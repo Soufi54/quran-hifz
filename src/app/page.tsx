@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import BottomNav from '../components/BottomNav';
 import QuizPlayer from '../components/QuizPlayer';
 import { generateDailyChallenge } from '../lib/quiz-generator';
-import { calculateChallengeXP } from '../lib/scoring';
 import {
   getStreak, updateStreak, addXP, getLives, loseLive,
   getLearnedSurahs, isChallengeCompletedToday,
@@ -39,9 +38,9 @@ export default function ChallengePage() {
     setState('playing');
   }, []);
 
-  const handleComplete = (score: number, total: number) => {
+  const handleComplete = (score: number, total: number, totalPoints: number) => {
     const newStreak = updateStreak();
-    const xp = calculateChallengeXP(score, newStreak);
+    const xp = Math.floor(totalPoints / 10); // 100 pts max/question → ~10 XP/question
     addXP(xp);
     setStreak(newStreak);
     setResult({ score, total, xp });

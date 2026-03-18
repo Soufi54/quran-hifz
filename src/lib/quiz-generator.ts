@@ -75,6 +75,7 @@ function generateCompleteAyahQuestion(surah: Surah): QuizQuestion | null {
   };
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function generateIdentifySurahQuestion(surahNumber: number): QuizQuestion | null {
   const surah = getSurah(surahNumber);
   if (!surah || surah.ayahs.length === 0) return null;
@@ -115,7 +116,13 @@ function generateTranslationQuestion(surah: Surah): QuizQuestion | null {
   };
 }
 
-const GENERATORS = [generateNextAyahQuestion, generateCompleteAyahQuestion, generateTranslationQuestion];
+// 85% verset suivant, 15% autres types
+function pickGenerator(): ((s: Surah) => QuizQuestion | null) {
+  const roll = Math.random();
+  if (roll < 0.85) return generateNextAyahQuestion;
+  const others = [generateCompleteAyahQuestion, generateTranslationQuestion];
+  return others[Math.floor(Math.random() * others.length)];
+}
 
 export function generateQuizForSurah(surahNumber: number, count: number = 10): QuizQuestion[] {
   const surah = getSurah(surahNumber);
@@ -123,7 +130,7 @@ export function generateQuizForSurah(surahNumber: number, count: number = 10): Q
   const questions: QuizQuestion[] = [];
   let attempts = 0;
   while (questions.length < count && attempts < count * 3) {
-    const gen = GENERATORS[Math.floor(Math.random() * GENERATORS.length)];
+    const gen = pickGenerator();
     const q = gen(surah);
     if (q) questions.push(q);
     attempts++;
@@ -139,14 +146,9 @@ export function generateDailyChallenge(learnedSurahNumbers: number[], count: num
     const surahNum = learnedSurahNumbers[Math.floor(Math.random() * learnedSurahNumbers.length)];
     const surah = getSurah(surahNum);
     if (!surah) { attempts++; continue; }
-    const typeIndex = questions.length % (GENERATORS.length + 1);
-    if (typeIndex === 2) {
-      const q = generateIdentifySurahQuestion(surahNum);
-      if (q) questions.push(q);
-    } else {
-      const q = GENERATORS[typeIndex % GENERATORS.length](surah);
-      if (q) questions.push(q);
-    }
+    const gen = pickGenerator();
+    const q = gen(surah);
+    if (q) questions.push(q);
     attempts++;
   }
   return questions.slice(0, count);

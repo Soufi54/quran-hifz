@@ -17,6 +17,7 @@ export default function SurahPage() {
   const [showTranslation, setShowTranslation] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const playingRef = useRef(false);
 
   useEffect(() => {
     if (!surah) return;
@@ -28,7 +29,6 @@ export default function SurahPage() {
     }
     setPages(pageList);
 
-    // Marquer comme learning
     const progress = getSurahProgress();
     if (!progress[surahNumber] || progress[surahNumber] === 'not_started') {
       setSurahStatus(surahNumber, 'learning');
@@ -40,16 +40,18 @@ export default function SurahPage() {
     if (!pages[currentPageIndex]) return;
 
     if (isPlaying) {
+      playingRef.current = false;
       audioRef.current?.pause();
       setIsPlaying(false);
       return;
     }
 
+    playingRef.current = true;
     setIsPlaying(true);
     const ayahs = pages[currentPageIndex].ayahs;
 
     for (const ayah of ayahs) {
-      if (!isPlaying && audioRef.current) break;
+      if (!playingRef.current) break;
       const url = getAudioUrl(ayah.surahNumber, ayah.ayahNumberInSurah);
       const audio = new Audio(url);
       audioRef.current = audio;
@@ -63,6 +65,7 @@ export default function SurahPage() {
         break;
       }
     }
+    playingRef.current = false;
     setIsPlaying(false);
   };
 
@@ -74,12 +77,14 @@ export default function SurahPage() {
   const isBismillah = surahNumber !== 9 && surahNumber !== 1;
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#FFF8F0]">
+    <div className="min-h-screen flex flex-col bg-[#FDF6EC]">
       {/* Header */}
       <div className="bg-[#1B4332] text-white px-4 py-3 flex items-center gap-3">
         <button onClick={() => router.back()} className="text-xl">←</button>
         <div className="flex-1 text-center">
-          <h1 className="text-base font-bold">{surah.nameArabic}</h1>
+          <h1 className="text-base font-bold" style={{ fontFamily: "'Amiri Quran', serif" }}>
+            {surah.nameArabic}
+          </h1>
           <p className="text-xs opacity-80">{surah.nameFrench}</p>
         </div>
         <button
@@ -90,41 +95,65 @@ export default function SurahPage() {
         </button>
       </div>
 
-      {/* Page content */}
+      {/* Page mushaf */}
       {page && (
-        <div className="flex-1 overflow-y-auto p-4">
-          {/* Page header */}
-          <div className="flex justify-between items-center pb-2 mb-3 border-b border-[#D4A574] text-xs text-[#8B7355]">
-            <span>Juz {page.ayahs[0]?.surahNumber && getSurah(page.ayahs[0].surahNumber)?.ayahs.find(a => a.page === page.pageNumber)?.juz}</span>
-            <span>{page.ayahs[0]?.surahNameArabic}</span>
-          </div>
+        <div className="flex-1 overflow-y-auto">
+          {/* Cadre mushaf */}
+          <div className="mx-2 my-3 border-2 border-[#C9A96E] rounded-sm bg-[#FFFDF7] min-h-[70vh]">
+            {/* Header de page - style mushaf */}
+            <div className="flex justify-between items-center px-4 py-2 border-b border-[#C9A96E] bg-[#F5EDD8]">
+              <span className="text-xs text-[#8B7355]">
+                Juz {page.ayahs[0]?.surahNumber && getSurah(page.ayahs[0].surahNumber)?.ayahs.find(a => a.page === page.pageNumber)?.juz}
+              </span>
+              <span className="text-sm text-[#1B4332]" style={{ fontFamily: "'Amiri Quran', serif" }}>
+                {page.ayahs[0]?.surahNameArabic}
+              </span>
+            </div>
 
-          {/* Bismillah */}
-          {currentPageIndex === 0 && isBismillah && (
-            <p className="text-xl text-center text-[#1B4332] my-4 leading-10" dir="rtl">
-              بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ
-            </p>
-          )}
-
-          {/* Ayahs */}
-          <div dir="rtl">
-            {page.ayahs.map((ayah) => (
-              <div key={`${ayah.surahNumber}-${ayah.ayahNumberInSurah}`} className="mb-2">
-                <p className="text-xl leading-[48px] text-right text-gray-900 inline">
-                  {ayah.text}
-                  <span className="text-sm text-[#8B7355] mx-1">﴿{ayah.ayahNumberInSurah}﴾</span>
+            {/* Contenu de la page */}
+            <div className="px-5 py-4">
+              {/* Bismillah */}
+              {currentPageIndex === 0 && isBismillah && (
+                <p
+                  className="text-center text-[#1B4332] my-5"
+                  dir="rtl"
+                  style={{ fontFamily: "'Amiri Quran', serif", fontSize: '28px', lineHeight: '60px' }}
+                >
+                  بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ
                 </p>
-                {showTranslation && (
-                  <p className="text-sm text-gray-500 leading-6 mt-1 text-left border-l-2 border-gray-200 pl-3" dir="ltr">
-                    {ayah.translationFr}
-                  </p>
-                )}
-              </div>
-            ))}
-          </div>
+              )}
 
-          {/* Page number */}
-          <p className="text-center text-sm text-[#8B7355] mt-6">{page.pageNumber}</p>
+              {/* Texte coranique continu - style mushaf */}
+              <div dir="rtl" className="text-justify">
+                {page.ayahs.map((ayah) => (
+                  <span key={`${ayah.surahNumber}-${ayah.ayahNumberInSurah}`}>
+                    <span
+                      className="text-[#1A1A1A] leading-[2.8]"
+                      style={{ fontFamily: "'Amiri Quran', serif", fontSize: '26px' }}
+                    >
+                      {ayah.text}
+                    </span>
+                    <span
+                      className="text-[#C9A96E] mx-1"
+                      style={{ fontFamily: "'Amiri Quran', serif", fontSize: '18px' }}
+                    >
+                      ﴿{ayah.ayahNumberInSurah}﴾
+                    </span>
+                    {showTranslation && (
+                      <span className="block text-sm text-gray-500 leading-6 my-2 text-left border-r-2 border-[#C9A96E] pr-3" dir="ltr">
+                        {ayah.translationFr}
+                      </span>
+                    )}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Numero de page */}
+            <div className="text-center py-3 border-t border-[#C9A96E] bg-[#F5EDD8]">
+              <span className="text-sm text-[#8B7355]">{page.pageNumber}</span>
+            </div>
+          </div>
         </div>
       )}
 
@@ -144,22 +173,22 @@ export default function SurahPage() {
 
         <div className="flex-1" />
 
-        {/* Page navigation */}
+        {/* Page navigation - fleches inversees pour sens arabe */}
         <div className="flex items-center gap-3">
-          <button
-            onClick={() => setCurrentPageIndex(i => Math.max(0, i - 1))}
-            disabled={currentPageIndex === 0}
-            className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center disabled:opacity-30"
-          >
-            →
-          </button>
-          <span className="text-xs text-gray-500">{currentPageIndex + 1}/{pages.length}</span>
           <button
             onClick={() => setCurrentPageIndex(i => Math.min(pages.length - 1, i + 1))}
             disabled={currentPageIndex === pages.length - 1}
-            className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center disabled:opacity-30"
+            className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center disabled:opacity-30 text-sm"
           >
             ←
+          </button>
+          <span className="text-xs text-gray-500">{currentPageIndex + 1}/{pages.length}</span>
+          <button
+            onClick={() => setCurrentPageIndex(i => Math.max(0, i - 1))}
+            disabled={currentPageIndex === 0}
+            className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center disabled:opacity-30 text-sm"
+          >
+            →
           </button>
         </div>
       </div>

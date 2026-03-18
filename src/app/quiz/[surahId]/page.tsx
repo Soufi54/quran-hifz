@@ -23,10 +23,10 @@ export default function QuizPage() {
     setLives(getLives());
   }, []);
 
-  const handleComplete = (score: number, total: number) => {
+  const handleComplete = (score: number, total: number, totalPoints: number) => {
     const percentage = (score / total) * 100;
     const mastered = percentage >= 80;
-    let xp = score * 10;
+    let xp = Math.floor(totalPoints / 10);
 
     if (mastered) {
       setSurahStatus(surahNumber, 'mastered');

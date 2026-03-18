@@ -2,6 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
+@import url('https://fonts.googleapis.com/css2?family=Amiri+Quran&display=swap');
+
 :root {
   --green-dark: #1B4332;
   --green-light: #D8F3DC;
