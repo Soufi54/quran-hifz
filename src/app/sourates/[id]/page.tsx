@@ -2,9 +2,13 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { getSurah, getPageData, getFirstPageOfSurah, getLastPageOfSurah, getAudioUrl } from '../../../lib/quran';
+import { getSurah, getFirstPageOfSurah, getLastPageOfSurah, getAudioUrl, getPageData } from '../../../lib/quran';
 import { setSurahStatus, getSurahProgress, setReviewDate } from '../../../lib/storage';
-import { PageData } from '../../../lib/quran';
+
+function getMushafImageUrl(pageNumber: number): string {
+  const padded = String(pageNumber).padStart(3, '0');
+  return `https://quran.islam-db.com/public/data/pages/quranpages_1024/images/page${padded}.png`;
+}
 
 export default function SurahPage() {
   const params = useParams();
@@ -13,9 +17,10 @@ export default function SurahPage() {
   const surah = getSurah(surahNumber);
 
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
-  const [pages, setPages] = useState<PageData[]>([]);
+  const [pageNumbers, setPageNumbers] = useState<number[]>([]);
   const [showTranslation, setShowTranslation] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [imageError, setImageError] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const playingRef = useRef(false);
 
@@ -23,11 +28,11 @@ export default function SurahPage() {
     if (!surah) return;
     const first = getFirstPageOfSurah(surahNumber);
     const last = getLastPageOfSurah(surahNumber);
-    const pageList: PageData[] = [];
+    const pages: number[] = [];
     for (let p = first; p <= last; p++) {
-      pageList.push(getPageData(p));
+      pages.push(p);
     }
-    setPages(pageList);
+    setPageNumbers(pages);
 
     const progress = getSurahProgress();
     if (!progress[surahNumber] || progress[surahNumber] === 'not_started') {
@@ -37,7 +42,7 @@ export default function SurahPage() {
   }, [surahNumber, surah]);
 
   const playPageAudio = async () => {
-    if (!pages[currentPageIndex]) return;
+    if (pageNumbers.length === 0) return;
 
     if (isPlaying) {
       playingRef.current = false;
@@ -48,9 +53,10 @@ export default function SurahPage() {
 
     playingRef.current = true;
     setIsPlaying(true);
-    const ayahs = pages[currentPageIndex].ayahs;
+    const pageNum = pageNumbers[currentPageIndex];
+    const pageData = getPageData(pageNum);
 
-    for (const ayah of ayahs) {
+    for (const ayah of pageData.ayahs) {
       if (!playingRef.current) break;
       const url = getAudioUrl(ayah.surahNumber, ayah.ayahNumberInSurah);
       const audio = new Audio(url);
@@ -73,11 +79,11 @@ export default function SurahPage() {
     return <div className="p-8 text-center text-gray-500">Sourate non trouvee</div>;
   }
 
-  const page = pages[currentPageIndex];
-  const isBismillah = surahNumber !== 9 && surahNumber !== 1;
+  const currentPage = pageNumbers[currentPageIndex];
+  const translationData = showTranslation && currentPage ? getPageData(currentPage) : null;
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#FDF6EC]">
+    <div className="min-h-screen flex flex-col bg-[#1B4332]">
       {/* Header */}
       <div className="bg-[#1B4332] text-white px-4 py-3 flex items-center gap-3">
         <button onClick={() => router.back()} className="text-xl">←</button>
@@ -95,65 +101,38 @@ export default function SurahPage() {
         </button>
       </div>
 
-      {/* Page mushaf */}
-      {page && (
-        <div className="flex-1 overflow-y-auto">
-          {/* Cadre mushaf */}
-          <div className="mx-2 my-3 border-2 border-[#C9A96E] rounded-sm bg-[#FFFDF7] min-h-[70vh]">
-            {/* Header de page - style mushaf */}
-            <div className="flex justify-between items-center px-4 py-2 border-b border-[#C9A96E] bg-[#F5EDD8]">
-              <span className="text-xs text-[#8B7355]">
-                Juz {page.ayahs[0]?.surahNumber && getSurah(page.ayahs[0].surahNumber)?.ayahs.find(a => a.page === page.pageNumber)?.juz}
-              </span>
-              <span className="text-sm text-[#1B4332]" style={{ fontFamily: "'Amiri Quran', serif" }}>
-                {page.ayahs[0]?.surahNameArabic}
-              </span>
-            </div>
+      {/* Page mushaf - image */}
+      {currentPage && (
+        <div className="flex-1 overflow-y-auto bg-[#FDF6EC]">
+          <div className="relative w-full" style={{ minHeight: '500px' }}>
+            {!imageError ? (
+              <img // eslint-disable-line @next/next/no-img-element
+                src={getMushafImageUrl(currentPage)}
+                alt={`Page ${currentPage} du mushaf`}
+                className="w-full h-auto"
+                onError={() => setImageError(true)}
+              />
+            ) : (
+              <div className="flex items-center justify-center h-96 text-gray-400">
+                <p>Image non disponible pour la page {currentPage}</p>
+              </div>
+            )}
+          </div>
 
-            {/* Contenu de la page */}
-            <div className="px-5 py-4">
-              {/* Bismillah */}
-              {currentPageIndex === 0 && isBismillah && (
-                <p
-                  className="text-center text-[#1B4332] my-5"
-                  dir="rtl"
-                  style={{ fontFamily: "'Amiri Quran', serif", fontSize: '28px', lineHeight: '60px' }}
-                >
-                  بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ
-                </p>
-              )}
-
-              {/* Texte coranique continu - style mushaf */}
-              <div dir="rtl" className="text-justify">
-                {page.ayahs.map((ayah) => (
-                  <span key={`${ayah.surahNumber}-${ayah.ayahNumberInSurah}`}>
-                    <span
-                      className="text-[#1A1A1A] leading-[2.8]"
-                      style={{ fontFamily: "'Amiri Quran', serif", fontSize: '26px' }}
-                    >
-                      {ayah.text}
-                    </span>
-                    <span
-                      className="text-[#C9A96E] mx-1"
-                      style={{ fontFamily: "'Amiri Quran', serif", fontSize: '18px' }}
-                    >
-                      ﴿{ayah.ayahNumberInSurah}﴾
-                    </span>
-                    {showTranslation && (
-                      <span className="block text-sm text-gray-500 leading-6 my-2 text-left border-r-2 border-[#C9A96E] pr-3" dir="ltr">
-                        {ayah.translationFr}
-                      </span>
-                    )}
-                  </span>
+          {/* Traduction sous l'image */}
+          {showTranslation && translationData && (
+            <div className="bg-white border-t border-gray-200 px-4 py-3">
+              <h3 className="text-xs font-semibold text-gray-500 uppercase mb-2">Traduction</h3>
+              <div className="space-y-2">
+                {translationData.ayahs.map((ayah) => (
+                  <div key={`${ayah.surahNumber}-${ayah.ayahNumberInSurah}`} className="text-sm text-gray-700">
+                    <span className="text-xs font-semibold text-[#1B4332] mr-1">{ayah.ayahNumberInSurah}.</span>
+                    {ayah.translationFr}
+                  </div>
                 ))}
               </div>
             </div>
-
-            {/* Numero de page */}
-            <div className="text-center py-3 border-t border-[#C9A96E] bg-[#F5EDD8]">
-              <span className="text-sm text-[#8B7355]">{page.pageNumber}</span>
-            </div>
-          </div>
+          )}
         </div>
       )}
 
@@ -173,18 +152,18 @@ export default function SurahPage() {
 
         <div className="flex-1" />
 
-        {/* Page navigation - fleches inversees pour sens arabe */}
+        {/* Page navigation */}
         <div className="flex items-center gap-3">
           <button
-            onClick={() => setCurrentPageIndex(i => Math.min(pages.length - 1, i + 1))}
-            disabled={currentPageIndex === pages.length - 1}
+            onClick={() => { setCurrentPageIndex(i => Math.min(pageNumbers.length - 1, i + 1)); setImageError(false); }}
+            disabled={currentPageIndex === pageNumbers.length - 1}
             className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center disabled:opacity-30 text-sm"
           >
             ←
           </button>
-          <span className="text-xs text-gray-500">{currentPageIndex + 1}/{pages.length}</span>
+          <span className="text-xs text-gray-500">p.{currentPage}</span>
           <button
-            onClick={() => setCurrentPageIndex(i => Math.max(0, i - 1))}
+            onClick={() => { setCurrentPageIndex(i => Math.max(0, i - 1)); setImageError(false); }}
             disabled={currentPageIndex === 0}
             className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center disabled:opacity-30 text-sm"
           >
