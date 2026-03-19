@@ -1,11 +1,17 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Eye, Check, X, RotateCcw, Mic } from 'lucide-react';
+import { ArrowLeft, Eye, Check, X, RotateCcw, Mic, Square, Download, Loader2 } from 'lucide-react';
 import { getSurah } from '../../../../lib/quran';
 import { setReviewDate, setSurahStatus } from '../../../../lib/storage';
-import { isWebSpeechAvailable, startWebSpeechRecognition, compareArabicTexts, getWordDiff } from '../../../../lib/speech';
+import {
+  isWebSpeechAvailable, startWebSpeechRecognition, stopWebSpeechRecognition,
+  loadWhisper, isWhisperLoaded, startRecording, stopRecording, transcribeWithWhisper,
+  compareArabicTexts, getWordDiff,
+} from '../../../../lib/speech';
+
+type Mode = 'manual' | 'webspeech' | 'whisper';
 
 export default function TartilPage() {
   const params = useParams();
@@ -17,17 +23,35 @@ export default function TartilPage() {
   const [revealed, setRevealed] = useState(false);
   const [results, setResults] = useState<('correct' | 'wrong' | null)[]>([]);
   const [done, setDone] = useState(false);
-  const [useVoice, setUseVoice] = useState(false);
+  const [mode, setMode] = useState<Mode>('manual');
   const [isRecording, setIsRecording] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
   const [recognizedText, setRecognizedText] = useState('');
   const [similarity, setSimilarity] = useState<number | null>(null);
   const [wordDiff, setWordDiff] = useState<{ word: string; correct: boolean }[]>([]);
-  const [speechAvailable, setSpeechAvailable] = useState(false);
+  const [whisperLoading, setWhisperLoading] = useState(false);
+  const [whisperProgress, setWhisperProgress] = useState(0);
+  const [whisperReady, setWhisperReady] = useState(false);
+  const [processing, setProcessing] = useState(false);
+  const [speechAvail, setSpeechAvail] = useState(false);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (surah) setResults(new Array(surah.ayahs.length).fill(null));
-    setSpeechAvailable(isWebSpeechAvailable());
+    setSpeechAvail(isWebSpeechAvailable());
+    setWhisperReady(isWhisperLoaded());
   }, [surah]);
+
+  // Timer d'enregistrement
+  useEffect(() => {
+    if (isRecording) {
+      setRecordingTime(0);
+      timerRef.current = setInterval(() => setRecordingTime(t => t + 1), 1000);
+    } else {
+      if (timerRef.current) clearInterval(timerRef.current);
+    }
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [isRecording]);
 
   if (!surah) return <div className="p-8 text-center text-gray-500">Sourate non trouvee</div>;
 
@@ -36,23 +60,67 @@ export default function TartilPage() {
   const correctCount = results.filter(r => r === 'correct').length;
   const answeredCount = results.filter(r => r !== null).length;
 
-  const handleVoice = async () => {
-    setIsRecording(true);
+  // --- Charger Whisper ---
+  const handleLoadWhisper = async () => {
+    setWhisperLoading(true);
+    try {
+      await loadWhisper((p) => setWhisperProgress(p));
+      setWhisperReady(true);
+      setMode('whisper');
+    } catch {
+      alert('Erreur chargement Whisper');
+    }
+    setWhisperLoading(false);
+  };
+
+  // --- Demarrer enregistrement ---
+  const handleStartRecording = async () => {
     setRecognizedText('');
     setSimilarity(null);
     setWordDiff([]);
-    try {
-      const transcript = await startWebSpeechRecognition();
-      setRecognizedText(transcript);
-      const sim = compareArabicTexts(transcript, ayah.text);
-      setSimilarity(sim);
-      setWordDiff(getWordDiff(transcript, ayah.text));
-      setRevealed(true);
-      if (sim >= 0.7) handleResult('correct');
-    } catch {
-      // Erreur silencieuse, l'utilisateur peut reveler manuellement
+    setIsRecording(true);
+
+    if (mode === 'webspeech') {
+      startWebSpeechRecognition().then(transcript => {
+        processTranscript(transcript);
+      }).catch(() => {
+        setIsRecording(false);
+      });
+    } else if (mode === 'whisper') {
+      await startRecording();
     }
+  };
+
+  // --- Arreter enregistrement ---
+  const handleStopRecording = async () => {
     setIsRecording(false);
+
+    if (mode === 'webspeech') {
+      stopWebSpeechRecognition();
+      // Le resultat arrivera via la promise de startWebSpeechRecognition
+    } else if (mode === 'whisper') {
+      setProcessing(true);
+      try {
+        const blob = await stopRecording();
+        const transcript = await transcribeWithWhisper(blob);
+        processTranscript(transcript);
+      } catch {
+        setProcessing(false);
+      }
+    }
+  };
+
+  const processTranscript = (transcript: string) => {
+    setRecognizedText(transcript);
+    const sim = compareArabicTexts(transcript, ayah.text);
+    setSimilarity(sim);
+    setWordDiff(getWordDiff(transcript, ayah.text));
+    setRevealed(true);
+    setProcessing(false);
+    if (sim >= 0.7) {
+      // Auto-marquer correct avec delai pour voir le feedback
+      setTimeout(() => handleResult('correct'), 1500);
+    }
   };
 
   const handleResult = (result: 'correct' | 'wrong') => {
@@ -66,7 +134,7 @@ export default function TartilPage() {
         setRecognizedText('');
         setSimilarity(null);
         setWordDiff([]);
-      }, 800);
+      }, 500);
     } else {
       setDone(true);
       setReviewDate(surahNumber);
@@ -85,6 +153,7 @@ export default function TartilPage() {
     setWordDiff([]);
   };
 
+  // --- Ecran termine ---
   if (done) {
     const percentage = Math.round((correctCount / totalAyahs) * 100);
     const mastered = percentage >= 80;
@@ -103,7 +172,6 @@ export default function TartilPage() {
           </div>
           <h2 className="text-2xl font-bold text-emerald-900 mb-2">{mastered ? 'Sourate maitrisee !' : 'Continue a reviser'}</h2>
           <p className="text-lg text-gray-600">{correctCount}/{totalAyahs} ({percentage}%)</p>
-          {!mastered && <p className="text-sm text-gray-400 mt-1">80% requis</p>}
           <div className="flex gap-3 mt-8">
             <button onClick={restart} className="clay-button py-3 px-6">Recommencer</button>
             <button onClick={() => router.back()} className="clay-card py-3 px-6 cursor-pointer text-emerald-700 font-semibold">Retour</button>
@@ -129,22 +197,31 @@ export default function TartilPage() {
         <p className="text-xs text-emerald-200 text-center mt-1">{currentAyah + 1}/{totalAyahs}</p>
       </div>
 
-      {/* Toggle vocal */}
-      {speechAvailable && (
-        <div className="flex gap-2 mx-4 mt-3 p-1 rounded-xl" style={{ background: '#E8F5E9', boxShadow: 'var(--shadow-clay-inset)' }}>
-          <button onClick={() => setUseVoice(false)} className={`flex-1 py-2 text-xs rounded-lg cursor-pointer transition-all ${!useVoice ? 'bg-white text-emerald-700 font-semibold shadow-md' : 'text-gray-500'}`}>
-            Manuel
+      {/* Mode selector */}
+      <div className="flex gap-1 mx-4 mt-3 p-1 rounded-xl" style={{ background: '#E8F5E9', boxShadow: 'var(--shadow-clay-inset)' }}>
+        <button onClick={() => setMode('manual')} className={`flex-1 py-2 text-xs rounded-lg cursor-pointer transition-all ${mode === 'manual' ? 'bg-white text-emerald-700 font-semibold shadow-md' : 'text-gray-500'}`}>
+          Manuel
+        </button>
+        {speechAvail && (
+          <button onClick={() => setMode('webspeech')} className={`flex-1 py-2 text-xs rounded-lg cursor-pointer transition-all ${mode === 'webspeech' ? 'bg-white text-emerald-700 font-semibold shadow-md' : 'text-gray-500'}`}>
+            Rapide
           </button>
-          <button onClick={() => setUseVoice(true)} className={`flex-1 py-2 text-xs rounded-lg cursor-pointer transition-all ${useVoice ? 'bg-white text-emerald-700 font-semibold shadow-md' : 'text-gray-500'}`}>
-            Vocal
-          </button>
-        </div>
-      )}
+        )}
+        <button
+          onClick={() => whisperReady ? setMode('whisper') : handleLoadWhisper()}
+          disabled={whisperLoading}
+          className={`flex-1 py-2 text-xs rounded-lg cursor-pointer transition-all ${mode === 'whisper' ? 'bg-white text-emerald-700 font-semibold shadow-md' : 'text-gray-500'}`}
+        >
+          {whisperLoading ? (
+            <span className="flex items-center justify-center gap-1"><Loader2 size={12} className="animate-spin" />{whisperProgress}%</span>
+          ) : whisperReady ? 'Precis' : (
+            <span className="flex items-center justify-center gap-1"><Download size={11} />Precis</span>
+          )}
+        </button>
+      </div>
 
       <div className="flex-1 p-5 flex flex-col items-center justify-center">
-        <p className="text-sm text-gray-500 mb-4 text-center">
-          Recite le verset {currentAyah + 1} de memoire
-        </p>
+        <p className="text-sm text-gray-500 mb-4 text-center">Verset {currentAyah + 1}</p>
 
         {/* Verset */}
         <div className="clay-card w-full p-6 min-h-[180px] flex items-center justify-center mb-4">
@@ -164,9 +241,22 @@ export default function TartilPage() {
               )}
               {similarity !== null && (
                 <p className={`text-center mt-3 text-sm font-bold ${similarity >= 0.7 ? 'text-emerald-600' : 'text-red-500'}`}>
-                  {Math.round(similarity * 100)}% de correspondance
+                  {Math.round(similarity * 100)}% correct
                 </p>
               )}
+            </div>
+          ) : processing ? (
+            <div className="text-center">
+              <Loader2 size={32} className="text-emerald-500 animate-spin mx-auto mb-2" />
+              <p className="text-sm text-gray-400">Analyse en cours...</p>
+            </div>
+          ) : isRecording ? (
+            <div className="text-center">
+              <div className="w-16 h-16 rounded-full bg-red-500 flex items-center justify-center mx-auto mb-3 animate-pulse" style={{ boxShadow: '0 0 30px rgba(239,68,68,0.4)' }}>
+                <Mic size={28} className="text-white" />
+              </div>
+              <p className="text-lg font-bold text-red-500">{recordingTime}s</p>
+              <p className="text-xs text-gray-400 mt-1">Recite le verset...</p>
             </div>
           ) : (
             <div className="text-center text-gray-300">
@@ -184,32 +274,41 @@ export default function TartilPage() {
         )}
 
         {/* Actions */}
-        {!revealed ? (
+        {!revealed && !processing ? (
           <div className="w-full space-y-3">
-            {useVoice && (
-              <button
-                onClick={handleVoice}
-                disabled={isRecording}
-                className={`w-full py-4 rounded-xl text-base flex items-center justify-center gap-2 cursor-pointer font-semibold ${
-                  isRecording ? 'bg-red-500 text-white animate-pulse' : 'bg-emerald-500 text-white'
-                }`}
-                style={{ boxShadow: isRecording ? '0 0 20px rgba(239,68,68,0.4)' : '0 4px 12px rgba(5,150,105,0.3)' }}
-              >
-                <Mic size={20} />
-                {isRecording ? 'Ecoute...' : 'Reciter'}
-              </button>
+            {mode !== 'manual' && (
+              isRecording ? (
+                <button
+                  onClick={handleStopRecording}
+                  className="w-full py-4 rounded-xl bg-red-500 text-white text-base flex items-center justify-center gap-2 cursor-pointer font-semibold transition-transform active:scale-95"
+                  style={{ boxShadow: '0 0 20px rgba(239,68,68,0.3)' }}
+                >
+                  <Square size={18} fill="white" />
+                  Arreter ({recordingTime}s)
+                </button>
+              ) : (
+                <button
+                  onClick={handleStartRecording}
+                  disabled={mode === 'whisper' && !whisperReady}
+                  className="w-full py-4 rounded-xl bg-emerald-500 text-white text-base flex items-center justify-center gap-2 cursor-pointer font-semibold transition-transform active:scale-95 disabled:opacity-50"
+                  style={{ boxShadow: '0 4px 12px rgba(5,150,105,0.3)' }}
+                >
+                  <Mic size={20} />
+                  Reciter
+                </button>
+              )
             )}
             <button
               onClick={() => setRevealed(true)}
               className={`w-full py-4 rounded-xl text-base flex items-center justify-center gap-2 cursor-pointer font-semibold ${
-                !useVoice ? 'bg-emerald-500 text-white' : 'bg-white text-gray-600 border border-gray-200'
+                mode === 'manual' ? 'bg-emerald-500 text-white' : 'bg-white text-gray-600 border border-gray-200'
               }`}
-              style={{ boxShadow: !useVoice ? '0 4px 12px rgba(5,150,105,0.3)' : 'none' }}
+              style={{ boxShadow: mode === 'manual' ? '0 4px 12px rgba(5,150,105,0.3)' : 'none' }}
             >
               <Eye size={20} /> Reveler
             </button>
           </div>
-        ) : (
+        ) : revealed ? (
           <div className="w-full">
             <p className="text-center text-sm text-gray-500 mb-2">Correct ?</p>
             <div className="flex gap-3">
@@ -221,7 +320,7 @@ export default function TartilPage() {
               </button>
             </div>
           </div>
-        )}
+        ) : null}
 
         {/* Dots */}
         <div className="flex flex-wrap gap-1.5 mt-6 justify-center">

@@ -1,5 +1,6 @@
-// Reconnaissance vocale arabe via Web Speech API (gratuit, dans le navigateur)
-// V2 : ajouter Whisper via web worker pour plus de precision
+// Reconnaissance vocale arabe
+// Mode 1 : Web Speech API (rapide, moins precis)
+// Mode 2 : Whisper via Web Worker (precis, 100% local)
 
 // --- Nettoyage texte arabe ---
 function stripTashkeel(text: string): string {
@@ -52,42 +53,132 @@ interface SpeechRecognitionLike {
   stop: () => void;
 }
 
+let activeRecognition: SpeechRecognitionLike | null = null;
+
 export function startWebSpeechRecognition(): Promise<string> {
   return new Promise((resolve, reject) => {
     const win = window as unknown as Record<string, unknown>;
-    const SpeechRecognitionCtor = (win.SpeechRecognition || win.webkitSpeechRecognition) as (new () => SpeechRecognitionLike) | undefined;
+    const Ctor = (win.SpeechRecognition || win.webkitSpeechRecognition) as (new () => SpeechRecognitionLike) | undefined;
+    if (!Ctor) { reject(new Error('Non disponible')); return; }
 
-    if (!SpeechRecognitionCtor) {
-      reject(new Error('Web Speech API non disponible'));
-      return;
-    }
-
-    const recognition = new SpeechRecognitionCtor();
+    const recognition = new Ctor();
     recognition.lang = 'ar-SA';
-    recognition.continuous = false;
+    recognition.continuous = true;
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
+    activeRecognition = recognition;
 
+    let fullTranscript = '';
     let resolved = false;
 
     recognition.onresult = (event) => {
-      resolved = true;
-      const transcript = event.results[0][0].transcript;
-      resolve(transcript);
+      for (let i = 0; i < Object.keys(event.results).length; i++) {
+        if (event.results[i] && event.results[i][0]) {
+          fullTranscript += ' ' + event.results[i][0].transcript;
+        }
+      }
     };
 
     recognition.onerror = (event) => {
-      if (!resolved) reject(new Error(event.error));
+      if (!resolved && event.error !== 'aborted') {
+        resolved = true;
+        resolve(fullTranscript.trim());
+      }
     };
 
     recognition.onend = () => {
-      if (!resolved) resolve('');
+      if (!resolved) {
+        resolved = true;
+        resolve(fullTranscript.trim());
+      }
+      activeRecognition = null;
     };
 
     recognition.start();
+  });
+}
 
-    setTimeout(() => {
-      recognition.stop();
-    }, 15000);
+export function stopWebSpeechRecognition(): void {
+  if (activeRecognition) {
+    activeRecognition.stop();
+    activeRecognition = null;
+  }
+}
+
+// --- Whisper via Web Worker ---
+let whisperWorker: Worker | null = null;
+let whisperReady = false;
+
+export function isWhisperLoaded(): boolean {
+  return whisperReady;
+}
+
+export function loadWhisper(onProgress: (pct: number) => void): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (whisperReady) { resolve(); return; }
+    if (typeof window === 'undefined') { reject(new Error('SSR')); return; }
+
+    whisperWorker = new Worker('/whisper-worker.js');
+
+    whisperWorker.onmessage = (e) => {
+      const { type, progress, error } = e.data;
+      if (type === 'progress') onProgress(progress);
+      if (type === 'loaded') { whisperReady = true; resolve(); }
+      if (type === 'error') reject(new Error(error));
+    };
+
+    whisperWorker.postMessage({ type: 'load' });
+  });
+}
+
+export async function transcribeWithWhisper(audioBlob: Blob): Promise<string> {
+  if (!whisperWorker || !whisperReady) throw new Error('Whisper pas charge');
+
+  // Convertir Blob → Float32Array (16kHz mono)
+  const arrayBuffer = await audioBlob.arrayBuffer();
+  const audioContext = new AudioContext({ sampleRate: 16000 });
+  const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+  const float32 = audioBuffer.getChannelData(0);
+  await audioContext.close();
+
+  return new Promise((resolve, reject) => {
+    if (!whisperWorker) { reject(new Error('No worker')); return; }
+    const handler = (e: MessageEvent) => {
+      const { type, text, error } = e.data;
+      if (type === 'result') { whisperWorker?.removeEventListener('message', handler); resolve(text); }
+      if (type === 'error') { whisperWorker?.removeEventListener('message', handler); reject(new Error(error)); }
+    };
+    whisperWorker.addEventListener('message', handler);
+    whisperWorker.postMessage({ type: 'transcribe', audioData: float32 });
+  });
+}
+
+// --- Enregistrement audio micro ---
+let mediaRecorder: MediaRecorder | null = null;
+let audioChunks: Blob[] = [];
+
+export function startRecording(): Promise<void> {
+  return navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+    audioChunks = [];
+    mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+    mediaRecorder.ondataavailable = (e) => {
+      if (e.data.size > 0) audioChunks.push(e.data);
+    };
+    mediaRecorder.start(250); // chunk every 250ms
+  });
+}
+
+export function stopRecording(): Promise<Blob> {
+  return new Promise((resolve) => {
+    if (!mediaRecorder || mediaRecorder.state !== 'recording') {
+      resolve(new Blob(audioChunks, { type: 'audio/webm' }));
+      return;
+    }
+    mediaRecorder.onstop = () => {
+      mediaRecorder?.stream.getTracks().forEach(t => t.stop());
+      resolve(new Blob(audioChunks, { type: 'audio/webm' }));
+      mediaRecorder = null;
+    };
+    mediaRecorder.stop();
   });
 }
