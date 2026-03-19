@@ -1,17 +1,14 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Check, RotateCcw, Mic, Square } from 'lucide-react';
 import { getSurah } from '../../../../lib/quran';
 import { setReviewDate, setSurahStatus } from '../../../../lib/storage';
-import { compareArabicTexts, getWordDiff } from '../../../../lib/speech';
+import { compareArabicTexts } from '../../../../lib/speech';
 
 type AyahResult = {
-  status: 'pending' | 'listening' | 'correct' | 'wrong' | 'timeout';
-  recognizedText?: string;
-  similarity?: number;
-  wordDiff?: { word: string; correct: boolean }[];
+  status: 'pending' | 'correct' | 'wrong' | 'timeout';
 };
 
 export default function TartilPage() {
@@ -24,186 +21,175 @@ export default function TartilPage() {
   const [currentAyah, setCurrentAyah] = useState(0);
   const [results, setResults] = useState<AyahResult[]>([]);
   const [done, setDone] = useState(false);
-  const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
-  const recognitionRef = useRef<ReturnType<typeof createRecognition> | null>(null);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [feedback, setFeedback] = useState<'correct' | 'wrong' | null>(null);
+
+  // Refs pour eviter les problemes de closure
   const currentAyahRef = useRef(0);
-  const resultsRef = useRef<AyahResult[]>([]);
+  const doneRef = useRef(false);
+  const recognitionRef = useRef<{ stop: () => void } | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const activeRef = useRef(false);
 
   useEffect(() => {
-    if (surah) {
-      const r = surah.ayahs.map(() => ({ status: 'pending' as const }));
-      setResults(r);
-      resultsRef.current = r;
-    }
+    if (surah) setResults(surah.ayahs.map(() => ({ status: 'pending' })));
+    return () => cleanup();
   }, [surah]);
 
-  // Sync refs
   useEffect(() => { currentAyahRef.current = currentAyah; }, [currentAyah]);
-  useEffect(() => { resultsRef.current = results; }, [results]);
+  useEffect(() => { doneRef.current = done; }, [done]);
 
-  const createRecognition = useCallback(() => {
+  function cleanup() {
+    activeRef.current = false;
+    if (recognitionRef.current) { try { recognitionRef.current.stop(); } catch {} recognitionRef.current = null; }
+    if (timeoutRef.current) { clearTimeout(timeoutRef.current); timeoutRef.current = null; }
+  }
+
+  function markAyah(idx: number, status: 'correct' | 'wrong' | 'timeout') {
+    setResults(prev => {
+      const next = [...prev];
+      next[idx] = { status };
+      return next;
+    });
+    setFeedback(status === 'correct' ? 'correct' : 'wrong');
+  }
+
+  function moveToNextAyah() {
+    if (!surah || doneRef.current) return;
+    const nextIdx = currentAyahRef.current + 1;
+    setFeedback(null);
+    setTranscript('');
+
+    if (nextIdx >= surah.ayahs.length) {
+      // Termine
+      cleanup();
+      setDone(true);
+      setReviewDate(surahNumber);
+      return;
+    }
+
+    setCurrentAyah(nextIdx);
+    // Restart timeout
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    timeoutRef.current = setTimeout(() => {
+      if (!doneRef.current && activeRef.current) {
+        markAyah(currentAyahRef.current, 'timeout');
+        setTimeout(() => moveToNextAyah(), 1000);
+      }
+    }, 15000);
+  }
+
+  function startFlow() {
+    if (!surah) return;
+    setStarted(true);
+    setCurrentAyah(0);
+    setTranscript('');
+    setDone(false);
+    setFeedback(null);
+    activeRef.current = true;
+    setResults(surah.ayahs.map(() => ({ status: 'pending' })));
+
+    // Creer la reconnaissance vocale
     const win = window as unknown as Record<string, unknown>;
-    const Ctor = (win.SpeechRecognition || win.webkitSpeechRecognition) as (new () => {
-      lang: string; continuous: boolean; interimResults: boolean;
-      onresult: ((e: { results: { length: number; [k: number]: { isFinal: boolean; [k: number]: { transcript: string } } } }) => void) | null;
-      onerror: ((e: { error: string }) => void) | null;
-      onend: (() => void) | null;
-      start: () => void; stop: () => void;
-    }) | undefined;
-    if (!Ctor) return null;
+    const Ctor = (win.SpeechRecognition || win.webkitSpeechRecognition) as
+      (new () => {
+        lang: string; continuous: boolean; interimResults: boolean;
+        onresult: ((e: { results: { length: number; [k: number]: { isFinal: boolean; [k: number]: { transcript: string } } } }) => void) | null;
+        onerror: ((e: { error: string }) => void) | null;
+        onend: (() => void) | null;
+        start: () => void; stop: () => void;
+      }) | undefined;
+
+    if (!Ctor) {
+      alert('Reconnaissance vocale non disponible. Utilise Chrome.');
+      return;
+    }
+
     const rec = new Ctor();
     rec.lang = 'ar-SA';
     rec.continuous = true;
     rec.interimResults = true;
-    return rec;
-  }, []);
-
-  const advanceToNext = useCallback((result: 'correct' | 'wrong' | 'timeout', recognized: string, sim: number, diff: { word: string; correct: boolean }[]) => {
-    if (!surah) return;
-    const idx = currentAyahRef.current;
-
-    setResults(prev => {
-      const next = [...prev];
-      next[idx] = { status: result, recognizedText: recognized, similarity: sim, wordDiff: diff };
-      resultsRef.current = next;
-      return next;
-    });
-
-    // Delai avant prochain verset
-    setTimeout(() => {
-      if (idx < surah.ayahs.length - 1) {
-        setCurrentAyah(idx + 1);
-        setTranscript('');
-        // Relancer le timeout pour le prochain
-        if (timeoutRef.current) clearTimeout(timeoutRef.current);
-        timeoutRef.current = setTimeout(() => {
-          advanceToNext('timeout', '', 0, []);
-        }, 15000);
-      } else {
-        // Fini
-        stopListening();
-        setDone(true);
-        setReviewDate(surahNumber);
-        const finalResults = [...resultsRef.current];
-        finalResults[idx] = { status: result, recognizedText: recognized, similarity: sim, wordDiff: diff };
-        const correctCount = finalResults.filter(r => r.status === 'correct').length;
-        if ((correctCount / surah.ayahs.length) * 100 >= 80) {
-          setSurahStatus(surahNumber, 'mastered');
-        }
-      }
-    }, 1500);
-  }, [surah, surahNumber]);
-
-  const stopListening = useCallback(() => {
-    setIsListening(false);
-    if (recognitionRef.current) {
-      recognitionRef.current.stop();
-      recognitionRef.current = null;
-    }
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-      timeoutRef.current = null;
-    }
-  }, []);
-
-  const startFlow = useCallback(() => {
-    if (!surah) return;
-    setStarted(true);
-    setIsListening(true);
-    setCurrentAyah(0);
-    setTranscript('');
-
-    const rec = createRecognition();
-    if (!rec) {
-      alert('Reconnaissance vocale non disponible sur ce navigateur');
-      return;
-    }
     recognitionRef.current = rec;
 
-    let accumulated = '';
-
     rec.onresult = (event) => {
-      // Reconstruire le transcript complet
+      if (!activeRef.current || doneRef.current) return;
+
+      // Recuperer tout le texte accumule
       let full = '';
       for (let i = 0; i < event.results.length; i++) {
         full += event.results[i][0].transcript + ' ';
       }
-      accumulated = full.trim();
-      setTranscript(accumulated);
+      full = full.trim();
+      setTranscript(full);
 
-      // Verifier la correspondance avec le verset courant
+      // Comparer avec le verset courant
       const idx = currentAyahRef.current;
       if (!surah.ayahs[idx]) return;
-      const expected = surah.ayahs[idx].text;
-      const sim = compareArabicTexts(accumulated, expected);
+      const sim = compareArabicTexts(full, surah.ayahs[idx].text);
 
-      if (sim >= 0.6) {
-        const diff = getWordDiff(accumulated, expected);
-        // Reset timeout et avancer
+      if (sim >= 0.5) {
+        // Correct ! Marquer et avancer
+        markAyah(idx, 'correct');
         if (timeoutRef.current) clearTimeout(timeoutRef.current);
-        accumulated = '';
-        advanceToNext('correct', accumulated, sim, diff);
+        setTimeout(() => moveToNextAyah(), 1200);
       }
     };
 
     rec.onend = () => {
-      // Relancer automatiquement si pas fini
-      if (!done && isListening && recognitionRef.current) {
-        try { rec.start(); } catch { /* ignore */ }
+      // Relancer automatiquement si toujours actif
+      if (activeRef.current && !doneRef.current) {
+        try { rec.start(); } catch { /* navigateur a bloque */ }
       }
     };
 
     rec.onerror = () => {
-      // Relancer
-      if (!done && isListening) {
-        try { rec.start(); } catch { /* ignore */ }
+      if (activeRef.current && !doneRef.current) {
+        setTimeout(() => { try { rec.start(); } catch {} }, 500);
       }
     };
 
-    rec.start();
+    try { rec.start(); } catch {
+      alert('Erreur demarrage micro. Autorise le micro dans les parametres du navigateur.');
+      return;
+    }
 
-    // Timeout 15s par verset
+    // Timeout premier verset
     timeoutRef.current = setTimeout(() => {
-      advanceToNext('timeout', accumulated, 0, []);
+      if (!doneRef.current && activeRef.current) {
+        markAyah(currentAyahRef.current, 'timeout');
+        setTimeout(() => moveToNextAyah(), 1000);
+      }
     }, 15000);
-  }, [surah, createRecognition, advanceToNext, done, isListening]);
+  }
 
-  const handleStop = () => {
-    stopListening();
+  function handleStop() {
+    cleanup();
     setDone(true);
     setReviewDate(surahNumber);
-  };
+  }
 
-  const restart = () => {
-    stopListening();
-    setCurrentAyah(0);
-    setStarted(false);
+  function restart() {
+    cleanup();
     setDone(false);
+    setStarted(false);
+    setCurrentAyah(0);
     setTranscript('');
-    if (surah) {
-      const r = surah.ayahs.map(() => ({ status: 'pending' as const }));
-      setResults(r);
-      resultsRef.current = r;
-    }
-  };
-
-  useEffect(() => {
-    return () => { stopListening(); };
-  }, [stopListening]);
+    setFeedback(null);
+    if (surah) setResults(surah.ayahs.map(() => ({ status: 'pending' })));
+  }
 
   if (!surah) return <div className="p-8 text-center text-gray-500">Sourate non trouvee</div>;
 
   const totalAyahs = surah.ayahs.length;
   const correctCount = results.filter(r => r.status === 'correct').length;
-  const answeredCount = results.filter(r => r.status !== 'pending' && r.status !== 'listening').length;
+  const answeredCount = results.filter(r => r.status !== 'pending').length;
   const ayah = surah.ayahs[currentAyah];
 
   // --- Ecran termine ---
   if (done) {
-    const percentage = totalAyahs > 0 ? Math.round((correctCount / totalAyahs) * 100) : 0;
+    const percentage = answeredCount > 0 ? Math.round((correctCount / totalAyahs) * 100) : 0;
     const mastered = percentage >= 80;
+    if (mastered) setSurahStatus(surahNumber, 'mastered');
     return (
       <div className="min-h-screen page-enter">
         <div className="bg-gradient-to-br from-emerald-800 to-emerald-900 text-white px-4 py-4 flex items-center gap-3 rounded-b-3xl">
@@ -218,21 +204,20 @@ export default function TartilPage() {
             {mastered ? <Check size={48} className="text-emerald-500" /> : <RotateCcw size={48} className="text-amber-500" />}
           </div>
           <h2 className="text-2xl font-bold text-emerald-900 mb-2">{mastered ? 'Maitrisee !' : 'A reviser'}</h2>
-          <p className="text-lg text-gray-600">{correctCount}/{answeredCount} corrects ({percentage}%)</p>
+          <p className="text-lg text-gray-600">{correctCount}/{totalAyahs} ({percentage}%)</p>
 
-          {/* Detail par verset */}
-          <div className="w-full mt-6 space-y-2 text-left max-h-[40vh] overflow-y-auto">
+          {/* Detail */}
+          <div className="w-full mt-6 space-y-1.5 text-left max-h-[35vh] overflow-y-auto">
             {results.map((r, i) => (
               r.status !== 'pending' && (
-                <div key={i} className={`p-3 rounded-xl text-sm ${r.status === 'correct' ? 'bg-emerald-50 border border-emerald-200' : 'bg-red-50 border border-red-200'}`}>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className={`text-xs font-bold ${r.status === 'correct' ? 'text-emerald-600' : 'text-red-500'}`}>
-                      {r.status === 'correct' ? 'Correct' : r.status === 'timeout' ? 'Pas recite' : 'Incorrect'}
-                    </span>
-                    <span className="text-xs text-gray-400">Verset {i + 1}</span>
-                  </div>
-                  <p className="text-right text-xs text-gray-600" dir="rtl" style={{ fontFamily: "'Amiri Quran', serif" }}>
-                    {surah.ayahs[i]?.text}
+                <div key={i} className={`p-2.5 rounded-lg text-xs flex items-start gap-2 ${
+                  r.status === 'correct' ? 'bg-emerald-50' : 'bg-red-50'
+                }`}>
+                  <span className={`mt-0.5 ${r.status === 'correct' ? 'text-emerald-500' : 'text-red-400'}`}>
+                    {r.status === 'correct' ? '✓' : r.status === 'timeout' ? '⏱' : '✗'}
+                  </span>
+                  <p className="text-right flex-1 text-gray-600" dir="rtl" style={{ fontFamily: "'Amiri Quran', serif", fontSize: '14px', lineHeight: '28px' }}>
+                    {surah.ayahs[i]?.text.split(' ').slice(0, 6).join(' ')}...
                   </p>
                 </div>
               )
@@ -250,89 +235,87 @@ export default function TartilPage() {
 
   // --- Ecran principal ---
   return (
-    <div className="min-h-screen flex flex-col page-enter">
+    <div className="min-h-screen flex flex-col page-enter" style={{ background: '#F0FDF4' }}>
+      {/* Header */}
       <div className="bg-gradient-to-br from-emerald-800 to-emerald-900 text-white px-4 py-4 rounded-b-3xl">
         <div className="flex items-center gap-3">
           <button onClick={() => router.back()} className="cursor-pointer p-1"><ArrowLeft size={22} /></button>
-          <div className="flex-1 text-center">
-            <h1 className="text-base font-bold">{surah.nameTransliteration}</h1>
-          </div>
-          {started && (
-            <button onClick={handleStop} className="bg-white/15 p-2 rounded-xl cursor-pointer">
-              <Square size={16} />
-            </button>
-          )}
+          <h1 className="flex-1 text-center text-base font-bold">{surah.nameTransliteration}</h1>
+          {started && <button onClick={handleStop} className="bg-white/15 p-2 rounded-xl cursor-pointer"><Square size={16} /></button>}
         </div>
         {started && (
           <>
             <div className="mt-3 h-2 bg-white/20 rounded-full overflow-hidden">
               <div className="h-full bg-emerald-400 rounded-full transition-all duration-500" style={{ width: `${(answeredCount / totalAyahs) * 100}%` }} />
             </div>
-            <p className="text-xs text-emerald-200 text-center mt-1">{currentAyah + 1}/{totalAyahs}</p>
+            <p className="text-xs text-emerald-200 text-center mt-1">{currentAyah + 1} / {totalAyahs}</p>
           </>
         )}
       </div>
 
       <div className="flex-1 flex flex-col items-center justify-center p-5">
         {!started ? (
-          /* Ecran de demarrage */
+          /* Demarrage */
           <div className="text-center">
-            <div className="w-24 h-24 rounded-full bg-emerald-500 flex items-center justify-center mx-auto mb-6 cursor-pointer transition-transform hover:scale-105 active:scale-95" onClick={startFlow} style={{ boxShadow: '0 8px 30px rgba(5,150,105,0.4)' }}>
-              <Mic size={40} className="text-white" />
-            </div>
+            <button
+              onClick={startFlow}
+              className="w-28 h-28 rounded-full bg-emerald-500 flex items-center justify-center mx-auto mb-6 cursor-pointer transition-transform hover:scale-105 active:scale-95"
+              style={{ boxShadow: '0 8px 30px rgba(5,150,105,0.4)' }}
+            >
+              <Mic size={44} className="text-white" />
+            </button>
             <h2 className="text-xl font-bold text-emerald-900 mb-2">Mode Tartil</h2>
-            <p className="text-sm text-gray-500 leading-relaxed max-w-[280px] mx-auto">
-              Appuie sur le micro et recite {surah.nameTransliteration} du debut a la fin. Les versets defilent automatiquement.
+            <p className="text-sm text-gray-500 max-w-[280px] mx-auto leading-relaxed">
+              Appuie sur le micro et recite. Les versets defilent automatiquement quand ils sont reconnus.
             </p>
-            <p className="text-xs text-gray-400 mt-4">{totalAyahs} versets · 15s max par verset</p>
+            <p className="text-xs text-gray-400 mt-4">{totalAyahs} versets</p>
           </div>
         ) : (
-          /* Mode ecoute */
+          /* Ecoute active */
           <div className="w-full">
-            {/* Verset precedent (correct) */}
-            {currentAyah > 0 && results[currentAyah - 1]?.status === 'correct' && (
-              <div className="mb-4 p-3 rounded-xl bg-emerald-50 border border-emerald-200 opacity-60">
-                <p className="text-sm text-right text-emerald-700" dir="rtl" style={{ fontFamily: "'Amiri Quran', serif" }}>
-                  {surah.ayahs[currentAyah - 1]?.text}
-                  <span className="text-xs text-emerald-400 mx-1">﴿{currentAyah}﴾</span>
-                </p>
+            {/* Feedback */}
+            {feedback && (
+              <div className={`text-center mb-4 py-2 rounded-xl text-sm font-bold ${
+                feedback === 'correct' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-600'
+              }`}>
+                {feedback === 'correct' ? 'Correct !' : 'A revoir'}
               </div>
             )}
 
             {/* Verset courant */}
-            <div className="clay-card p-6 min-h-[160px] flex items-center justify-center relative">
-              {/* Pulse indicator */}
-              <div className="absolute top-3 right-3 flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-                <span className="text-xs text-gray-400">Ecoute...</span>
+            <div className="clay-card p-6 min-h-[200px] flex flex-col items-center justify-center relative">
+              <div className="absolute top-3 right-3 flex items-center gap-1.5">
+                <div className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
+                <span className="text-[10px] text-gray-400">Ecoute</span>
               </div>
 
-              <div className="text-center w-full">
-                <p className="text-gray-300 text-sm mb-2">Verset {currentAyah + 1}</p>
-                {/* Afficher les premiers mots comme indice */}
-                <p className="text-lg text-emerald-300" dir="rtl" style={{ fontFamily: "'Amiri Quran', serif" }}>
-                  {ayah.text.split(' ').slice(0, 2).join(' ')}...
-                </p>
-              </div>
+              <p className="text-xs text-gray-400 mb-3">Verset {currentAyah + 1}</p>
+
+              {/* Indice : 2 premiers mots */}
+              <p className="text-2xl text-emerald-300 mb-2" dir="rtl" style={{ fontFamily: "'Amiri Quran', serif" }}>
+                {ayah?.text.split(' ').slice(0, 2).join(' ')}...
+              </p>
+
+              {/* Transcript live */}
+              {transcript && (
+                <div className="mt-4 w-full">
+                  <p className="text-xs text-gray-400 text-center mb-1">Tu dis :</p>
+                  <p className="text-base text-right text-gray-700 bg-gray-50 rounded-lg p-3" dir="rtl">
+                    {transcript}
+                  </p>
+                </div>
+              )}
             </div>
 
-            {/* Transcript en temps reel */}
-            {transcript && (
-              <div className="mt-3 p-3 rounded-xl bg-gray-50 border border-gray-200">
-                <p className="text-xs text-gray-400 mb-1">Tu dis :</p>
-                <p className="text-sm text-right text-gray-700" dir="rtl">{transcript}</p>
-              </div>
-            )}
-
-            {/* Resultats deja passes */}
+            {/* Dots */}
             <div className="flex flex-wrap gap-1.5 mt-6 justify-center">
               {results.map((r, i) => (
                 <div key={i} className={`w-3 h-3 rounded-full transition-all ${
-                  i === currentAyah ? 'ring-2 ring-emerald-400 ring-offset-2 bg-emerald-200' :
+                  i === currentAyah ? 'ring-2 ring-emerald-400 ring-offset-2 scale-125' :
                   r.status === 'correct' ? 'bg-emerald-500' :
-                  r.status === 'wrong' || r.status === 'timeout' ? 'bg-red-500' :
+                  r.status === 'wrong' || r.status === 'timeout' ? 'bg-red-400' :
                   'bg-gray-200'
-                }`} />
+                } ${i === currentAyah ? 'bg-emerald-300' : ''}`} />
               ))}
             </div>
           </div>
