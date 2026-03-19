@@ -163,6 +163,8 @@ export default function TartilPage() {
 
     rec.onend = () => {
       log('Recognition ended, restarting...');
+      // Reset l'index car les resultats repartent de 0 apres restart
+      resultStartIndexRef.current = 0;
       if (activeRef.current && !doneRef.current) {
         setTimeout(() => {
           try { rec.start(); log('Restarted'); } catch (e) { log('Restart failed: ' + e); }
