@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 
-import { ArrowLeft, Play, Pause, Languages, GraduationCap, ChevronLeft, ChevronRight, EyeOff } from 'lucide-react';
+import { ArrowLeft, Play, Pause, Languages, GraduationCap, ChevronLeft, ChevronRight, EyeOff, Music } from 'lucide-react';
 import { getSurah, getPageData, getFirstPageOfSurah, getAudioUrl } from '../../../lib/quran';
 import { setSurahStatus, getSurahProgress, setReviewDate } from '../../../lib/storage';
 import TafsirButton from '../../../components/TafsirButton';
@@ -23,6 +23,16 @@ export default function SurahPage() {
   const [showTranslation, setShowTranslation] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const [showRecitateur, setShowRecitateur] = useState(false);
+  const [recitateur, setRecitateur] = useState('Alafasy_128kbps');
+
+  const RECITATEURS = [
+    { id: 'Alafasy_128kbps', name: 'Alafasy' },
+    { id: 'Abdul_Basit_Murattal_192kbps', name: 'Abdul Basit' },
+    { id: 'Husary_128kbps', name: 'Husary' },
+    { id: 'Minshawi_Murattal_128kbps', name: 'Minshawi' },
+    { id: 'Saood_ash-Shuraym_128kbps', name: 'Shuraym' },
+  ];
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const playingRef = useRef(false);
 
@@ -30,6 +40,11 @@ export default function SurahPage() {
   const touchStartX = useRef(0);
   const touchEndX = useRef(0);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('recitateur');
+    if (saved) setRecitateur(saved);
+  }, []);
 
   useEffect(() => {
     if (!surah) return;
@@ -234,6 +249,14 @@ export default function SurahPage() {
           <span className="mt-0.5">Traduction</span>
         </button>
 
+        <button
+          onClick={() => setShowRecitateur(!showRecitateur)}
+          className="flex flex-col items-center text-[10px] cursor-pointer transition-colors duration-200 text-gray-400 hover:text-gray-600 min-w-[44px] relative"
+        >
+          <Music size={20} />
+          <span className="mt-0.5">Recitateur</span>
+        </button>
+
         <div className="flex-1" />
 
         {/* Navigation pages — infini 1-604 */}
@@ -255,6 +278,33 @@ export default function SurahPage() {
           </button>
         </div>
       </div>
+
+      {/* Popup recitateur */}
+      {showRecitateur && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center" onClick={() => setShowRecitateur(false)}>
+          <div className="absolute inset-0 bg-black/30" />
+          <div className="relative bg-white rounded-t-2xl w-full p-4 pb-8" style={{ maxWidth: 480 }} onClick={e => e.stopPropagation()}>
+            <h3 className="text-sm font-bold text-emerald-900 mb-3">Recitateur</h3>
+            <div className="space-y-1">
+              {RECITATEURS.map(r => (
+                <button
+                  key={r.id}
+                  onClick={() => {
+                    setRecitateur(r.id);
+                    localStorage.setItem('recitateur', r.id);
+                    setShowRecitateur(false);
+                  }}
+                  className={`w-full text-left p-3 rounded-xl text-sm cursor-pointer transition-colors ${
+                    recitateur === r.id ? 'bg-emerald-50 text-emerald-700 font-semibold' : 'text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  {r.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
