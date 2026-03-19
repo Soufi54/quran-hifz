@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { User, Clock, Music, RefreshCw, BookOpen, ChevronRight } from 'lucide-react';
+import { User, Clock, Music, RefreshCw, BookOpen, ChevronRight, Bell } from 'lucide-react';
 import BottomNav from '../../components/BottomNav';
 import { getLearnedSurahs } from '../../lib/storage';
+import { requestNotificationPermission, scheduleStreakReminder } from '../../lib/notifications';
 
 const RECITATEURS = [
   { id: 'Alafasy_128kbps', name: 'Mishary Alafasy' },
@@ -21,6 +22,7 @@ export default function ProfilPage() {
   const [showRecitateur, setShowRecitateur] = useState(false);
   const [showGoal, setShowGoal] = useState(false);
   const [learnedCount, setLearnedCount] = useState(0);
+  const [notifEnabled, setNotifEnabled] = useState(false);
 
   useEffect(() => {
     const goal = localStorage.getItem('dailyGoalMinutes');
@@ -28,7 +30,19 @@ export default function ProfilPage() {
     const rec = localStorage.getItem('recitateur');
     if (rec) setRecitateur(rec);
     setLearnedCount(getLearnedSurahs().length);
+    if (typeof Notification !== 'undefined') {
+      setNotifEnabled(Notification.permission === 'granted');
+    }
   }, []);
+
+  const toggleNotifications = async () => {
+    if (notifEnabled) return; // Can't revoke from JS
+    const granted = await requestNotificationPermission();
+    if (granted) {
+      setNotifEnabled(true);
+      scheduleStreakReminder();
+    }
+  };
 
   const updateGoal = (min: number) => {
     setDailyGoal(min);
@@ -80,10 +94,22 @@ export default function ProfilPage() {
         <div>
           <h3 className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2.5 ml-1">Parametres</h3>
           <div className="clay-card divide-y divide-emerald-50">
+            {/* Notifications */}
+            <button
+              onClick={toggleNotifications}
+              className="w-full p-4 flex items-center gap-3 cursor-pointer transition-colors duration-200 hover:bg-emerald-50/50 rounded-t-2xl"
+            >
+              <Bell size={20} className="text-emerald-600" />
+              <span className="flex-1 text-left text-sm text-emerald-900 font-medium">Rappel quotidien</span>
+              <span className={`text-xs px-2 py-0.5 rounded-full ${notifEnabled ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>
+                {notifEnabled ? 'Active' : 'Desactive'}
+              </span>
+            </button>
+
             {/* Objectif quotidien */}
             <button
               onClick={() => setShowGoal(!showGoal)}
-              className="w-full p-4 flex items-center gap-3 cursor-pointer transition-colors duration-200 hover:bg-emerald-50/50 rounded-t-2xl"
+              className="w-full p-4 flex items-center gap-3 cursor-pointer transition-colors duration-200 hover:bg-emerald-50/50"
             >
               <Clock size={20} className="text-emerald-600" />
               <span className="flex-1 text-left text-sm text-emerald-900 font-medium">Objectif quotidien</span>

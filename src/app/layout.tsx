@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import OnboardingGuard from "../components/OnboardingGuard";
+import PWAInstall from "../components/PWAInstall";
 
 export const metadata: Metadata = {
   title: "QuranDuel",
@@ -24,6 +25,7 @@ export default function RootLayout({
   return (
     <html lang="fr">
       <body className="antialiased">
+        <PWAInstall />
         <OnboardingGuard>{children}</OnboardingGuard>
       </body>
     </html>
