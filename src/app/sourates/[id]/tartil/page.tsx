@@ -29,6 +29,7 @@ export default function TartilPage() {
   const recognitionRef = useRef<{ stop: () => void } | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const activeRef = useRef(false);
+  const resultStartIndexRef = useRef(0); // Index de depart dans les resultats pour le verset courant
 
   useEffect(() => {
     if (surah) setResults(surah.ayahs.map(() => ({ status: 'pending' })));
@@ -123,6 +124,7 @@ export default function TartilPage() {
     setFeedback(null);
     setMicError('');
     activeRef.current = true;
+    resultStartIndexRef.current = 0;
     setResults(surah.ayahs.map(() => ({ status: 'pending' })));
     log('Demarrage reconnaissance...');
 
@@ -135,22 +137,26 @@ export default function TartilPage() {
     rec.onresult = (event) => {
       if (!activeRef.current || doneRef.current) return;
 
-      let full = '';
-      for (let i = 0; i < event.results.length; i++) {
-        full += event.results[i][0].transcript + ' ';
+      // Ne prendre que les resultats DEPUIS le debut du verset courant
+      let currentText = '';
+      const startIdx = resultStartIndexRef.current;
+      for (let i = startIdx; i < event.results.length; i++) {
+        currentText += event.results[i][0].transcript + ' ';
       }
-      full = full.trim();
-      setTranscript(full);
+      currentText = currentText.trim();
+      setTranscript(currentText);
 
       const idx = currentAyahRef.current;
       if (!surah.ayahs[idx]) return;
-      const sim = compareArabicTexts(full, surah.ayahs[idx].text);
-      log(`Match: ${Math.round(sim * 100)}% (verset ${idx + 1})`);
+      const sim = compareArabicTexts(currentText, surah.ayahs[idx].text);
+      log(`Match: ${Math.round(sim * 100)}% (v${idx + 1}) "${currentText.slice(0, 30)}"`);
 
       if (sim >= 0.5) {
         log(`Correct ! (${Math.round(sim * 100)}%)`);
         markAyah(idx, 'correct');
         if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        // Marquer l'index de fin pour le prochain verset
+        resultStartIndexRef.current = event.results.length;
         setTimeout(() => moveToNextAyah(), 1200);
       }
     };
