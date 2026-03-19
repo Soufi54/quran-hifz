@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+
 import QuizPlayer from '../../../components/QuizPlayer';
 import { getSurah } from '../../../lib/quran';
 import { generateQuizForSurah } from '../../../lib/quiz-generator';

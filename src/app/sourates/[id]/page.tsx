@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+
 import { ArrowLeft, Play, Pause, Languages, GraduationCap, ChevronLeft, ChevronRight } from 'lucide-react';
 import { getSurah, getPageData, getFirstPageOfSurah, getAudioUrl } from '../../../lib/quran';
 import { setSurahStatus, getSurahProgress, setReviewDate } from '../../../lib/storage';
