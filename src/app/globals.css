@@ -2,28 +2,96 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Amiri+Quran&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Amiri+Quran&family=Noto+Naskh+Arabic:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
-  --green-dark: #1B4332;
-  --green-light: #D8F3DC;
-  --bg: #F9FAFB;
+  --primary: #059669;
+  --primary-dark: #064E3B;
+  --primary-light: #ECFDF5;
+  --secondary: #10B981;
+  --accent: #FBBF24;
+  --accent-dark: #CA8A04;
+  --bg: #F0FDF4;
+  --bg-card: #FFFFFF;
+  --text: #064E3B;
+  --text-muted: #6B7280;
+  --border: #D1FAE5;
+  --danger: #EF4444;
+  --shadow-clay: 6px 6px 12px rgba(6, 78, 59, 0.08), -2px -2px 8px rgba(255, 255, 255, 0.9);
+  --shadow-clay-sm: 3px 3px 6px rgba(6, 78, 59, 0.06), -1px -1px 4px rgba(255, 255, 255, 0.8);
+  --shadow-clay-inset: inset 2px 2px 4px rgba(6, 78, 59, 0.06), inset -1px -1px 3px rgba(255, 255, 255, 0.7);
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
   background: var(--bg);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  color: var(--text);
   margin: 0;
   padding: 0;
   max-width: 480px;
   margin: 0 auto;
   min-height: 100dvh;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* Style mobile-first */
 @media (min-width: 481px) {
   body {
-    border-left: 1px solid #e5e7eb;
-    border-right: 1px solid #e5e7eb;
+    border-left: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+    box-shadow: 0 0 40px rgba(6, 78, 59, 0.05);
+  }
+}
+
+/* Clay card style */
+.clay-card {
+  background: var(--bg-card);
+  border-radius: 16px;
+  border: 1.5px solid var(--border);
+  box-shadow: var(--shadow-clay);
+  transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+}
+
+.clay-card:active {
+  transform: scale(0.98);
+  box-shadow: var(--shadow-clay-inset);
+}
+
+.clay-button {
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 24px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: var(--shadow-clay-sm);
+  transition: transform 0.15s ease-out, box-shadow 0.15s ease-out;
+}
+
+.clay-button:active {
+  transform: scale(0.96);
+  box-shadow: var(--shadow-clay-inset);
+}
+
+/* Smooth page transitions */
+@media (prefers-reduced-motion: no-preference) {
+  .page-enter {
+    animation: fadeSlideIn 0.3s ease-out;
+  }
+}
+
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
   }
 }

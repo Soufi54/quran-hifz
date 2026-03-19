@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { Flame, Trophy, Zap, CheckCircle, BookOpen, AlertTriangle } from 'lucide-react';
 import BottomNav from '../../components/BottomNav';
 import { getMosqueLevel } from '../../lib/scoring';
 import { getStreak, getBestStreak, getTotalXP, getSurahProgress } from '../../lib/storage';
@@ -32,22 +33,22 @@ export default function ProgressionPage() {
   const declining = statuses.filter(s => s === 'declining' || s === 'urgent').length;
 
   return (
-    <div className="min-h-screen pb-20">
-      <div className="bg-[#1B4332] text-white px-4 py-4">
+    <div className="min-h-screen pb-20 page-enter">
+      <div className="bg-gradient-to-br from-emerald-800 to-emerald-900 text-white px-5 py-5 rounded-b-3xl" style={{ boxShadow: '0 4px 20px rgba(6, 78, 59, 0.2)' }}>
         <h1 className="text-xl font-bold text-center">Progression</h1>
       </div>
 
-      <div className="p-4 space-y-4">
+      <div className="p-4 space-y-4 mt-2">
         {/* Mosquee */}
-        <div className="bg-white rounded-2xl p-6 text-center border border-gray-200">
-          <div className="text-6xl mb-3">{mosque.emoji}</div>
-          <h2 className="text-xl font-bold text-[#1B4332]">{mosque.name}</h2>
-          <p className="text-sm text-gray-500 mt-1">Niveau {mosqueLevel}/7</p>
+        <div className="clay-card p-6 text-center">
+          <div className="text-5xl mb-3">{mosque.emoji}</div>
+          <h2 className="text-xl font-bold text-emerald-800">{mosque.name}</h2>
+          <p className="text-sm text-gray-400 mt-1">Niveau {mosqueLevel}/7</p>
           {nextLevel && (
-            <div className="mt-4">
-              <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+            <div className="mt-5">
+              <div className="h-2.5 rounded-full overflow-hidden" style={{ background: '#E8F5E9', boxShadow: 'var(--shadow-clay-inset)' }}>
                 <div
-                  className="h-full bg-[#1B4332] rounded-full transition-all"
+                  className="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 rounded-full transition-all duration-500"
                   style={{ width: `${Math.min(100, progressToNext)}%` }}
                 />
               </div>
@@ -59,48 +60,56 @@ export default function ProgressionPage() {
         </div>
 
         {/* Streak */}
-        <div className="bg-white rounded-xl p-4 border border-gray-200 flex items-center">
+        <div className="clay-card p-4 flex items-center">
           <div className="flex-1 flex items-center gap-3">
-            <span className="text-3xl">🔥</span>
+            <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center">
+              <Flame size={22} className="text-amber-500" />
+            </div>
             <div>
-              <p className="text-lg font-bold text-gray-900">{streak} jours</p>
-              <p className="text-xs text-gray-500">Streak actuel</p>
+              <p className="text-lg font-bold text-emerald-900">{streak} jours</p>
+              <p className="text-[11px] text-gray-400">Streak actuel</p>
             </div>
           </div>
-          <div className="w-px h-10 bg-gray-200 mx-3" />
+          <div className="w-px h-10 bg-emerald-100 mx-3" />
           <div className="flex-1 flex items-center gap-3">
-            <span className="text-3xl">🏆</span>
+            <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center">
+              <Trophy size={22} className="text-amber-500" />
+            </div>
             <div>
-              <p className="text-lg font-bold text-gray-900">{bestStreak} jours</p>
-              <p className="text-xs text-gray-500">Meilleur streak</p>
+              <p className="text-lg font-bold text-emerald-900">{bestStreak} jours</p>
+              <p className="text-[11px] text-gray-400">Meilleur streak</p>
             </div>
           </div>
         </div>
 
-        {/* Stats */}
+        {/* Stats grid */}
         <div className="grid grid-cols-2 gap-3">
-          <div className="bg-white rounded-xl p-4 text-center border border-gray-200">
-            <p className="text-2xl font-bold text-gray-900">{totalXP}</p>
-            <p className="text-xs text-gray-500 mt-1">XP Total</p>
+          <div className="clay-card p-4 text-center">
+            <Zap size={20} className="text-amber-500 mx-auto mb-1" />
+            <p className="text-2xl font-bold text-emerald-900">{totalXP}</p>
+            <p className="text-[11px] text-gray-400 mt-1">XP Total</p>
           </div>
-          <div className="bg-white rounded-xl p-4 text-center border border-gray-200">
-            <p className="text-2xl font-bold text-green-500">{mastered}</p>
-            <p className="text-xs text-gray-500 mt-1">Maitrisees</p>
+          <div className="clay-card p-4 text-center">
+            <CheckCircle size={20} className="text-emerald-500 mx-auto mb-1" />
+            <p className="text-2xl font-bold text-emerald-600">{mastered}</p>
+            <p className="text-[11px] text-gray-400 mt-1">Maitrisees</p>
           </div>
-          <div className="bg-white rounded-xl p-4 text-center border border-gray-200">
-            <p className="text-2xl font-bold text-yellow-400">{learning}</p>
-            <p className="text-xs text-gray-500 mt-1">En cours</p>
+          <div className="clay-card p-4 text-center">
+            <BookOpen size={20} className="text-amber-500 mx-auto mb-1" />
+            <p className="text-2xl font-bold text-amber-500">{learning}</p>
+            <p className="text-[11px] text-gray-400 mt-1">En cours</p>
           </div>
-          <div className="bg-white rounded-xl p-4 text-center border border-gray-200">
+          <div className="clay-card p-4 text-center">
+            <AlertTriangle size={20} className="text-red-500 mx-auto mb-1" />
             <p className="text-2xl font-bold text-red-500">{declining}</p>
-            <p className="text-xs text-gray-500 mt-1">A reviser</p>
+            <p className="text-[11px] text-gray-400 mt-1">A reviser</p>
           </div>
         </div>
 
         {declining > 0 && (
-          <div className="bg-orange-50 border border-orange-300 rounded-xl p-3 flex items-start gap-2">
-            <span>⚠️</span>
-            <p className="text-sm text-orange-800">
+          <div className="clay-card p-3.5 flex items-start gap-2.5 border-amber-200 bg-amber-50/50">
+            <AlertTriangle size={18} className="text-amber-600 flex-shrink-0 mt-0.5" />
+            <p className="text-sm text-amber-800">
               {declining} sourate(s) en declin. Va dans &quot;Sourates&quot; pour les reviser.
             </p>
           </div>
