@@ -1,15 +1,29 @@
 // Reconnaissance vocale arabe
-// Mode 1 : Web Speech API (rapide, moins precis)
-// Mode 2 : Whisper via Web Worker (precis, 100% local)
+// Mode 1 : Web Speech API (rapide)
+// Mode 2 : Whisper via Web Worker (precis, 100% local) — V2
 
-// --- Nettoyage texte arabe ---
-function stripTashkeel(text: string): string {
-  return text.replace(/[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06DC\u06DF-\u06E4\u06E7\u06E8\u06EA-\u06ED]/g, '');
-}
-
+// --- Normalisation texte arabe ---
+// Le Coran Uthmani utilise des caracteres speciaux (alef wasla, madda, tatweel)
+// que la reconnaissance vocale ne produit pas. On normalise les deux cotes.
 function normalizeArabic(text: string): string {
-  return stripTashkeel(text)
+  return text
+    // Retirer tashkeel (diacritiques)
+    .replace(/[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06DC\u06DF-\u06E4\u06E7\u06E8\u06EA-\u06ED]/g, '')
+    // Alef wasla → alef normal
+    .replace(/\u0671/g, '\u0627')
+    // Alef madda → alef
+    .replace(/\u0622/g, '\u0627')
+    // Alef hamza dessus/dessous → alef
+    .replace(/[\u0623\u0625]/g, '\u0627')
+    // Tatweel (kashida) → rien
+    .replace(/\u0640/g, '')
+    // Teh marbuta → heh
+    .replace(/\u0629/g, '\u0647')
+    // Alef maksura → ya
+    .replace(/\u0649/g, '\u064A')
+    // Espaces multiples → un seul
     .replace(/\s+/g, ' ')
+    // Garder que l'arabe et les espaces
     .replace(/[^\u0600-\u06FF\s]/g, '')
     .trim();
 }
@@ -29,7 +43,8 @@ export function compareArabicTexts(recognized: string, expected: string): number
 
 export function getWordDiff(recognized: string, expected: string): { word: string; correct: boolean }[] {
   const recWords = new Set(normalizeArabic(recognized).split(' '));
-  return normalizeArabic(expected).split(' ').map(word => ({
+  const expWords = normalizeArabic(expected).split(' ');
+  return expWords.map(word => ({
     word,
     correct: recWords.has(word),
   }));
@@ -46,7 +61,7 @@ interface SpeechRecognitionLike {
   continuous: boolean;
   interimResults: boolean;
   maxAlternatives: number;
-  onresult: ((event: { results: { [key: number]: { [key: number]: { transcript: string } } } }) => void) | null;
+  onresult: ((event: { results: { length: number; [k: number]: { isFinal: boolean; [k: number]: { transcript: string } } } }) => void) | null;
   onerror: ((event: { error: string }) => void) | null;
   onend: (() => void) | null;
   start: () => void;
@@ -55,47 +70,16 @@ interface SpeechRecognitionLike {
 
 let activeRecognition: SpeechRecognitionLike | null = null;
 
-export function startWebSpeechRecognition(): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const win = window as unknown as Record<string, unknown>;
-    const Ctor = (win.SpeechRecognition || win.webkitSpeechRecognition) as (new () => SpeechRecognitionLike) | undefined;
-    if (!Ctor) { reject(new Error('Non disponible')); return; }
-
-    const recognition = new Ctor();
-    recognition.lang = 'ar-SA';
-    recognition.continuous = true;
-    recognition.interimResults = false;
-    recognition.maxAlternatives = 1;
-    activeRecognition = recognition;
-
-    let fullTranscript = '';
-    let resolved = false;
-
-    recognition.onresult = (event) => {
-      for (let i = 0; i < Object.keys(event.results).length; i++) {
-        if (event.results[i] && event.results[i][0]) {
-          fullTranscript += ' ' + event.results[i][0].transcript;
-        }
-      }
-    };
-
-    recognition.onerror = (event) => {
-      if (!resolved && event.error !== 'aborted') {
-        resolved = true;
-        resolve(fullTranscript.trim());
-      }
-    };
-
-    recognition.onend = () => {
-      if (!resolved) {
-        resolved = true;
-        resolve(fullTranscript.trim());
-      }
-      activeRecognition = null;
-    };
-
-    recognition.start();
-  });
+export function createSpeechRecognition(): SpeechRecognitionLike | null {
+  const win = window as unknown as Record<string, unknown>;
+  const Ctor = (win.SpeechRecognition || win.webkitSpeechRecognition) as (new () => SpeechRecognitionLike) | undefined;
+  if (!Ctor) return null;
+  const rec = new Ctor();
+  rec.lang = 'ar-SA';
+  rec.continuous = true;
+  rec.interimResults = true;
+  rec.maxAlternatives = 1;
+  return rec;
 }
 
 export function stopWebSpeechRecognition(): void {
@@ -103,82 +87,4 @@ export function stopWebSpeechRecognition(): void {
     activeRecognition.stop();
     activeRecognition = null;
   }
-}
-
-// --- Whisper via Web Worker ---
-let whisperWorker: Worker | null = null;
-let whisperReady = false;
-
-export function isWhisperLoaded(): boolean {
-  return whisperReady;
-}
-
-export function loadWhisper(onProgress: (pct: number) => void): Promise<void> {
-  return new Promise((resolve, reject) => {
-    if (whisperReady) { resolve(); return; }
-    if (typeof window === 'undefined') { reject(new Error('SSR')); return; }
-
-    whisperWorker = new Worker('/whisper-worker.js');
-
-    whisperWorker.onmessage = (e) => {
-      const { type, progress, error } = e.data;
-      if (type === 'progress') onProgress(progress);
-      if (type === 'loaded') { whisperReady = true; resolve(); }
-      if (type === 'error') reject(new Error(error));
-    };
-
-    whisperWorker.postMessage({ type: 'load' });
-  });
-}
-
-export async function transcribeWithWhisper(audioBlob: Blob): Promise<string> {
-  if (!whisperWorker || !whisperReady) throw new Error('Whisper pas charge');
-
-  // Convertir Blob → Float32Array (16kHz mono)
-  const arrayBuffer = await audioBlob.arrayBuffer();
-  const audioContext = new AudioContext({ sampleRate: 16000 });
-  const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-  const float32 = audioBuffer.getChannelData(0);
-  await audioContext.close();
-
-  return new Promise((resolve, reject) => {
-    if (!whisperWorker) { reject(new Error('No worker')); return; }
-    const handler = (e: MessageEvent) => {
-      const { type, text, error } = e.data;
-      if (type === 'result') { whisperWorker?.removeEventListener('message', handler); resolve(text); }
-      if (type === 'error') { whisperWorker?.removeEventListener('message', handler); reject(new Error(error)); }
-    };
-    whisperWorker.addEventListener('message', handler);
-    whisperWorker.postMessage({ type: 'transcribe', audioData: float32 });
-  });
-}
-
-// --- Enregistrement audio micro ---
-let mediaRecorder: MediaRecorder | null = null;
-let audioChunks: Blob[] = [];
-
-export function startRecording(): Promise<void> {
-  return navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
-    audioChunks = [];
-    mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
-    mediaRecorder.ondataavailable = (e) => {
-      if (e.data.size > 0) audioChunks.push(e.data);
-    };
-    mediaRecorder.start(250); // chunk every 250ms
-  });
-}
-
-export function stopRecording(): Promise<Blob> {
-  return new Promise((resolve) => {
-    if (!mediaRecorder || mediaRecorder.state !== 'recording') {
-      resolve(new Blob(audioChunks, { type: 'audio/webm' }));
-      return;
-    }
-    mediaRecorder.onstop = () => {
-      mediaRecorder?.stream.getTracks().forEach(t => t.stop());
-      resolve(new Blob(audioChunks, { type: 'audio/webm' }));
-      mediaRecorder = null;
-    };
-    mediaRecorder.stop();
-  });
 }
