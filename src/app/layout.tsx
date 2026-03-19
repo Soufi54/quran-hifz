@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import OnboardingGuard from "../components/OnboardingGuard";
 
 export const metadata: Metadata = {
   title: "QuranDuel",
@@ -22,7 +23,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="fr">
-      <body className="antialiased">{children}</body>
+      <body className="antialiased">
+        <OnboardingGuard>{children}</OnboardingGuard>
+      </body>
     </html>
   );
 }

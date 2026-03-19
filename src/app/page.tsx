@@ -7,7 +7,7 @@ import QuizPlayer from '../components/QuizPlayer';
 import { generateDailyChallenge } from '../lib/quiz-generator';
 import {
   getStreak, updateStreak, addXP, getLives, loseLive,
-  getLearnedSurahs, isChallengeCompletedToday,
+  getLearnedSurahs, isChallengeCompletedToday, updateSurahDeclines,
 } from '../lib/storage';
 import { QuizQuestion } from '../types';
 
@@ -22,6 +22,7 @@ export default function ChallengePage() {
     const s = getStreak();
     setStreak(s);
     setLives(getLives());
+    updateSurahDeclines(); // Verifie les sourates en declin
 
     if (isChallengeCompletedToday()) {
       setState('done');

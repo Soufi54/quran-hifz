@@ -114,6 +114,26 @@ export function getReviewDate(surahNumber: number): string | null {
   return dates[surahNumber] || null;
 }
 
+// --- Declin des sourates ---
+
+export function updateSurahDeclines(): void {
+  const progress = getSurahProgress();
+  const dates = JSON.parse(get('surahReviewDates') || '{}');
+  const now = Date.now();
+
+  Object.entries(progress).forEach(([numStr, status]) => {
+    if (status !== 'mastered' && status !== 'learning') return;
+    const lastReview = dates[numStr];
+    if (!lastReview) return;
+    const daysSince = (now - new Date(lastReview).getTime()) / (1000 * 60 * 60 * 24);
+    if (daysSince > 30) {
+      setSurahStatus(parseInt(numStr), 'urgent');
+    } else if (daysSince > 14) {
+      setSurahStatus(parseInt(numStr), 'declining');
+    }
+  });
+}
+
 // --- Challenge quotidien ---
 
 export function isChallengeCompletedToday(): boolean {

@@ -63,9 +63,17 @@ export function getLastPageOfSurah(surahNumber: number): number {
 }
 
 export function getAudioUrl(surahNumber: number, ayahNumber: number): string {
+  const recitateur = typeof window !== 'undefined'
+    ? localStorage.getItem('recitateur') || 'Alafasy_128kbps'
+    : 'Alafasy_128kbps';
   const surah = String(surahNumber).padStart(3, '0');
   const ayah = String(ayahNumber).padStart(3, '0');
-  return `https://everyayah.com/data/Alafasy_128kbps/${surah}${ayah}.mp3`;
+  return `https://everyayah.com/data/${recitateur}/${surah}${ayah}.mp3`;
+}
+
+export function getTafsirUrl(surahNumber: number, ayahNumber: number, lang: 'ar' | 'en' = 'ar'): string {
+  const slug = lang === 'ar' ? 'ar-tafsir-ibn-kathir' : 'en-tafisr-ibn-kathir';
+  return `https://cdn.jsdelivr.net/gh/spa5k/tafsir_api@main/tafsir/${slug}/${surahNumber}/${ayahNumber}.json`;
 }
 
 export const TOTAL_SURAHS = data.surahs.length;

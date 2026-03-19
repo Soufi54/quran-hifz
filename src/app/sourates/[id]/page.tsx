@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Play, Pause, Languages, GraduationCap, ChevronLeft, ChevronRight } from 'lucide-react';
 import { getSurah, getPageData, getFirstPageOfSurah, getAudioUrl } from '../../../lib/quran';
 import { setSurahStatus, getSurahProgress, setReviewDate } from '../../../lib/storage';
+import TafsirButton from '../../../components/TafsirButton';
 
 function getMushafImageUrl(pageNumber: number): string {
   const padded = String(pageNumber).padStart(3, '0');
@@ -173,6 +174,7 @@ export default function SurahPage() {
                       <span className="text-xs font-semibold text-emerald-600 mr-1">{ayah.ayahNumberInSurah}.</span>
                       {ayah.translationFr}
                     </p>
+                    <TafsirButton surahNumber={ayah.surahNumber} ayahNumber={ayah.ayahNumberInSurah} />
                   </div>
                 </div>
               ))}
