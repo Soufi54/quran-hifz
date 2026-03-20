@@ -95,3 +95,35 @@ body {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Tajweed colors — based on printed mushaf tajweed */
+.tajweed-text {
+  font-family: 'Amiri Quran', serif;
+  direction: rtl;
+  text-align: justify;
+  line-height: 2.8;
+  font-size: clamp(1.4rem, 5vw, 2.2rem);
+  color: #1a1a1a;
+  word-spacing: 0.05em;
+}
+
+.tajweed-text tajweed.ham_wasl { color: #AAAAAA; }
+.tajweed-text tajweed.laam_shamsiyah { color: #AAAAAA; }
+.tajweed-text tajweed.madda_normal { color: #537FFF; }
+.tajweed-text tajweed.madda_permissible { color: #4050FF; }
+.tajweed-text tajweed.madda_obligatory { color: #000FB5; }
+.tajweed-text tajweed.qalqalah { color: #DD0008; }
+.tajweed-text tajweed.ikhfa { color: #26BFAF; }
+.tajweed-text tajweed.idghaam { color: #169777; }
+.tajweed-text tajweed.idghaam_shafawi { color: #169777; }
+.tajweed-text tajweed.idghaam_mutajaanisain { color: #169777; }
+.tajweed-text tajweed.ghunnah { color: #FF7E1E; }
+.tajweed-text tajweed.iqlab { color: #26BFAF; }
+
+.ayah-number {
+  display: inline-block;
+  font-size: 0.65em;
+  color: #B8860B;
+  margin: 0 0.15em;
+  vertical-align: middle;
+}

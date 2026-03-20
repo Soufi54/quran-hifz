@@ -42,11 +42,8 @@ export default function SouratesPage() {
       >
         {/* Numero + indicateur */}
         <div className="relative mr-4">
-          <div className="w-10 h-10 flex items-center justify-center">
-            {/* Losange style app Quran */}
-            <div className="w-9 h-9 rotate-45 border-2 border-emerald-300 rounded-sm flex items-center justify-center" style={{ borderColor: STATUS_COLORS[status] }}>
-              <span className="-rotate-45 text-xs font-bold text-gray-600">{surah.number}</span>
-            </div>
+          <div className="w-9 h-9 rounded-full flex items-center justify-center border-2" style={{ borderColor: STATUS_COLORS[status] }}>
+            <span className="text-xs font-bold text-gray-600">{surah.number}</span>
           </div>
         </div>
 
