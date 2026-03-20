@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions, Animated, Easing } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions, Animated, Easing, Platform } from 'react-native';
 import { useLocalSearchParams, router, Stack } from 'expo-router';
 import { useState, useEffect, useRef } from 'react';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,6 +16,35 @@ type TartilVerse = {
   ayahNumberInSurah: number;
   revealed: boolean;
   selfRating: 'correct' | 'error' | 'hesitation' | null;
+};
+
+// Color palette
+const COLORS = {
+  parchment: '#FDF6E3',
+  parchmentDark: '#F5ECD0',
+  gold: '#D4AF37',
+  goldLight: 'rgba(212,175,55,0.15)',
+  goldFaint: 'rgba(212,175,55,0.06)',
+  darkGreen: '#0D2818',
+  mediumGreen: '#1B4332',
+  lightGreen: '#2D6A4F',
+  correct: '#10B981',
+  correctBg: '#D1FAE5',
+  correctBgStrong: '#A7F3D0',
+  correctDark: '#065F46',
+  error: '#EF4444',
+  errorBg: '#FEE2E2',
+  errorBgStrong: '#FECACA',
+  errorDark: '#991B1B',
+  hesitation: '#F59E0B',
+  hesitationBg: '#FEF3C7',
+  hesitationBgStrong: '#FDE68A',
+  hesitationDark: '#92400E',
+  textPrimary: '#1A1A1A',
+  textSecondary: '#6B7280',
+  textMuted: '#9CA3AF',
+  border: '#E5E7EB',
+  white: '#FFFFFF',
 };
 
 export default function SurahScreen() {
@@ -42,6 +71,11 @@ export default function SurahScreen() {
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const headerAnim = useRef(new Animated.Value(0)).current;
 
+  // Tartil verse reveal animations (one per verse)
+  const tartilRevealAnims = useRef<Animated.Value[]>([]);
+  const tartilColorAnims = useRef<Animated.Value[]>([]);
+  const tartilCurrentPulse = useRef(new Animated.Value(1)).current;
+
   useEffect(() => {
     if (!surah) return;
     const firstPage = getFirstPageOfSurah(surahNumber);
@@ -67,19 +101,33 @@ export default function SurahScreen() {
     };
   }, [surahNumber]);
 
-  // Pulse animation pour le verset actif
+  // Pulse animation pour le verset actif (mushaf mode)
   useEffect(() => {
     if (activeAyahIndex >= 0) {
       Animated.loop(
         Animated.sequence([
-          Animated.timing(pulseAnim, { toValue: 1.02, duration: 800, useNativeDriver: true }),
-          Animated.timing(pulseAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
+          Animated.timing(pulseAnim, { toValue: 1.015, duration: 1000, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+          Animated.timing(pulseAnim, { toValue: 1, duration: 1000, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
         ])
       ).start();
     } else {
       pulseAnim.setValue(1);
     }
   }, [activeAyahIndex]);
+
+  // Pulse for current tartil verse
+  useEffect(() => {
+    if (tartilMode) {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(tartilCurrentPulse, { toValue: 1.02, duration: 1200, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+          Animated.timing(tartilCurrentPulse, { toValue: 1, duration: 1200, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+        ])
+      ).start();
+    } else {
+      tartilCurrentPulse.setValue(1);
+    }
+  }, [tartilMode, tartilCurrentIndex]);
 
   const markAsLearning = async () => {
     try {
@@ -147,6 +195,9 @@ export default function SurahScreen() {
       revealed: false,
       selfRating: null,
     }));
+    // Initialize animations for each verse
+    tartilRevealAnims.current = verses.map(() => new Animated.Value(0));
+    tartilColorAnims.current = verses.map(() => new Animated.Value(0));
     setTartilVerses(verses);
     setTartilCurrentIndex(0);
     setTartilMode(true);
@@ -157,12 +208,36 @@ export default function SurahScreen() {
     const updated = [...tartilVerses];
     updated[tartilCurrentIndex].revealed = true;
     setTartilVerses(updated);
+
+    // Smooth reveal animation
+    const anim = tartilRevealAnims.current[tartilCurrentIndex];
+    if (anim) {
+      anim.setValue(0);
+      Animated.spring(anim, {
+        toValue: 1,
+        friction: 6,
+        tension: 40,
+        useNativeDriver: true,
+      }).start();
+    }
   };
 
   const rateTartilVerse = (rating: 'correct' | 'error' | 'hesitation') => {
     const updated = [...tartilVerses];
     updated[tartilCurrentIndex].selfRating = rating;
     setTartilVerses(updated);
+
+    // Color transition animation
+    const colorAnim = tartilColorAnims.current[tartilCurrentIndex];
+    if (colorAnim) {
+      colorAnim.setValue(0);
+      Animated.timing(colorAnim, {
+        toValue: 1,
+        duration: 400,
+        easing: Easing.out(Easing.ease),
+        useNativeDriver: false,
+      }).start();
+    }
 
     if (tartilCurrentIndex < tartilVerses.length - 1) {
       setTartilCurrentIndex(tartilCurrentIndex + 1);
@@ -192,23 +267,63 @@ export default function SurahScreen() {
     const ratedCount = tartilVerses.filter(v => v.selfRating).length;
     const correctCount = tartilVerses.filter(v => v.selfRating === 'correct').length;
     const errorCount = tartilVerses.filter(v => v.selfRating === 'error').length;
+    const hesitationCount = tartilVerses.filter(v => v.selfRating === 'hesitation').length;
     const allDone = ratedCount === totalVerses;
+    const scorePercent = totalVerses > 0 ? Math.round((correctCount / totalVerses) * 100) : 0;
 
     return (
       <View style={styles.container}>
-        <Stack.Screen options={{ title: `Tartil - ${surah.nameArabic}`, headerStyle: { backgroundColor: '#0D2818' } }} />
+        <Stack.Screen options={{
+          title: `Tartil - ${surah.nameArabic}`,
+          headerStyle: { backgroundColor: COLORS.darkGreen },
+          headerTintColor: COLORS.gold,
+        }} />
 
-        {/* Progress bar tartil */}
+        {/* Progress bar tartil - premium gradient feel */}
         <View style={styles.tartilProgress}>
-          <View style={[styles.tartilProgressFill, { width: `${(ratedCount / totalVerses) * 100}%` }]} />
+          <View style={[styles.tartilProgressFill, { width: `${(ratedCount / totalVerses) * 100}%` }]}>
+            <View style={styles.tartilProgressSheen} />
+          </View>
         </View>
 
         <ScrollView style={styles.tartilContainer} contentContainerStyle={styles.tartilContent}>
-          {/* Header sourate */}
+          {/* Islamic border frame top */}
+          <View style={styles.mushafFrameTop}>
+            <View style={styles.frameCornerLeft}>
+              <Text style={styles.frameCornerGlyph}>{'﴾'}</Text>
+            </View>
+            <View style={styles.frameBorderTop} />
+            <View style={styles.frameCornerRight}>
+              <Text style={styles.frameCornerGlyph}>{'﴿'}</Text>
+            </View>
+          </View>
+
+          {/* Header sourate - Calligraphic style */}
           <View style={styles.tartilSurahHeader}>
+            <View style={styles.tartilSurahHeaderDecor}>
+              <View style={styles.tartilHeaderLine} />
+              <View style={styles.tartilHeaderOrnament}>
+                <Text style={styles.tartilHeaderOrnamentText}>۞</Text>
+              </View>
+              <View style={styles.tartilHeaderLine} />
+            </View>
             <Text style={styles.tartilSurahName}>{surah.nameArabic}</Text>
             <Text style={styles.tartilSurahSubtitle}>Mode Tartil - Recite de memoire</Text>
+            <View style={styles.tartilSurahHeaderDecor}>
+              <View style={styles.tartilHeaderLine} />
+              <View style={styles.tartilHeaderOrnament}>
+                <Text style={styles.tartilHeaderOrnamentText}>۝</Text>
+              </View>
+              <View style={styles.tartilHeaderLine} />
+            </View>
           </View>
+
+          {/* Bismillah in tartil mode */}
+          {isBismillahSurah && (
+            <View style={styles.tartilBismillah}>
+              <Text style={styles.tartilBismillahText}>بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ</Text>
+            </View>
+          )}
 
           {pageAyahs.map((ayah, index) => {
             const verse = tartilVerses[index];
@@ -216,126 +331,230 @@ export default function SurahScreen() {
             const isRevealed = verse?.revealed;
             const rating = verse?.selfRating;
 
-            // Couleur de fond selon la note
-            let verseBg = 'transparent';
-            let verseBorder = 'transparent';
-            let verseTextColor = '#1A1A1A';
+            // Rating-based highlight colors (THE KEY FEATURE - colored background on text)
+            let verseBgColor = COLORS.white;
+            let textHighlightBg = 'transparent';
+            let verseBorderColor = COLORS.border;
+            let verseTextColor = COLORS.textPrimary;
+            let ratingIconBg = COLORS.mediumGreen;
+            let numberBadgeBg = COLORS.mediumGreen;
 
             if (rating === 'correct') {
-              verseBg = '#ECFDF5';
-              verseBorder = '#10B981';
-              verseTextColor = '#065F46';
+              verseBgColor = COLORS.correctBg;
+              textHighlightBg = COLORS.correctBgStrong;
+              verseBorderColor = COLORS.correct;
+              verseTextColor = COLORS.correctDark;
+              ratingIconBg = COLORS.correct;
+              numberBadgeBg = COLORS.correct;
             } else if (rating === 'error') {
-              verseBg = '#FEF2F2';
-              verseBorder = '#EF4444';
-              verseTextColor = '#991B1B';
+              verseBgColor = COLORS.errorBg;
+              textHighlightBg = COLORS.errorBgStrong;
+              verseBorderColor = COLORS.error;
+              verseTextColor = COLORS.errorDark;
+              ratingIconBg = COLORS.error;
+              numberBadgeBg = COLORS.error;
             } else if (rating === 'hesitation') {
-              verseBg = '#FFFBEB';
-              verseBorder = '#F59E0B';
-              verseTextColor = '#92400E';
+              verseBgColor = COLORS.hesitationBg;
+              textHighlightBg = COLORS.hesitationBgStrong;
+              verseBorderColor = COLORS.hesitation;
+              verseTextColor = COLORS.hesitationDark;
+              ratingIconBg = COLORS.hesitation;
+              numberBadgeBg = COLORS.hesitation;
             }
 
+            const revealAnim = tartilRevealAnims.current[index];
+            const colorAnim = tartilColorAnims.current[index];
+
+            // Animated background color for smooth transitions
+            const animatedBg = colorAnim
+              ? colorAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [COLORS.white, verseBgColor],
+                })
+              : verseBgColor;
+
             return (
-              <View key={`${ayah.surahNumber}-${ayah.ayahNumberInSurah}`} style={[
-                styles.tartilVerseCard,
-                isCurrent && styles.tartilVerseActive,
-                rating && { backgroundColor: verseBg, borderColor: verseBorder },
-              ]}>
-                {/* Numero du verset */}
-                <View style={[styles.tartilVerseNumber, rating && { backgroundColor: verseBorder || '#1B4332' }]}>
-                  <Text style={styles.tartilVerseNumberText}>{ayah.ayahNumberInSurah}</Text>
+              <Animated.View
+                key={`${ayah.surahNumber}-${ayah.ayahNumberInSurah}`}
+                style={[
+                  styles.tartilVerseCard,
+                  isCurrent && !rating && styles.tartilVerseActive,
+                  isCurrent && !rating && { transform: [{ scale: tartilCurrentPulse }] },
+                  rating && {
+                    backgroundColor: verseBgColor,
+                    borderColor: verseBorderColor,
+                    borderLeftWidth: 5,
+                    borderLeftColor: verseBorderColor,
+                  },
+                ]}
+              >
+                {/* Verse number badge */}
+                <View style={[styles.tartilVerseNumber, { backgroundColor: numberBadgeBg }]}>
+                  <Text style={styles.tartilVerseNumberText}>
+                    {toArabicNumeral(ayah.ayahNumberInSurah)}
+                  </Text>
                 </View>
+
+                {/* Rating indicator icon (top right) */}
+                {rating && (
+                  <View style={[styles.tartilRatingIconBadge, { backgroundColor: ratingIconBg }]}>
+                    <Ionicons
+                      name={rating === 'correct' ? 'checkmark' : rating === 'error' ? 'close' : 'help'}
+                      size={16}
+                      color="#fff"
+                    />
+                  </View>
+                )}
 
                 {/* Texte du verset - cache ou visible */}
                 {!isRevealed && !rating ? (
                   <View style={styles.tartilHiddenVerse}>
-                    <Text style={styles.tartilHiddenText}>
-                      {isCurrent ? '👆 Recite ce verset puis revele' : '🔒 Verset cache'}
-                    </Text>
-                    {isCurrent && (
-                      <TouchableOpacity style={styles.tartilRevealButton} onPress={revealTartilVerse}>
-                        <Ionicons name="eye-outline" size={18} color="#fff" />
-                        <Text style={styles.tartilRevealText}>Reveler</Text>
-                      </TouchableOpacity>
+                    {isCurrent ? (
+                      <>
+                        <View style={styles.tartilHiddenPrompt}>
+                          <View style={styles.tartilHiddenDots}>
+                            <View style={[styles.tartilDot, styles.tartilDot1]} />
+                            <View style={[styles.tartilDot, styles.tartilDot2]} />
+                            <View style={[styles.tartilDot, styles.tartilDot3]} />
+                          </View>
+                          <Text style={styles.tartilHiddenCurrentText}>
+                            Recite ce verset puis revele le texte
+                          </Text>
+                        </View>
+                        <TouchableOpacity style={styles.tartilRevealButton} onPress={revealTartilVerse}>
+                          <View style={styles.tartilRevealButtonInner}>
+                            <Ionicons name="eye-outline" size={20} color="#fff" />
+                            <Text style={styles.tartilRevealText}>Reveler le verset</Text>
+                          </View>
+                        </TouchableOpacity>
+                      </>
+                    ) : (
+                      <View style={styles.tartilHiddenLocked}>
+                        <Ionicons name="lock-closed" size={18} color={COLORS.textMuted} />
+                        <Text style={styles.tartilHiddenLockedText}>Verset cache</Text>
+                      </View>
                     )}
                   </View>
                 ) : (
-                  <View style={styles.tartilRevealedVerse}>
-                    <Text style={[styles.tartilAyahText, { color: verseTextColor }]}>
-                      {ayah.text}
-                    </Text>
+                  <Animated.View
+                    style={[
+                      styles.tartilRevealedVerse,
+                      revealAnim && {
+                        opacity: rating ? 1 : revealAnim,
+                        transform: [{
+                          translateY: rating ? 0 : revealAnim.interpolate({
+                            inputRange: [0, 1],
+                            outputRange: [20, 0],
+                          }),
+                        }],
+                      },
+                    ]}
+                  >
+                    {/* THE KEY FEATURE: Colored background highlight strip on the Arabic text */}
+                    <View style={[
+                      styles.tartilTextHighlight,
+                      rating && {
+                        backgroundColor: textHighlightBg,
+                        borderRadius: 8,
+                      },
+                    ]}>
+                      <Text style={[
+                        styles.tartilAyahText,
+                        { color: verseTextColor },
+                        rating === 'error' && styles.tartilAyahTextError,
+                        rating === 'correct' && styles.tartilAyahTextCorrect,
+                        rating === 'hesitation' && styles.tartilAyahTextHesitation,
+                      ]}>
+                        {ayah.text}
+                        <Text style={[styles.tartilAyahNumber, rating && { color: verseBorderColor }]}>
+                          {' '}﴿{toArabicNumeral(ayah.ayahNumberInSurah)}﴾
+                        </Text>
+                      </Text>
+                    </View>
+
+                    {/* Rating label strip under text */}
+                    {rating && (
+                      <View style={[styles.tartilRatingStrip, { backgroundColor: verseBorderColor }]}>
+                        <Ionicons
+                          name={rating === 'correct' ? 'checkmark-circle' : rating === 'error' ? 'close-circle' : 'help-circle'}
+                          size={14}
+                          color="#fff"
+                        />
+                        <Text style={styles.tartilRatingStripText}>
+                          {rating === 'correct' ? 'Parfait' : rating === 'error' ? 'Erreur' : 'Hesitation'}
+                        </Text>
+                      </View>
+                    )}
 
                     {/* Boutons d'evaluation si pas encore note */}
                     {!rating && isCurrent && (
                       <View style={styles.tartilRatingButtons}>
+                        <View style={styles.tartilRatingDivider} />
                         <Text style={styles.tartilRatingLabel}>Comment as-tu recite ?</Text>
                         <View style={styles.tartilRatingRow}>
                           <TouchableOpacity
                             style={[styles.tartilRatingBtn, styles.tartilRatingCorrect]}
                             onPress={() => rateTartilVerse('correct')}
+                            activeOpacity={0.7}
                           >
-                            <Ionicons name="checkmark-circle" size={22} color="#fff" />
+                            <Ionicons name="checkmark-circle" size={24} color="#fff" />
                             <Text style={styles.tartilRatingBtnText}>Parfait</Text>
                           </TouchableOpacity>
                           <TouchableOpacity
                             style={[styles.tartilRatingBtn, styles.tartilRatingHesitation]}
                             onPress={() => rateTartilVerse('hesitation')}
+                            activeOpacity={0.7}
                           >
-                            <Ionicons name="help-circle" size={22} color="#fff" />
+                            <Ionicons name="help-circle" size={24} color="#fff" />
                             <Text style={styles.tartilRatingBtnText}>Hesitation</Text>
                           </TouchableOpacity>
                           <TouchableOpacity
                             style={[styles.tartilRatingBtn, styles.tartilRatingError]}
                             onPress={() => rateTartilVerse('error')}
+                            activeOpacity={0.7}
                           >
-                            <Ionicons name="close-circle" size={22} color="#fff" />
+                            <Ionicons name="close-circle" size={24} color="#fff" />
                             <Text style={styles.tartilRatingBtnText}>Erreur</Text>
                           </TouchableOpacity>
                         </View>
                       </View>
                     )}
-
-                    {/* Icone de notation */}
-                    {rating && (
-                      <View style={styles.tartilRatingIcon}>
-                        <Ionicons
-                          name={rating === 'correct' ? 'checkmark-circle' : rating === 'error' ? 'close-circle' : 'help-circle'}
-                          size={24}
-                          color={rating === 'correct' ? '#10B981' : rating === 'error' ? '#EF4444' : '#F59E0B'}
-                        />
-                      </View>
-                    )}
-                  </View>
+                  </Animated.View>
                 )}
-              </View>
+              </Animated.View>
             );
           })}
 
           {/* Resume si tout est termine */}
           {allDone && (
             <View style={styles.tartilSummary}>
+              {/* Score circle */}
+              <View style={styles.tartilScoreCircle}>
+                <Text style={styles.tartilScorePercent}>{scorePercent}%</Text>
+                <Text style={styles.tartilScoreLabel}>Score</Text>
+              </View>
+
               <Text style={styles.tartilSummaryTitle}>Resultats du Tartil</Text>
+
               <View style={styles.tartilSummaryStats}>
-                <View style={styles.tartilSummaryStat}>
-                  <Ionicons name="checkmark-circle" size={28} color="#10B981" />
-                  <Text style={styles.tartilSummaryNumber}>{correctCount}</Text>
+                <View style={[styles.tartilSummaryStat, { backgroundColor: COLORS.correctBg }]}>
+                  <Ionicons name="checkmark-circle" size={28} color={COLORS.correct} />
+                  <Text style={[styles.tartilSummaryNumber, { color: COLORS.correctDark }]}>{correctCount}</Text>
                   <Text style={styles.tartilSummaryLabel}>Parfait</Text>
                 </View>
-                <View style={styles.tartilSummaryStat}>
-                  <Ionicons name="help-circle" size={28} color="#F59E0B" />
-                  <Text style={styles.tartilSummaryNumber}>
-                    {tartilVerses.filter(v => v.selfRating === 'hesitation').length}
-                  </Text>
+                <View style={[styles.tartilSummaryStat, { backgroundColor: COLORS.hesitationBg }]}>
+                  <Ionicons name="help-circle" size={28} color={COLORS.hesitation} />
+                  <Text style={[styles.tartilSummaryNumber, { color: COLORS.hesitationDark }]}>{hesitationCount}</Text>
                   <Text style={styles.tartilSummaryLabel}>Hesitations</Text>
                 </View>
-                <View style={styles.tartilSummaryStat}>
-                  <Ionicons name="close-circle" size={28} color="#EF4444" />
-                  <Text style={styles.tartilSummaryNumber}>{errorCount}</Text>
+                <View style={[styles.tartilSummaryStat, { backgroundColor: COLORS.errorBg }]}>
+                  <Ionicons name="close-circle" size={28} color={COLORS.error} />
+                  <Text style={[styles.tartilSummaryNumber, { color: COLORS.errorDark }]}>{errorCount}</Text>
                   <Text style={styles.tartilSummaryLabel}>Erreurs</Text>
                 </View>
               </View>
 
-              {/* Score visuel */}
+              {/* Visual score bar */}
               <View style={styles.tartilScoreBar}>
                 {tartilVerses.map((v, i) => (
                   <View
@@ -343,8 +562,8 @@ export default function SurahScreen() {
                     style={[
                       styles.tartilScoreDot,
                       {
-                        backgroundColor: v.selfRating === 'correct' ? '#10B981' :
-                          v.selfRating === 'error' ? '#EF4444' : '#F59E0B'
+                        backgroundColor: v.selfRating === 'correct' ? COLORS.correct :
+                          v.selfRating === 'error' ? COLORS.error : COLORS.hesitation
                       }
                     ]}
                   />
@@ -352,25 +571,59 @@ export default function SurahScreen() {
               </View>
 
               <View style={styles.tartilSummaryActions}>
-                <TouchableOpacity style={styles.tartilRetryBtn} onPress={enterTartilMode}>
+                <TouchableOpacity style={styles.tartilRetryBtn} onPress={enterTartilMode} activeOpacity={0.8}>
                   <Ionicons name="refresh" size={20} color="#fff" />
                   <Text style={styles.tartilRetryText}>Recommencer</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.tartilExitBtn} onPress={exitTartilMode}>
+                <TouchableOpacity style={styles.tartilExitBtn} onPress={exitTartilMode} activeOpacity={0.8}>
                   <Text style={styles.tartilExitText}>Retour au Mushaf</Text>
                 </TouchableOpacity>
               </View>
             </View>
           )}
+
+          {/* Islamic border frame bottom */}
+          <View style={styles.mushafFrameBottom}>
+            <View style={styles.frameCornerLeft}>
+              <Text style={styles.frameCornerGlyph}>{'﴾'}</Text>
+            </View>
+            <View style={styles.frameBorderTop} />
+            <View style={styles.frameCornerRight}>
+              <Text style={styles.frameCornerGlyph}>{'﴿'}</Text>
+            </View>
+          </View>
         </ScrollView>
 
-        {/* Barre du bas Tartil */}
+        {/* Barre du bas Tartil - Premium */}
         <View style={styles.tartilBottomBar}>
-          <TouchableOpacity style={styles.tartilBottomBtn} onPress={exitTartilMode}>
-            <Ionicons name="close" size={22} color="#EF4444" />
-            <Text style={styles.tartilBottomBtnText}>Quitter</Text>
+          <TouchableOpacity style={styles.tartilBottomQuitBtn} onPress={exitTartilMode} activeOpacity={0.8}>
+            <Ionicons name="close" size={20} color="#fff" />
+            <Text style={styles.tartilBottomQuitText}>Quitter</Text>
           </TouchableOpacity>
-          <Text style={styles.tartilBottomProgress}>{ratedCount}/{totalVerses} versets</Text>
+
+          <View style={styles.tartilBottomCenter}>
+            <View style={styles.tartilBottomProgressPill}>
+              <Text style={styles.tartilBottomProgressText}>
+                {ratedCount}/{totalVerses}
+              </Text>
+            </View>
+            <Text style={styles.tartilBottomProgressLabel}>versets evalues</Text>
+          </View>
+
+          <View style={styles.tartilBottomStats}>
+            <View style={styles.tartilBottomStatItem}>
+              <View style={[styles.tartilBottomStatDot, { backgroundColor: COLORS.correct }]} />
+              <Text style={styles.tartilBottomStatNum}>{correctCount}</Text>
+            </View>
+            <View style={styles.tartilBottomStatItem}>
+              <View style={[styles.tartilBottomStatDot, { backgroundColor: COLORS.hesitation }]} />
+              <Text style={styles.tartilBottomStatNum}>{hesitationCount}</Text>
+            </View>
+            <View style={styles.tartilBottomStatItem}>
+              <View style={[styles.tartilBottomStatDot, { backgroundColor: COLORS.error }]} />
+              <Text style={styles.tartilBottomStatNum}>{errorCount}</Text>
+            </View>
+          </View>
         </View>
       </View>
     );
@@ -382,22 +635,22 @@ export default function SurahScreen() {
       <Stack.Screen
         options={{
           title: '',
-          headerStyle: { backgroundColor: '#0D2818' },
-          headerTintColor: '#D4AF37',
+          headerStyle: { backgroundColor: COLORS.darkGreen },
+          headerTintColor: COLORS.gold,
           headerRight: () => (
             <View style={styles.headerActions}>
               <TouchableOpacity onPress={enterTartilMode} style={styles.headerBtn}>
-                <Ionicons name="mic-outline" size={22} color="#D4AF37" />
+                <Ionicons name="mic-outline" size={22} color={COLORS.gold} />
               </TouchableOpacity>
               <TouchableOpacity onPress={() => setShowTranslation(!showTranslation)} style={styles.headerBtn}>
-                <Ionicons name="language" size={22} color={showTranslation ? '#D4AF37' : 'rgba(212,175,55,0.4)'} />
+                <Ionicons name="language" size={22} color={showTranslation ? COLORS.gold : 'rgba(212,175,55,0.4)'} />
               </TouchableOpacity>
             </View>
           ),
         }}
       />
 
-      {/* Mushaf pages - Style Tarteel */}
+      {/* Mushaf pages - Tarteel Style */}
       <PagerView
         ref={pagerRef}
         style={styles.pager}
@@ -409,129 +662,179 @@ export default function SurahScreen() {
       >
         {pages.map((page, pageIndex) => (
           <ScrollView key={page.pageNumber} style={styles.page} contentContainerStyle={styles.pageContent}>
-            {/* Bordure ornementale superieure */}
-            <View style={styles.ornamentTop}>
-              <View style={styles.ornamentLine} />
-              <View style={styles.ornamentDiamond}>
-                <Text style={styles.ornamentText}>۞</Text>
-              </View>
-              <View style={styles.ornamentLine} />
-            </View>
-
-            {/* Header page - Style Tarteel */}
-            <View style={styles.pageHeader}>
-              <View style={styles.pageHeaderLeft}>
-                <Text style={styles.juzBadge}>
-                  الجزء {toArabicNumeral(page.ayahs[0]?.surahNumber ? getSurah(page.ayahs[0].surahNumber)?.ayahs.find(a => a.page === page.pageNumber)?.juz || 1 : 1)}
-                </Text>
-              </View>
-              <Text style={styles.surahHeaderText}>{page.ayahs[0]?.surahNameArabic}</Text>
-              <View style={styles.pageHeaderRight}>
-                <Text style={styles.pageNumberHeader}>{toArabicNumeral(page.pageNumber)}</Text>
-              </View>
-            </View>
-
-            {/* Bismillah ornementale */}
-            {pageIndex === 0 && isBismillahSurah && (
-              <View style={styles.bismillahContainer}>
-                <View style={styles.bismillahDecor}>
-                  <View style={styles.bismillahLine} />
-                  <Text style={styles.bismillah}>بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ</Text>
-                  <View style={styles.bismillahLine} />
+            {/* Islamic frame border */}
+            <View style={styles.mushafFrame}>
+              {/* Frame top border with ornaments */}
+              <View style={styles.mushafFrameTop}>
+                <View style={styles.frameCornerLeft}>
+                  <Text style={styles.frameCornerGlyph}>{'﴾'}</Text>
+                </View>
+                <View style={styles.frameBorderTop} />
+                <View style={styles.frameOrnamentCenter}>
+                  <Text style={styles.frameOrnamentText}>۞</Text>
+                </View>
+                <View style={styles.frameBorderTop} />
+                <View style={styles.frameCornerRight}>
+                  <Text style={styles.frameCornerGlyph}>{'﴿'}</Text>
                 </View>
               </View>
-            )}
 
-            {/* Titre de la sourate si premiere page */}
-            {pageIndex === 0 && (
-              <View style={styles.surahTitleContainer}>
-                <View style={styles.surahTitleFrame}>
-                  <View style={styles.surahTitleLine} />
-                  <View style={styles.surahTitleContent}>
-                    <Text style={styles.surahTitleArabic}>{surah.nameArabic}</Text>
-                    <Text style={styles.surahTitleFrench}>{surah.nameFrench}</Text>
-                    <Text style={styles.surahTitleMeta}>
-                      {surah.ayahCount} versets · {surah.revelationType === 'mecquoise' ? 'Mecquoise' : 'Medinoise'}
-                    </Text>
-                  </View>
-                  <View style={styles.surahTitleLine} />
-                </View>
-              </View>
-            )}
+              {/* Left and right border lines */}
+              <View style={styles.mushafFrameContent}>
+                <View style={styles.frameBorderLeft} />
 
-            {/* Versets - Style Tarteel avec surlignage */}
-            <View style={styles.ayahsContainer}>
-              {page.ayahs.map((ayah, ayahIndex) => {
-                const isActive = isPlaying && ayahIndex === activeAyahIndex;
-                return (
-                  <Animated.View
-                    key={`${ayah.surahNumber}-${ayah.ayahNumberInSurah}`}
-                    style={[
-                      styles.ayahWrapper,
-                      isActive && styles.ayahActive,
-                      isActive && { transform: [{ scale: pulseAnim }] },
-                    ]}
-                  >
-                    <TouchableOpacity
-                      activeOpacity={0.7}
-                      onPress={() => playSpecificAyah(ayah.surahNumber, ayah.ayahNumberInSurah, ayahIndex)}
-                      style={styles.ayahTouchable}
-                    >
-                      <Text style={[styles.ayahText, isActive && styles.ayahTextActive]}>
-                        {ayah.text}
-                        <Text style={[styles.ayahNumber, isActive && styles.ayahNumberActive]}>
-                          {' '}﴿{toArabicNumeral(ayah.ayahNumberInSurah)}﴾{' '}
-                        </Text>
+                <View style={styles.mushafInner}>
+                  {/* Header page - Style Tarteel */}
+                  <View style={styles.pageHeader}>
+                    <View style={styles.pageHeaderLeft}>
+                      <Text style={styles.juzBadge}>
+                        الجزء {toArabicNumeral(page.ayahs[0]?.surahNumber ? getSurah(page.ayahs[0].surahNumber)?.ayahs.find(a => a.page === page.pageNumber)?.juz || 1 : 1)}
                       </Text>
-                    </TouchableOpacity>
+                    </View>
+                    <Text style={styles.surahHeaderText}>{page.ayahs[0]?.surahNameArabic}</Text>
+                    <View style={styles.pageHeaderRight}>
+                      <Text style={styles.pageNumberHeader}>{toArabicNumeral(page.pageNumber)}</Text>
+                    </View>
+                  </View>
 
-                    {showTranslation && (
-                      <View style={styles.translationContainer}>
-                        <View style={styles.translationBar} />
-                        <Text style={styles.translationText}>{ayah.translationFr}</Text>
+                  {/* Bismillah ornementale - Calligraphic header */}
+                  {pageIndex === 0 && isBismillahSurah && (
+                    <View style={styles.bismillahContainer}>
+                      <View style={styles.bismillahDecorLine} />
+                      <View style={styles.bismillahContent}>
+                        <Text style={styles.bismillahStar}>۝</Text>
+                        <Text style={styles.bismillah}>بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ</Text>
+                        <Text style={styles.bismillahStar}>۝</Text>
                       </View>
-                    )}
-                  </Animated.View>
-                );
-              })}
-            </View>
+                      <View style={styles.bismillahDecorLine} />
+                    </View>
+                  )}
 
-            {/* Bordure ornementale inferieure */}
-            <View style={styles.ornamentBottom}>
-              <View style={styles.ornamentLine} />
-              <Text style={styles.pageNumberBottom}>{page.pageNumber}</Text>
-              <View style={styles.ornamentLine} />
+                  {/* Titre de la sourate si premiere page */}
+                  {pageIndex === 0 && (
+                    <View style={styles.surahTitleContainer}>
+                      <View style={styles.surahTitleFrame}>
+                        <View style={styles.surahTitleOrnamentRow}>
+                          <View style={styles.surahTitleLine} />
+                          <Text style={styles.surahTitleOrnament}>۩</Text>
+                          <View style={styles.surahTitleLine} />
+                        </View>
+                        <View style={styles.surahTitleContent}>
+                          <Text style={styles.surahTitleArabic}>{surah.nameArabic}</Text>
+                          <Text style={styles.surahTitleFrench}>{surah.nameFrench}</Text>
+                          <Text style={styles.surahTitleMeta}>
+                            {surah.ayahCount} versets · {surah.revelationType === 'mecquoise' ? 'Mecquoise' : 'Medinoise'}
+                          </Text>
+                        </View>
+                        <View style={styles.surahTitleOrnamentRow}>
+                          <View style={styles.surahTitleLine} />
+                          <Text style={styles.surahTitleOrnament}>۩</Text>
+                          <View style={styles.surahTitleLine} />
+                        </View>
+                      </View>
+                    </View>
+                  )}
+
+                  {/* Versets - Style Tarteel avec surlignage */}
+                  <View style={styles.ayahsContainer}>
+                    {page.ayahs.map((ayah, ayahIndex) => {
+                      const isActive = isPlaying && ayahIndex === activeAyahIndex;
+                      return (
+                        <Animated.View
+                          key={`${ayah.surahNumber}-${ayah.ayahNumberInSurah}`}
+                          style={[
+                            styles.ayahWrapper,
+                            isActive && styles.ayahActive,
+                            isActive && { transform: [{ scale: pulseAnim }] },
+                          ]}
+                        >
+                          <TouchableOpacity
+                            activeOpacity={0.7}
+                            onPress={() => playSpecificAyah(ayah.surahNumber, ayah.ayahNumberInSurah, ayahIndex)}
+                            style={styles.ayahTouchable}
+                          >
+                            <Text style={[styles.ayahText, isActive && styles.ayahTextActive]}>
+                              {ayah.text}
+                              <Text style={[styles.ayahNumber, isActive && styles.ayahNumberActive]}>
+                                {' '}﴿{toArabicNumeral(ayah.ayahNumberInSurah)}﴾{' '}
+                              </Text>
+                            </Text>
+                          </TouchableOpacity>
+
+                          {showTranslation && (
+                            <View style={styles.translationContainer}>
+                              <View style={styles.translationBar} />
+                              <Text style={styles.translationText}>{ayah.translationFr}</Text>
+                            </View>
+                          )}
+
+                          {/* Gold ornamental separator between ayahs */}
+                          {ayahIndex < page.ayahs.length - 1 && (
+                            <View style={styles.ayahSeparator}>
+                              <View style={styles.ayahSeparatorLine} />
+                              <Text style={styles.ayahSeparatorDot}>۝</Text>
+                              <View style={styles.ayahSeparatorLine} />
+                            </View>
+                          )}
+                        </Animated.View>
+                      );
+                    })}
+                  </View>
+                </View>
+
+                <View style={styles.frameBorderRight} />
+              </View>
+
+              {/* Frame bottom border with page number */}
+              <View style={styles.mushafFrameBottom}>
+                <View style={styles.frameCornerLeft}>
+                  <Text style={styles.frameCornerGlyph}>{'﴾'}</Text>
+                </View>
+                <View style={styles.frameBorderTop} />
+                <View style={styles.frameOrnamentCenter}>
+                  <Text style={styles.pageNumberBottom}>{page.pageNumber}</Text>
+                </View>
+                <View style={styles.frameBorderTop} />
+                <View style={styles.frameCornerRight}>
+                  <Text style={styles.frameCornerGlyph}>{'﴿'}</Text>
+                </View>
+              </View>
             </View>
           </ScrollView>
         ))}
       </PagerView>
 
-      {/* Bottom bar - Style Tarteel premium */}
+      {/* Bottom bar - Premium Tarteel style */}
       <View style={styles.bottomBar}>
-        {/* Bouton play/pause */}
+        {/* Play button with glow */}
         <TouchableOpacity
           style={[styles.playButton, isPlaying && styles.playButtonActive]}
           onPress={playPageAudio}
+          activeOpacity={0.8}
         >
-          <Ionicons name={isPlaying ? 'pause' : 'play'} size={24} color="#fff" />
+          <View style={styles.playButtonInner}>
+            <Ionicons name={isPlaying ? 'pause' : 'play'} size={22} color="#fff" />
+          </View>
         </TouchableOpacity>
 
-        {/* Bouton Tartil */}
-        <TouchableOpacity style={styles.tartilButton} onPress={enterTartilMode}>
-          <Ionicons name="mic" size={20} color="#D4AF37" />
+        {/* Tartil button */}
+        <TouchableOpacity style={styles.tartilButton} onPress={enterTartilMode} activeOpacity={0.8}>
+          <View style={styles.tartilButtonGlow} />
+          <Ionicons name="mic" size={18} color={COLORS.gold} />
           <Text style={styles.tartilButtonText}>Tartil</Text>
         </TouchableOpacity>
 
-        {/* Bouton Quiz */}
+        {/* Quiz button */}
         <TouchableOpacity
           style={styles.quizButton}
           onPress={() => router.push(`/quiz/${surahNumber}`)}
+          activeOpacity={0.8}
         >
-          <Ionicons name="school" size={20} color="#fff" />
+          <Ionicons name="school" size={18} color="#fff" />
           <Text style={styles.quizButtonText}>Quiz</Text>
         </TouchableOpacity>
 
-        {/* Page indicator */}
+        {/* Page indicator pill */}
         <View style={styles.pageIndicatorContainer}>
           <Text style={styles.pageIndicator}>
             {currentPage + 1}/{pages.length}
@@ -575,103 +878,234 @@ function toArabicNumeral(num: number): string {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FEFBF3' },
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.parchment,
+  },
   pager: { flex: 1 },
-  page: { flex: 1 },
-  pageContent: { paddingHorizontal: 12, paddingBottom: 40, paddingTop: 8 },
+  page: { flex: 1, backgroundColor: COLORS.parchment },
+  pageContent: {
+    paddingHorizontal: 6,
+    paddingBottom: 20,
+    paddingTop: 8,
+  },
 
   // Header actions
   headerActions: { flexDirection: 'row', gap: 16, marginRight: 8 },
-  headerBtn: { padding: 4 },
+  headerBtn: { padding: 6 },
 
-  // Ornements
-  ornamentTop: { flexDirection: 'row', alignItems: 'center', marginBottom: 12, paddingHorizontal: 8 },
-  ornamentBottom: { flexDirection: 'row', alignItems: 'center', marginTop: 20, paddingHorizontal: 8 },
-  ornamentLine: { flex: 1, height: 1.5, backgroundColor: '#D4AF37', opacity: 0.4 },
-  ornamentDiamond: { marginHorizontal: 12 },
-  ornamentText: { fontSize: 18, color: '#D4AF37' },
+  // ======= MUSHAF FRAME (Islamic border) =======
+  mushafFrame: {
+    borderWidth: 0,
+    margin: 4,
+  },
+  mushafFrameTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+    paddingHorizontal: 4,
+  },
+  mushafFrameBottom: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 12,
+    paddingHorizontal: 4,
+  },
+  mushafFrameContent: {
+    flexDirection: 'row',
+  },
+  mushafInner: {
+    flex: 1,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  frameBorderLeft: {
+    width: 2,
+    backgroundColor: COLORS.gold,
+    opacity: 0.25,
+    borderRadius: 1,
+  },
+  frameBorderRight: {
+    width: 2,
+    backgroundColor: COLORS.gold,
+    opacity: 0.25,
+    borderRadius: 1,
+  },
+  frameBorderTop: {
+    flex: 1,
+    height: 2,
+    backgroundColor: COLORS.gold,
+    opacity: 0.3,
+  },
+  frameCornerLeft: {
+    width: 24,
+    alignItems: 'center',
+  },
+  frameCornerRight: {
+    width: 24,
+    alignItems: 'center',
+  },
+  frameCornerGlyph: {
+    fontSize: 16,
+    color: COLORS.gold,
+    opacity: 0.6,
+  },
+  frameOrnamentCenter: {
+    marginHorizontal: 8,
+  },
+  frameOrnamentText: {
+    fontSize: 18,
+    color: COLORS.gold,
+    opacity: 0.7,
+  },
 
-  // Page header - style Tarteel
+  // ======= PAGE HEADER =======
   pageHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    backgroundColor: 'rgba(13,40,24,0.05)',
-    borderRadius: 8,
-    marginBottom: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    backgroundColor: COLORS.goldFaint,
+    borderRadius: 10,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(212,175,55,0.12)',
   },
   pageHeaderLeft: { flex: 1, alignItems: 'flex-start' },
   pageHeaderRight: { flex: 1, alignItems: 'flex-end' },
-  juzBadge: { fontSize: 13, color: '#1B4332', fontWeight: '500' },
-  surahHeaderText: { fontSize: 20, color: '#0D2818', fontWeight: '700' },
-  pageNumberHeader: { fontSize: 13, color: '#8B7355' },
+  juzBadge: { fontSize: 14, color: COLORS.mediumGreen, fontWeight: '600' },
+  surahHeaderText: { fontSize: 22, color: COLORS.darkGreen, fontWeight: '700' },
+  pageNumberHeader: { fontSize: 14, color: '#8B7355', fontWeight: '500' },
 
-  // Bismillah ornementale
-  bismillahContainer: { marginVertical: 16, alignItems: 'center' },
-  bismillahDecor: { flexDirection: 'row', alignItems: 'center', width: '100%', paddingHorizontal: 8 },
-  bismillahLine: { flex: 1, height: 1, backgroundColor: '#D4AF37', opacity: 0.3 },
+  // ======= BISMILLAH - Calligraphic =======
+  bismillahContainer: {
+    marginVertical: 18,
+    alignItems: 'center',
+    paddingHorizontal: 12,
+  },
+  bismillahDecorLine: {
+    width: '70%',
+    height: 1.5,
+    backgroundColor: COLORS.gold,
+    opacity: 0.3,
+  },
+  bismillahContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 8,
+    gap: 12,
+  },
+  bismillahStar: {
+    fontSize: 16,
+    color: COLORS.gold,
+    opacity: 0.7,
+  },
   bismillah: {
-    fontSize: 24,
+    fontSize: 28,
     textAlign: 'center',
-    color: '#0D2818',
-    marginHorizontal: 16,
-    lineHeight: 44,
+    color: COLORS.darkGreen,
+    lineHeight: 50,
+    fontWeight: '500',
   },
 
-  // Titre de la sourate
-  surahTitleContainer: { marginBottom: 20, alignItems: 'center' },
-  surahTitleFrame: { alignItems: 'center', width: '85%' },
-  surahTitleLine: { width: '60%', height: 1.5, backgroundColor: '#D4AF37', opacity: 0.5 },
-  surahTitleContent: {
+  // ======= SURAH TITLE =======
+  surahTitleContainer: { marginBottom: 22, alignItems: 'center' },
+  surahTitleFrame: { alignItems: 'center', width: '88%' },
+  surahTitleOrnamentRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    backgroundColor: 'rgba(212,175,55,0.06)',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(212,175,55,0.15)',
-    marginVertical: 8,
     width: '100%',
   },
-  surahTitleArabic: { fontSize: 28, fontWeight: '700', color: '#0D2818', marginBottom: 4 },
-  surahTitleFrench: { fontSize: 16, color: '#374151', fontWeight: '500' },
-  surahTitleMeta: { fontSize: 12, color: '#8B7355', marginTop: 4 },
+  surahTitleLine: { flex: 1, height: 1.5, backgroundColor: COLORS.gold, opacity: 0.35 },
+  surahTitleOrnament: {
+    fontSize: 16,
+    color: COLORS.gold,
+    marginHorizontal: 10,
+    opacity: 0.7,
+  },
+  surahTitleContent: {
+    alignItems: 'center',
+    paddingVertical: 18,
+    paddingHorizontal: 24,
+    backgroundColor: COLORS.goldFaint,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(212,175,55,0.18)',
+    marginVertical: 8,
+    width: '100%',
+    ...Platform.select({
+      ios: {
+        shadowColor: COLORS.gold,
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.12,
+        shadowRadius: 10,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
+  },
+  surahTitleArabic: { fontSize: 32, fontWeight: '700', color: COLORS.darkGreen, marginBottom: 6 },
+  surahTitleFrench: { fontSize: 17, color: '#374151', fontWeight: '500' },
+  surahTitleMeta: { fontSize: 13, color: '#8B7355', marginTop: 6 },
 
-  // Versets - Style Tarteel
-  ayahsContainer: { paddingHorizontal: 4 },
+  // ======= AYAHS - Mushaf Style =======
+  ayahsContainer: { paddingHorizontal: 2 },
   ayahWrapper: {
-    marginBottom: 2,
+    marginBottom: 0,
     borderRadius: 8,
     paddingHorizontal: 8,
     paddingVertical: 4,
   },
   ayahActive: {
-    backgroundColor: 'rgba(16,185,129,0.12)',
+    backgroundColor: 'rgba(16,185,129,0.10)',
     borderLeftWidth: 3,
-    borderLeftColor: '#10B981',
+    borderLeftColor: COLORS.correct,
+    borderRadius: 10,
   },
   ayahTouchable: { paddingVertical: 2 },
   ayahText: {
-    fontSize: 24,
-    lineHeight: 52,
-    color: '#1A1A1A',
+    fontSize: 26,
+    lineHeight: 56,
+    color: COLORS.textPrimary,
     textAlign: 'right',
     writingDirection: 'rtl',
     width: '100%',
   },
   ayahTextActive: {
-    color: '#065F46',
+    color: COLORS.correctDark,
     fontWeight: '600',
   },
   ayahNumber: {
-    fontSize: 14,
-    color: '#D4AF37',
-    fontWeight: '600',
+    fontSize: 15,
+    color: COLORS.gold,
+    fontWeight: '700',
   },
   ayahNumberActive: {
-    color: '#10B981',
+    color: COLORS.correct,
+  },
+
+  // Gold ornamental separator between ayahs
+  ayahSeparator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 4,
+    paddingHorizontal: 20,
+    opacity: 0.5,
+  },
+  ayahSeparatorLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: COLORS.gold,
+    opacity: 0.4,
+  },
+  ayahSeparatorDot: {
+    fontSize: 12,
+    color: COLORS.gold,
+    marginHorizontal: 8,
   },
 
   // Traduction
@@ -682,233 +1116,598 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   translationBar: {
-    width: 2.5,
-    backgroundColor: '#D4AF37',
+    width: 3,
+    backgroundColor: COLORS.gold,
     borderRadius: 2,
     marginRight: 12,
-    opacity: 0.5,
+    opacity: 0.4,
   },
   translationText: {
-    fontSize: 13,
-    color: '#6B7280',
-    lineHeight: 20,
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    lineHeight: 22,
     flex: 1,
     fontStyle: 'italic',
   },
 
   // Page number
   pageNumberBottom: {
-    fontSize: 14,
-    color: '#D4AF37',
+    fontSize: 15,
+    color: COLORS.gold,
     marginHorizontal: 12,
-    fontWeight: '500',
+    fontWeight: '600',
   },
 
-  // Bottom bar - Premium
+  // ======= BOTTOM BAR - Premium =======
   bottomBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#0D2818',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    gap: 12,
+    backgroundColor: COLORS.darkGreen,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    gap: 10,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(212,175,55,0.2)',
+    borderTopColor: 'rgba(212,175,55,0.25)',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 12,
+      },
+      android: {
+        elevation: 12,
+      },
+    }),
   },
   playButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#1B4332',
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#D4AF37',
+    borderColor: COLORS.gold,
+    overflow: 'hidden',
+  },
+  playButtonInner: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 25,
+    backgroundColor: COLORS.mediumGreen,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   playButtonActive: {
-    backgroundColor: '#10B981',
-    borderColor: '#10B981',
+    borderColor: COLORS.correct,
   },
   tartilButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 22,
     borderWidth: 1.5,
-    borderColor: '#D4AF37',
+    borderColor: COLORS.gold,
     gap: 6,
+    overflow: 'hidden',
   },
-  tartilButtonText: { color: '#D4AF37', fontWeight: '600', fontSize: 14 },
+  tartilButtonGlow: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(212,175,55,0.08)',
+  },
+  tartilButtonText: { color: COLORS.gold, fontWeight: '700', fontSize: 14 },
   quizButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1B4332',
-    paddingHorizontal: 16,
+    paddingHorizontal: 18,
     paddingVertical: 10,
-    borderRadius: 20,
+    borderRadius: 22,
     gap: 6,
     marginLeft: 'auto',
+    backgroundColor: COLORS.mediumGreen,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
   },
-  quizButtonText: { color: '#fff', fontWeight: '600', fontSize: 14 },
+  quizButtonText: { color: '#fff', fontWeight: '700', fontSize: 14 },
   pageIndicatorContainer: {
-    backgroundColor: 'rgba(212,175,55,0.15)',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
+    backgroundColor: COLORS.goldLight,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 14,
   },
-  pageIndicator: { fontSize: 12, color: '#D4AF37', fontWeight: '500' },
+  pageIndicator: { fontSize: 13, color: COLORS.gold, fontWeight: '600' },
 
-  // ---- Styles Mode Tartil ----
+  // ======= TARTIL MODE STYLES =======
   tartilProgress: {
-    height: 4,
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    height: 5,
+    backgroundColor: 'rgba(255,255,255,0.08)',
   },
   tartilProgressFill: {
     height: '100%',
-    backgroundColor: '#10B981',
-    borderRadius: 2,
+    backgroundColor: COLORS.correct,
+    borderRadius: 3,
+    overflow: 'hidden',
   },
-  tartilContainer: { flex: 1, backgroundColor: '#FEFBF3' },
-  tartilContent: { padding: 16, paddingBottom: 40 },
+  tartilProgressSheen: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    width: 40,
+    height: '100%',
+    backgroundColor: 'rgba(255,255,255,0.3)',
+    borderRadius: 3,
+  },
+  tartilContainer: { flex: 1, backgroundColor: COLORS.parchment },
+  tartilContent: { padding: 14, paddingBottom: 40 },
+
+  // Tartil surah header - ornamental
   tartilSurahHeader: {
     alignItems: 'center',
-    marginBottom: 24,
-    paddingVertical: 16,
-    backgroundColor: 'rgba(13,40,24,0.05)',
-    borderRadius: 12,
+    marginBottom: 20,
+    paddingVertical: 20,
+    backgroundColor: COLORS.goldFaint,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(212,175,55,0.15)',
+    ...Platform.select({
+      ios: {
+        shadowColor: COLORS.gold,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
   },
-  tartilSurahName: { fontSize: 26, fontWeight: '700', color: '#0D2818' },
-  tartilSurahSubtitle: { fontSize: 13, color: '#6B7280', marginTop: 4 },
+  tartilSurahHeaderDecor: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '80%',
+    marginVertical: 6,
+  },
+  tartilHeaderLine: {
+    flex: 1,
+    height: 1.5,
+    backgroundColor: COLORS.gold,
+    opacity: 0.3,
+  },
+  tartilHeaderOrnament: {
+    marginHorizontal: 10,
+  },
+  tartilHeaderOrnamentText: {
+    fontSize: 16,
+    color: COLORS.gold,
+    opacity: 0.7,
+  },
+  tartilSurahName: { fontSize: 30, fontWeight: '700', color: COLORS.darkGreen, marginVertical: 6 },
+  tartilSurahSubtitle: { fontSize: 14, color: COLORS.textSecondary, marginTop: 2 },
 
+  // Tartil bismillah
+  tartilBismillah: {
+    alignItems: 'center',
+    marginBottom: 16,
+    paddingVertical: 10,
+  },
+  tartilBismillahText: {
+    fontSize: 24,
+    color: COLORS.darkGreen,
+    lineHeight: 44,
+    opacity: 0.7,
+  },
+
+  // Tartil verse card
   tartilVerseCard: {
-    marginBottom: 12,
-    borderRadius: 12,
+    marginBottom: 14,
+    borderRadius: 14,
     borderWidth: 2,
-    borderColor: '#E5E7EB',
+    borderColor: COLORS.border,
     overflow: 'hidden',
-    backgroundColor: '#fff',
+    backgroundColor: COLORS.white,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.06,
+        shadowRadius: 6,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
   },
   tartilVerseActive: {
-    borderColor: '#D4AF37',
-    shadowColor: '#D4AF37',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 4,
+    borderColor: COLORS.gold,
+    borderWidth: 2.5,
+    ...Platform.select({
+      ios: {
+        shadowColor: COLORS.gold,
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.2,
+        shadowRadius: 10,
+      },
+      android: {
+        elevation: 6,
+      },
+    }),
   },
   tartilVerseNumber: {
     position: 'absolute',
-    top: 8,
-    left: 8,
+    top: 10,
+    left: 10,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: COLORS.mediumGreen,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 2,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.2,
+        shadowRadius: 2,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
+  },
+  tartilVerseNumberText: { color: '#fff', fontSize: 13, fontWeight: '700' },
+
+  // Rating icon badge (top right)
+  tartilRatingIconBadge: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: '#1B4332',
     justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 1,
+    zIndex: 2,
   },
-  tartilVerseNumberText: { color: '#fff', fontSize: 12, fontWeight: '700' },
 
+  // Hidden verse
   tartilHiddenVerse: {
-    padding: 24,
-    paddingLeft: 44,
+    padding: 28,
+    paddingLeft: 48,
     alignItems: 'center',
-    minHeight: 80,
+    minHeight: 90,
     justifyContent: 'center',
-    backgroundColor: 'rgba(0,0,0,0.02)',
+    backgroundColor: 'rgba(0,0,0,0.015)',
   },
-  tartilHiddenText: { fontSize: 14, color: '#9CA3AF', textAlign: 'center' },
+  tartilHiddenPrompt: {
+    alignItems: 'center',
+  },
+  tartilHiddenDots: {
+    flexDirection: 'row',
+    gap: 6,
+    marginBottom: 10,
+  },
+  tartilDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: COLORS.gold,
+    opacity: 0.4,
+  },
+  tartilDot1: { opacity: 0.3 },
+  tartilDot2: { opacity: 0.5 },
+  tartilDot3: { opacity: 0.7 },
+  tartilHiddenCurrentText: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
   tartilRevealButton: {
+    marginTop: 14,
+    borderRadius: 24,
+    overflow: 'hidden',
+  },
+  tartilRevealButtonInner: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#D4AF37',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    gap: 6,
-    marginTop: 12,
+    backgroundColor: COLORS.gold,
+    paddingHorizontal: 22,
+    paddingVertical: 11,
+    borderRadius: 24,
+    gap: 8,
+    ...Platform.select({
+      ios: {
+        shadowColor: COLORS.gold,
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.3,
+        shadowRadius: 6,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
   },
-  tartilRevealText: { color: '#fff', fontWeight: '600', fontSize: 14 },
+  tartilRevealText: { color: '#fff', fontWeight: '700', fontSize: 15 },
 
-  tartilRevealedVerse: { padding: 16, paddingLeft: 44 },
+  tartilHiddenLocked: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    opacity: 0.5,
+  },
+  tartilHiddenLockedText: {
+    fontSize: 14,
+    color: COLORS.textMuted,
+  },
+
+  // Revealed verse
+  tartilRevealedVerse: { padding: 18, paddingLeft: 48, paddingTop: 14 },
+
+  // THE KEY FEATURE: Text highlight background
+  tartilTextHighlight: {
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
   tartilAyahText: {
-    fontSize: 22,
-    lineHeight: 44,
+    fontSize: 24,
+    lineHeight: 50,
     textAlign: 'right',
     writingDirection: 'rtl',
+    color: COLORS.textPrimary,
+  },
+  tartilAyahTextError: {
+    // Red text background is handled by parent container backgroundColor
+    fontWeight: '500',
+  },
+  tartilAyahTextCorrect: {
+    fontWeight: '500',
+  },
+  tartilAyahTextHesitation: {
+    fontWeight: '500',
+  },
+  tartilAyahNumber: {
+    fontSize: 14,
+    color: COLORS.gold,
+    fontWeight: '700',
   },
 
-  tartilRatingButtons: { marginTop: 16 },
-  tartilRatingLabel: { fontSize: 13, color: '#6B7280', textAlign: 'center', marginBottom: 10 },
-  tartilRatingRow: { flexDirection: 'row', gap: 8, justifyContent: 'center' },
-  tartilRatingBtn: {
+  // Rating strip label under text
+  tartilRatingStrip: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 10,
-    gap: 6,
+    alignSelf: 'flex-start',
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 12,
+    gap: 5,
+    marginTop: 8,
   },
-  tartilRatingCorrect: { backgroundColor: '#10B981' },
-  tartilRatingHesitation: { backgroundColor: '#F59E0B' },
-  tartilRatingError: { backgroundColor: '#EF4444' },
-  tartilRatingBtnText: { color: '#fff', fontWeight: '600', fontSize: 13 },
-
-  tartilRatingIcon: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
+  tartilRatingStripText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '700',
   },
 
-  // Resume Tartil
-  tartilSummary: {
-    marginTop: 24,
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 24,
-    borderWidth: 2,
-    borderColor: '#D4AF37',
+  // Rating buttons
+  tartilRatingButtons: { marginTop: 14 },
+  tartilRatingDivider: {
+    height: 1,
+    backgroundColor: COLORS.border,
+    marginBottom: 14,
+  },
+  tartilRatingLabel: { fontSize: 14, color: COLORS.textSecondary, textAlign: 'center', marginBottom: 12, fontWeight: '500' },
+  tartilRatingRow: { flexDirection: 'row', gap: 10, justifyContent: 'center' },
+  tartilRatingBtn: {
+    flexDirection: 'column',
     alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 14,
+    gap: 4,
+    minWidth: 85,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
   },
-  tartilSummaryTitle: { fontSize: 20, fontWeight: '700', color: '#0D2818', marginBottom: 16 },
-  tartilSummaryStats: { flexDirection: 'row', gap: 24, marginBottom: 16 },
-  tartilSummaryStat: { alignItems: 'center' },
-  tartilSummaryNumber: { fontSize: 24, fontWeight: '700', color: '#111827', marginTop: 4 },
-  tartilSummaryLabel: { fontSize: 12, color: '#6B7280', marginTop: 2 },
-  tartilScoreBar: { flexDirection: 'row', gap: 4, marginVertical: 16 },
-  tartilScoreDot: { width: 12, height: 12, borderRadius: 6 },
-  tartilSummaryActions: { flexDirection: 'row', gap: 12, marginTop: 8 },
+  tartilRatingCorrect: { backgroundColor: COLORS.correct },
+  tartilRatingHesitation: { backgroundColor: COLORS.hesitation },
+  tartilRatingError: { backgroundColor: COLORS.error },
+  tartilRatingBtnText: { color: '#fff', fontWeight: '700', fontSize: 13 },
+
+  // ======= TARTIL SUMMARY =======
+  tartilSummary: {
+    marginTop: 28,
+    backgroundColor: COLORS.white,
+    borderRadius: 20,
+    padding: 28,
+    borderWidth: 2,
+    borderColor: COLORS.gold,
+    alignItems: 'center',
+    ...Platform.select({
+      ios: {
+        shadowColor: COLORS.gold,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 12,
+      },
+      android: {
+        elevation: 6,
+      },
+    }),
+  },
+  tartilScoreCircle: {
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    backgroundColor: COLORS.goldFaint,
+    borderWidth: 3,
+    borderColor: COLORS.gold,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  tartilScorePercent: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: COLORS.darkGreen,
+  },
+  tartilScoreLabel: {
+    fontSize: 11,
+    color: COLORS.textSecondary,
+    fontWeight: '600',
+    marginTop: -2,
+  },
+  tartilSummaryTitle: { fontSize: 22, fontWeight: '700', color: COLORS.darkGreen, marginBottom: 20 },
+  tartilSummaryStats: { flexDirection: 'row', gap: 14, marginBottom: 18 },
+  tartilSummaryStat: {
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 18,
+    borderRadius: 14,
+    minWidth: 85,
+  },
+  tartilSummaryNumber: { fontSize: 26, fontWeight: '800', marginTop: 6 },
+  tartilSummaryLabel: { fontSize: 12, color: COLORS.textSecondary, marginTop: 3, fontWeight: '500' },
+  tartilScoreBar: { flexDirection: 'row', gap: 5, marginVertical: 16 },
+  tartilScoreDot: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.15,
+        shadowRadius: 2,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
+  },
+  tartilSummaryActions: { flexDirection: 'row', gap: 14, marginTop: 12 },
   tartilRetryBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1B4332',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 10,
+    backgroundColor: COLORS.mediumGreen,
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: 14,
     gap: 8,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
   },
-  tartilRetryText: { color: '#fff', fontWeight: '600', fontSize: 15 },
+  tartilRetryText: { color: '#fff', fontWeight: '700', fontSize: 16 },
   tartilExitBtn: {
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: COLORS.border,
   },
-  tartilExitText: { color: '#374151', fontWeight: '500', fontSize: 15 },
+  tartilExitText: { color: '#374151', fontWeight: '600', fontSize: 16 },
 
-  // Bottom bar Tartil
+  // ======= TARTIL BOTTOM BAR - Premium =======
   tartilBottomBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#0D2818',
+    backgroundColor: COLORS.darkGreen,
     paddingVertical: 12,
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(212,175,55,0.2)',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -3 },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 8,
+      },
+    }),
   },
-  tartilBottomBtn: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  tartilBottomBtnText: { color: '#EF4444', fontWeight: '500', fontSize: 14 },
-  tartilBottomProgress: { color: '#D4AF37', fontWeight: '600', fontSize: 14 },
+  tartilBottomQuitBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: 'rgba(239,68,68,0.15)',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  tartilBottomQuitText: { color: COLORS.error, fontWeight: '600', fontSize: 13 },
+  tartilBottomCenter: {
+    alignItems: 'center',
+  },
+  tartilBottomProgressPill: {
+    backgroundColor: COLORS.goldLight,
+    paddingHorizontal: 14,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  tartilBottomProgressText: {
+    color: COLORS.gold,
+    fontWeight: '700',
+    fontSize: 15,
+  },
+  tartilBottomProgressLabel: {
+    color: 'rgba(255,255,255,0.5)',
+    fontSize: 10,
+    marginTop: 2,
+    fontWeight: '500',
+  },
+  tartilBottomStats: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  tartilBottomStatItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  tartilBottomStatDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  tartilBottomStatNum: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '600',
+  },
 });
