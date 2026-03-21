@@ -975,8 +975,8 @@ const styles = StyleSheet.create({
   },
   pageHeaderLeft: { flex: 1, alignItems: 'flex-start' },
   pageHeaderRight: { flex: 1, alignItems: 'flex-end' },
-  juzBadge: { fontSize: 14, color: COLORS.mediumGreen, fontWeight: '600' },
-  surahHeaderText: { fontSize: fontScale(22), color: COLORS.darkGreen, fontWeight: '700' },
+  juzBadge: { fontSize: 14, color: COLORS.mediumGreen, fontWeight: '600', fontFamily: 'UthmanicHafs' },
+  surahHeaderText: { fontSize: fontScale(22), color: COLORS.darkGreen, fontWeight: '700', fontFamily: 'UthmanicHafs' },
   pageNumberHeader: { fontSize: fontScale(14), color: '#8B7355', fontWeight: '500' },
 
   // ======= BISMILLAH - Calligraphic =======
@@ -1009,7 +1009,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: COLORS.darkGreen,
     lineHeight: fontScale(50),
-    fontWeight: '500',
+    fontFamily: 'UthmanicHafs',
   },
 
   // ======= SURAH TITLE =======
@@ -1049,7 +1049,7 @@ const styles = StyleSheet.create({
       },
     }),
   },
-  surahTitleArabic: { fontSize: fontScale(32), fontWeight: '700', color: COLORS.darkGreen, marginBottom: scale(6) },
+  surahTitleArabic: { fontSize: fontScale(32), fontWeight: '700', color: COLORS.darkGreen, marginBottom: scale(6), fontFamily: 'UthmanicHafs' },
   surahTitleFrench: { fontSize: fontScale(17), color: '#374151', fontWeight: '500' },
   surahTitleMeta: { fontSize: fontScale(13), color: '#8B7355', marginTop: scale(6) },
 
@@ -1075,6 +1075,7 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     writingDirection: 'rtl',
     width: '100%',
+    fontFamily: 'UthmanicHafs',
   },
   ayahTextActive: {
     color: COLORS.correctDark,
@@ -1471,6 +1472,7 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     writingDirection: 'rtl',
     color: COLORS.textPrimary,
+    fontFamily: 'UthmanicHafs',
   },
   tartilAyahTextError: {
     // Red text background is handled by parent container backgroundColor

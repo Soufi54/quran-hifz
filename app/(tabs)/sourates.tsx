@@ -352,7 +352,7 @@ const styles = StyleSheet.create({
   statusText: { fontSize: fontScale(11), fontWeight: '600' },
   surahMeta: { fontSize: fontScale(12), color: '#9CA3AF' },
   surahRight: { alignItems: 'flex-end', gap: scale(4) },
-  surahNameAr: { fontSize: fontScale(20), color: '#0D2818', fontWeight: '600' },
+  surahNameAr: { fontSize: fontScale(20), color: '#0D2818', fontWeight: '600', fontFamily: 'UthmanicHafs' },
 
   // Juz
   juzSection: { marginTop: spacing.sm },

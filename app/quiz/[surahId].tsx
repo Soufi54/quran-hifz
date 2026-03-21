@@ -949,13 +949,14 @@ const styles = StyleSheet.create({
   },
   arabicDecor: { flexDirection: 'row', alignItems: 'center', marginBottom: scale(14) },
   arabicLine: { flex: 1, height: 1.5, backgroundColor: 'rgba(212,175,55,0.35)' },
-  arabicDecorSymbol: { fontSize: fontScale(20), color: '#D4AF37', marginHorizontal: spacing.sm + spacing.xs },
+  arabicDecorSymbol: { fontSize: fontScale(20), color: '#D4AF37', marginHorizontal: spacing.sm + spacing.xs, fontFamily: 'UthmanicHafs' },
   arabicText: {
     fontSize: fontScale(30),
     lineHeight: fontScale(54),
     textAlign: 'right',
     color: '#0D2818',
     writingDirection: 'rtl',
+    fontFamily: 'UthmanicHafs',
     textShadowColor: 'rgba(212,175,55,0.15)',
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 8,
@@ -1003,8 +1004,8 @@ const styles = StyleSheet.create({
     transform: [{ rotate: '-45deg' }],
   },
 
-  optionText: { flex: 1, fontSize: fontScale(16), color: '#374151', textAlign: 'right', lineHeight: fontScale(26) },
-  optionTextCorrect: { color: '#065F46', fontWeight: '600' },
+  optionText: { flex: 1, fontSize: fontScale(16), color: '#374151', textAlign: 'right', lineHeight: fontScale(26), fontFamily: 'UthmanicHafs' },
+  optionTextCorrect: { color: '#065F46' },
   optionTextWrong: { color: '#991B1B' },
 
   // Loading

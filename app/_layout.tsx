@@ -1,7 +1,21 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { useFonts } from 'expo-font';
+import { View, ActivityIndicator } from 'react-native';
 
 export default function RootLayout() {
+  const [fontsLoaded] = useFonts({
+    'UthmanicHafs': require('../assets/fonts/UthmanicHafs.ttf'),
+  });
+
+  if (!fontsLoaded) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0D2818' }}>
+        <ActivityIndicator size="large" color="#D4AF37" />
+      </View>
+    );
+  }
+
   return (
     <>
       <StatusBar style="light" />
