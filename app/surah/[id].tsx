@@ -2,7 +2,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions, Anima
 import { useLocalSearchParams, router, Stack } from 'expo-router';
 import { useState, useEffect, useRef } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import PagerView from 'react-native-pager-view';
+import PagerView from '../../components/PagerView';
 import { Audio } from 'expo-av';
 import { getSurah, getPageData, getFirstPageOfSurah, getLastPageOfSurah, getAudioUrl } from '../../lib/quran';
 import { PageData } from '../../types';
