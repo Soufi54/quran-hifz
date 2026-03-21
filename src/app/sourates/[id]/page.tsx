@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Play, Pause, Languages, GraduationCap, ChevronLeft, ChevronRight, EyeOff, Music } from 'lucide-react';
+import { ArrowLeft, Play, Pause, Languages, GraduationCap, ChevronLeft, ChevronRight, EyeOff, Music, BookOpen } from 'lucide-react';
 import { getSurah, getPageData, getFirstPageOfSurah, getAudioUrl } from '../../../lib/quran';
 import { setSurahStatus, getSurahProgress, setReviewDate } from '../../../lib/storage';
 import TafsirButton from '../../../components/TafsirButton';
@@ -326,6 +326,10 @@ export default function SurahPage() {
           </h1>
           <p className="text-xs text-emerald-200">{surah.nameFrench}</p>
         </div>
+        <button onClick={() => router.push(`/sourates/${surahNumber}/apprendre`)}
+          className="bg-amber-500/80 p-2 rounded-xl cursor-pointer transition-colors hover:bg-amber-500" title="Apprendre">
+          <BookOpen size={18} />
+        </button>
         <button onClick={() => router.push(`/sourates/${surahNumber}/tartil`)}
           className="bg-white/15 p-2 rounded-xl cursor-pointer transition-colors hover:bg-white/25" title="Mode Tartil">
           <EyeOff size={18} />
