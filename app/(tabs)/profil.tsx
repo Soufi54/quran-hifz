@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getMosqueLevel, getStreakMultiplier } from '../../lib/scoring';
+import { scale, fontScale, spacing } from '../../lib/responsive';
 
 export default function ProfilScreen() {
   const [totalXP, setTotalXP] = useState(0);
@@ -73,7 +74,7 @@ export default function ProfilScreen() {
         <View style={styles.header}>
           <View style={styles.avatarContainer}>
             <View style={styles.avatar}>
-              <Ionicons name="person" size={36} color="#D4AF37" />
+              <Ionicons name="person" size={scale(36)} color="#D4AF37" />
             </View>
             <View style={styles.levelBadge}>
               <Text style={styles.levelBadgeText}>{mosqueLevel}</Text>
@@ -85,19 +86,19 @@ export default function ProfilScreen() {
           {/* Mini stats */}
           <View style={styles.headerStats}>
             <View style={styles.headerStat}>
-              <Ionicons name="flash" size={18} color="#D4AF37" />
+              <Ionicons name="flash" size={scale(18)} color="#D4AF37" />
               <Text style={styles.headerStatNumber}>{totalXP.toLocaleString()}</Text>
               <Text style={styles.headerStatLabel}>XP</Text>
             </View>
             <View style={styles.headerStatDivider} />
             <View style={styles.headerStat}>
-              <Ionicons name="flame" size={18} color="#F97316" />
+              <Ionicons name="flame" size={scale(18)} color="#F97316" />
               <Text style={styles.headerStatNumber}>{streak}</Text>
               <Text style={styles.headerStatLabel}>Streak</Text>
             </View>
             <View style={styles.headerStatDivider} />
             <View style={styles.headerStat}>
-              <Ionicons name="checkmark-circle" size={18} color="#10B981" />
+              <Ionicons name="checkmark-circle" size={scale(18)} color="#10B981" />
               <Text style={styles.headerStatNumber}>{mastered}</Text>
               <Text style={styles.headerStatLabel}>Maitrisees</Text>
             </View>
@@ -106,7 +107,7 @@ export default function ProfilScreen() {
           {/* Multiplier badge */}
           {multiplier > 1 && (
             <View style={styles.multiplierBadge}>
-              <Ionicons name="flash" size={16} color="#D4AF37" />
+              <Ionicons name="flash" size={scale(16)} color="#D4AF37" />
               <Text style={styles.multiplierText}>Multiplicateur x{multiplier} actif !</Text>
             </View>
           )}
@@ -118,36 +119,36 @@ export default function ProfilScreen() {
 
           <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
             <View style={[styles.menuIcon, { backgroundColor: 'rgba(212,175,55,0.1)' }]}>
-              <Ionicons name="notifications-outline" size={20} color="#D4AF37" />
+              <Ionicons name="notifications-outline" size={scale(20)} color="#D4AF37" />
             </View>
             <Text style={styles.menuText}>Notifications</Text>
-            <Ionicons name="chevron-forward" size={18} color="#D4AF37" />
+            <Ionicons name="chevron-forward" size={scale(18)} color="#D4AF37" />
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
             <View style={[styles.menuIcon, { backgroundColor: 'rgba(16,185,129,0.1)' }]}>
-              <Ionicons name="time-outline" size={20} color="#10B981" />
+              <Ionicons name="time-outline" size={scale(20)} color="#10B981" />
             </View>
             <Text style={styles.menuText}>Objectif quotidien</Text>
             <Text style={styles.menuValue}>10 min</Text>
-            <Ionicons name="chevron-forward" size={18} color="#D4AF37" />
+            <Ionicons name="chevron-forward" size={scale(18)} color="#D4AF37" />
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
             <View style={[styles.menuIcon, { backgroundColor: 'rgba(99,102,241,0.1)' }]}>
-              <Ionicons name="musical-notes-outline" size={20} color="#6366F1" />
+              <Ionicons name="musical-notes-outline" size={scale(20)} color="#6366F1" />
             </View>
             <Text style={styles.menuText}>Recitateur</Text>
             <Text style={styles.menuValue}>Alafasy</Text>
-            <Ionicons name="chevron-forward" size={18} color="#D4AF37" />
+            <Ionicons name="chevron-forward" size={scale(18)} color="#D4AF37" />
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
             <View style={[styles.menuIcon, { backgroundColor: 'rgba(249,115,22,0.1)' }]}>
-              <Ionicons name="book-outline" size={20} color="#F97316" />
+              <Ionicons name="book-outline" size={scale(20)} color="#F97316" />
             </View>
             <Text style={styles.menuText}>Sourates connues</Text>
-            <Ionicons name="chevron-forward" size={18} color="#D4AF37" />
+            <Ionicons name="chevron-forward" size={scale(18)} color="#D4AF37" />
           </TouchableOpacity>
         </View>
 
@@ -157,7 +158,7 @@ export default function ProfilScreen() {
 
           <TouchableOpacity style={styles.menuItem} onPress={handleResetProgress} activeOpacity={0.7}>
             <View style={[styles.menuIcon, { backgroundColor: 'rgba(239,68,68,0.1)' }]}>
-              <Ionicons name="refresh-outline" size={20} color="#EF4444" />
+              <Ionicons name="refresh-outline" size={scale(20)} color="#EF4444" />
             </View>
             <Text style={[styles.menuText, { color: '#EF4444' }]}>Reinitialiser la progression</Text>
           </TouchableOpacity>
@@ -176,17 +177,17 @@ const styles = StyleSheet.create({
   // Header
   header: {
     backgroundColor: '#0D2818',
-    paddingVertical: 32,
-    paddingBottom: 28,
+    paddingVertical: scale(32),
+    paddingBottom: scale(28),
     alignItems: 'center',
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
+    borderBottomLeftRadius: scale(24),
+    borderBottomRightRadius: scale(24),
   },
   avatarContainer: { position: 'relative' },
   avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: scale(80),
+    height: scale(80),
+    borderRadius: scale(40),
     backgroundColor: 'rgba(212,175,55,0.15)',
     justifyContent: 'center',
     alignItems: 'center',
@@ -195,57 +196,57 @@ const styles = StyleSheet.create({
   },
   levelBadge: {
     position: 'absolute',
-    bottom: -4,
-    right: -4,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    bottom: scale(-4),
+    right: scale(-4),
+    width: scale(28),
+    height: scale(28),
+    borderRadius: scale(14),
     backgroundColor: '#D4AF37',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 3,
     borderColor: '#0D2818',
   },
-  levelBadgeText: { fontSize: 12, fontWeight: '800', color: '#0D2818' },
-  name: { fontSize: 22, fontWeight: '800', color: '#fff', marginTop: 14 },
-  subtitle: { fontSize: 14, color: 'rgba(255,255,255,0.5)', marginTop: 2 },
+  levelBadgeText: { fontSize: fontScale(12), fontWeight: '800', color: '#0D2818' },
+  name: { fontSize: fontScale(22), fontWeight: '800', color: '#fff', marginTop: scale(14) },
+  subtitle: { fontSize: fontScale(14), color: 'rgba(255,255,255,0.5)', marginTop: scale(2) },
 
   headerStats: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 20,
+    marginTop: scale(20),
     backgroundColor: 'rgba(255,255,255,0.08)',
-    borderRadius: 14,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    gap: 4,
+    borderRadius: scale(14),
+    paddingHorizontal: scale(20),
+    paddingVertical: scale(12),
+    gap: scale(4),
   },
-  headerStat: { flex: 1, alignItems: 'center', gap: 4 },
-  headerStatNumber: { fontSize: 18, fontWeight: '800', color: '#fff' },
-  headerStatLabel: { fontSize: 11, color: 'rgba(255,255,255,0.5)' },
-  headerStatDivider: { width: 1, height: 30, backgroundColor: 'rgba(255,255,255,0.15)' },
+  headerStat: { flex: 1, alignItems: 'center', gap: scale(4) },
+  headerStatNumber: { fontSize: fontScale(18), fontWeight: '800', color: '#fff' },
+  headerStatLabel: { fontSize: fontScale(11), color: 'rgba(255,255,255,0.5)' },
+  headerStatDivider: { width: 1, height: scale(30), backgroundColor: 'rgba(255,255,255,0.15)' },
 
   multiplierBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 12,
+    marginTop: spacing.sm + spacing.xs,
     backgroundColor: 'rgba(212,175,55,0.15)',
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 20,
-    gap: 6,
+    paddingHorizontal: scale(14),
+    paddingVertical: scale(6),
+    borderRadius: scale(20),
+    gap: scale(6),
   },
-  multiplierText: { fontSize: 13, fontWeight: '600', color: '#D4AF37' },
+  multiplierText: { fontSize: fontScale(13), fontWeight: '600', color: '#D4AF37' },
 
   // Sections
-  section: { marginTop: 24, paddingHorizontal: 16 },
+  section: { marginTop: spacing.lg, paddingHorizontal: spacing.md },
   sectionTitle: {
-    fontSize: 12,
+    fontSize: fontScale(12),
     fontWeight: '700',
     color: '#9CA3AF',
     letterSpacing: 1,
-    marginBottom: 10,
-    marginLeft: 4,
+    marginBottom: scale(10),
+    marginLeft: scale(4),
   },
 
   // Menu items
@@ -253,10 +254,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#fff',
-    padding: 14,
-    borderRadius: 14,
-    marginBottom: 6,
-    gap: 12,
+    padding: scale(14),
+    borderRadius: scale(14),
+    marginBottom: scale(6),
+    gap: spacing.sm + spacing.xs,
     borderWidth: 1,
     borderColor: '#F3F4F6',
     shadowColor: '#000',
@@ -264,18 +265,19 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.03,
     shadowRadius: 4,
     elevation: 1,
+    minHeight: scale(48), // Minimum touch target
   },
   menuIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
+    width: scale(36),
+    height: scale(36),
+    borderRadius: scale(10),
     justifyContent: 'center',
     alignItems: 'center',
   },
-  menuText: { flex: 1, fontSize: 15, color: '#0D2818', fontWeight: '500' },
-  menuValue: { fontSize: 14, color: '#9CA3AF' },
+  menuText: { flex: 1, fontSize: fontScale(15), color: '#0D2818', fontWeight: '500' },
+  menuValue: { fontSize: fontScale(14), color: '#9CA3AF' },
 
   // Footer
-  version: { textAlign: 'center', fontSize: 12, color: '#9CA3AF', marginTop: 40 },
-  copyright: { textAlign: 'center', fontSize: 11, color: '#D4AF37', marginTop: 4, marginBottom: 20, opacity: 0.6 },
+  version: { textAlign: 'center', fontSize: fontScale(12), color: '#9CA3AF', marginTop: scale(40) },
+  copyright: { textAlign: 'center', fontSize: fontScale(11), color: '#D4AF37', marginTop: scale(4), marginBottom: scale(20), opacity: 0.6 },
 });

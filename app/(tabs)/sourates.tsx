@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { getAllSurahs, getJuzList, getSurahsByJuz } from '../../lib/quran';
 import { Surah, SurahStatus, STATUS_COLORS, STATUS_LABELS } from '../../types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { scale, fontScale, spacing } from '../../lib/responsive';
 
 type ViewMode = 'list' | 'juz';
 
@@ -29,21 +30,21 @@ function SurahNumberBadge({ number, status }: { number: number; status: SurahSta
 
 const surahBadgeStyles = StyleSheet.create({
   container: {
-    width: 40,
-    height: 40,
+    width: scale(40),
+    height: scale(40),
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderRadius: 8,
+    borderRadius: scale(8),
     transform: [{ rotate: '45deg' }],
-    marginRight: 14,
+    marginRight: scale(14),
   },
   diamond: {
     transform: [{ rotate: '-45deg' }],
     justifyContent: 'center',
     alignItems: 'center',
   },
-  number: { fontSize: 14, fontWeight: '700', color: '#6B7280' },
+  number: { fontSize: fontScale(14), fontWeight: '700', color: '#6B7280' },
 });
 
 export default function SouratesScreen() {
@@ -104,7 +105,7 @@ export default function SouratesScreen() {
         </View>
         <View style={styles.surahRight}>
           <Text style={styles.surahNameAr}>{item.nameArabic}</Text>
-          <Ionicons name="chevron-forward" size={16} color="#D4AF37" />
+          <Ionicons name="chevron-forward" size={scale(16)} color="#D4AF37" />
         </View>
       </TouchableOpacity>
     );
@@ -176,21 +177,21 @@ export default function SouratesScreen() {
         <View style={styles.statsRow}>
           <View style={styles.stat}>
             <View style={[styles.statIcon, { backgroundColor: 'rgba(16,185,129,0.12)' }]}>
-              <Ionicons name="checkmark-circle" size={18} color="#10B981" />
+              <Ionicons name="checkmark-circle" size={scale(18)} color="#10B981" />
             </View>
             <Text style={[styles.statNumber, { color: '#10B981' }]}>{masteredCount}</Text>
             <Text style={styles.statLabel}>Maitrisees</Text>
           </View>
           <View style={styles.stat}>
             <View style={[styles.statIcon, { backgroundColor: 'rgba(212,175,55,0.12)' }]}>
-              <Ionicons name="book" size={18} color="#D4AF37" />
+              <Ionicons name="book" size={scale(18)} color="#D4AF37" />
             </View>
             <Text style={[styles.statNumber, { color: '#D4AF37' }]}>{learningCount}</Text>
             <Text style={styles.statLabel}>En cours</Text>
           </View>
           <View style={styles.stat}>
             <View style={[styles.statIcon, { backgroundColor: 'rgba(239,68,68,0.12)' }]}>
-              <Ionicons name="alert-circle" size={18} color="#EF4444" />
+              <Ionicons name="alert-circle" size={scale(18)} color="#EF4444" />
             </View>
             <Text style={[styles.statNumber, { color: '#EF4444' }]}>{decliningCount}</Text>
             <Text style={styles.statLabel}>A reviser</Text>
@@ -204,14 +205,14 @@ export default function SouratesScreen() {
           style={[styles.toggleButton, viewMode === 'list' && styles.toggleActive]}
           onPress={() => setViewMode('list')}
         >
-          <Ionicons name="list" size={16} color={viewMode === 'list' ? '#D4AF37' : '#6B7280'} />
+          <Ionicons name="list" size={scale(16)} color={viewMode === 'list' ? '#D4AF37' : '#6B7280'} />
           <Text style={[styles.toggleText, viewMode === 'list' && styles.toggleTextActive]}>Par sourate</Text>
         </Pressable>
         <Pressable
           style={[styles.toggleButton, viewMode === 'juz' && styles.toggleActive]}
           onPress={() => setViewMode('juz')}
         >
-          <Ionicons name="layers" size={16} color={viewMode === 'juz' ? '#D4AF37' : '#6B7280'} />
+          <Ionicons name="layers" size={scale(16)} color={viewMode === 'juz' ? '#D4AF37' : '#6B7280'} />
           <Text style={[styles.toggleText, viewMode === 'juz' && styles.toggleTextActive]}>Par juz</Text>
         </Pressable>
       </View>
@@ -244,89 +245,89 @@ const styles = StyleSheet.create({
   // Stats
   statsBar: {
     backgroundColor: '#0D2818',
-    paddingVertical: 16,
-    paddingHorizontal: 16,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
   },
   statsProgress: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
-    gap: 12,
+    marginBottom: spacing.md,
+    gap: spacing.sm + spacing.xs,
   },
   statsProgressCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: scale(48),
+    height: scale(48),
+    borderRadius: scale(24),
     backgroundColor: 'rgba(212,175,55,0.15)',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
     borderColor: '#D4AF37',
   },
-  statsProgressPercent: { fontSize: 14, fontWeight: '800', color: '#D4AF37' },
+  statsProgressPercent: { fontSize: fontScale(14), fontWeight: '800', color: '#D4AF37' },
   statsProgressInfo: { flex: 1 },
-  statsProgressTitle: { fontSize: 14, color: 'rgba(255,255,255,0.7)', marginBottom: 6 },
+  statsProgressTitle: { fontSize: fontScale(14), color: 'rgba(255,255,255,0.7)', marginBottom: scale(6) },
   statsProgressBar: {
-    height: 6,
+    height: scale(6),
     backgroundColor: 'rgba(255,255,255,0.15)',
-    borderRadius: 3,
+    borderRadius: scale(3),
     overflow: 'hidden',
   },
-  statsProgressFill: { height: '100%', backgroundColor: '#D4AF37', borderRadius: 3 },
+  statsProgressFill: { height: '100%', backgroundColor: '#D4AF37', borderRadius: scale(3) },
   statsRow: {
     flexDirection: 'row',
     justifyContent: 'space-around',
   },
-  stat: { alignItems: 'center', gap: 4 },
+  stat: { alignItems: 'center', gap: scale(4) },
   statIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: scale(36),
+    height: scale(36),
+    borderRadius: scale(18),
     justifyContent: 'center',
     alignItems: 'center',
   },
-  statNumber: { fontSize: 18, fontWeight: '800' },
-  statLabel: { fontSize: 11, color: 'rgba(255,255,255,0.6)' },
+  statNumber: { fontSize: fontScale(18), fontWeight: '800' },
+  statLabel: { fontSize: fontScale(11), color: 'rgba(255,255,255,0.6)' },
 
   // Toggle
   toggleContainer: {
     flexDirection: 'row',
-    margin: 12,
+    margin: spacing.sm + spacing.xs,
     backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 3,
+    borderRadius: scale(12),
+    padding: scale(3),
     borderWidth: 1,
     borderColor: '#E5E7EB',
   },
   toggleButton: {
     flex: 1,
     flexDirection: 'row',
-    paddingVertical: 10,
+    paddingVertical: scale(10),
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 10,
-    gap: 6,
+    borderRadius: scale(10),
+    gap: scale(6),
   },
   toggleActive: {
     backgroundColor: 'rgba(212,175,55,0.1)',
     borderWidth: 1,
     borderColor: 'rgba(212,175,55,0.2)',
   },
-  toggleText: { fontSize: 14, color: '#6B7280', fontWeight: '500' },
+  toggleText: { fontSize: fontScale(14), color: '#6B7280', fontWeight: '500' },
   toggleTextActive: { color: '#D4AF37', fontWeight: '700' },
 
   // List
-  listContent: { paddingBottom: 20 },
+  listContent: { paddingBottom: scale(20) },
 
   // Surah item
   surahItem: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#fff',
-    marginHorizontal: 12,
-    marginVertical: 4,
-    padding: 14,
-    borderRadius: 14,
+    marginHorizontal: spacing.sm + spacing.xs,
+    marginVertical: scale(4),
+    padding: scale(14),
+    borderRadius: scale(14),
     borderWidth: 1,
     borderColor: '#F3F4F6',
     shadowColor: '#000',
@@ -334,42 +335,43 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.03,
     shadowRadius: 4,
     elevation: 1,
+    minHeight: scale(48), // Minimum touch target
   },
   surahInfo: { flex: 1 },
-  surahNameFr: { fontSize: 15, fontWeight: '600', color: '#0D2818' },
-  surahMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 },
+  surahNameFr: { fontSize: fontScale(15), fontWeight: '600', color: '#0D2818' },
+  surahMetaRow: { flexDirection: 'row', alignItems: 'center', gap: scale(8), marginTop: scale(4) },
   statusPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 10,
-    gap: 4,
+    paddingHorizontal: scale(8),
+    paddingVertical: scale(2),
+    borderRadius: scale(10),
+    gap: scale(4),
   },
-  statusDot: { width: 6, height: 6, borderRadius: 3 },
-  statusText: { fontSize: 11, fontWeight: '600' },
-  surahMeta: { fontSize: 12, color: '#9CA3AF' },
-  surahRight: { alignItems: 'flex-end', gap: 4 },
-  surahNameAr: { fontSize: 20, color: '#0D2818', fontWeight: '600' },
+  statusDot: { width: scale(6), height: scale(6), borderRadius: scale(3) },
+  statusText: { fontSize: fontScale(11), fontWeight: '600' },
+  surahMeta: { fontSize: fontScale(12), color: '#9CA3AF' },
+  surahRight: { alignItems: 'flex-end', gap: scale(4) },
+  surahNameAr: { fontSize: fontScale(20), color: '#0D2818', fontWeight: '600' },
 
   // Juz
-  juzSection: { marginTop: 8 },
+  juzSection: { marginTop: spacing.sm },
   juzHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginHorizontal: 16,
-    marginBottom: 8,
-    gap: 10,
+    marginHorizontal: spacing.md,
+    marginBottom: spacing.sm,
+    gap: scale(10),
   },
   juzBadge: {
-    width: 28,
-    height: 28,
-    borderRadius: 6,
+    width: scale(28),
+    height: scale(28),
+    borderRadius: scale(6),
     backgroundColor: '#0D2818',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  juzBadgeText: { fontSize: 12, fontWeight: '700', color: '#D4AF37' },
-  juzTitle: { fontSize: 16, fontWeight: '700', color: '#0D2818' },
+  juzBadgeText: { fontSize: fontScale(12), fontWeight: '700', color: '#D4AF37' },
+  juzTitle: { fontSize: fontScale(16), fontWeight: '700', color: '#0D2818' },
   juzLine: { flex: 1, height: 1, backgroundColor: 'rgba(212,175,55,0.2)' },
 });

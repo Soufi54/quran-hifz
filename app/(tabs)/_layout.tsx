@@ -1,8 +1,12 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet, Platform } from 'react-native';
+import { scale, fontScale } from '../../lib/responsive';
 
 export default function TabsLayout() {
+  const tabBarHeight = Platform.OS === 'ios' ? scale(64) : scale(60);
+  const iconSize = scale(24);
+
   return (
     <Tabs
       screenOptions={{
@@ -12,9 +16,9 @@ export default function TabsLayout() {
           backgroundColor: '#0D2818',
           borderTopColor: 'rgba(212,175,55,0.15)',
           borderTopWidth: 1,
-          paddingBottom: 6,
-          paddingTop: 6,
-          height: 64,
+          paddingBottom: Platform.OS === 'ios' ? scale(6) : scale(6),
+          paddingTop: scale(6),
+          height: tabBarHeight,
           elevation: 8,
           shadowColor: '#000',
           shadowOffset: { width: 0, height: -4 },
@@ -22,9 +26,9 @@ export default function TabsLayout() {
           shadowRadius: 8,
         },
         tabBarLabelStyle: {
-          fontSize: 11,
+          fontSize: fontScale(11),
           fontWeight: '600',
-          marginTop: 2,
+          marginTop: scale(2),
         },
         headerStyle: {
           backgroundColor: '#0D2818',
@@ -36,7 +40,7 @@ export default function TabsLayout() {
         headerTintColor: '#D4AF37',
         headerTitleStyle: {
           fontWeight: '700',
-          fontSize: 18,
+          fontSize: fontScale(18),
           color: '#fff',
         },
       }}
@@ -47,7 +51,7 @@ export default function TabsLayout() {
           title: 'Challenge',
           tabBarIcon: ({ color, focused }) => (
             <View style={focused ? styles.activeIconContainer : undefined}>
-              <Ionicons name={focused ? 'star' : 'star-outline'} size={24} color={color} />
+              <Ionicons name={focused ? 'star' : 'star-outline'} size={iconSize} color={color} />
             </View>
           ),
         }}
@@ -58,7 +62,7 @@ export default function TabsLayout() {
           title: 'Sourates',
           tabBarIcon: ({ color, focused }) => (
             <View style={focused ? styles.activeIconContainer : undefined}>
-              <Ionicons name={focused ? 'book' : 'book-outline'} size={24} color={color} />
+              <Ionicons name={focused ? 'book' : 'book-outline'} size={iconSize} color={color} />
             </View>
           ),
         }}
@@ -69,7 +73,7 @@ export default function TabsLayout() {
           title: 'Progression',
           tabBarIcon: ({ color, focused }) => (
             <View style={focused ? styles.activeIconContainer : undefined}>
-              <Ionicons name={focused ? 'trending-up' : 'trending-up-outline' as any} size={24} color={color} />
+              <Ionicons name={focused ? 'trending-up' : 'trending-up-outline' as any} size={iconSize} color={color} />
             </View>
           ),
         }}
@@ -80,7 +84,7 @@ export default function TabsLayout() {
           title: 'Profil',
           tabBarIcon: ({ color, focused }) => (
             <View style={focused ? styles.activeIconContainer : undefined}>
-              <Ionicons name={focused ? 'person' : 'person-outline'} size={24} color={color} />
+              <Ionicons name={focused ? 'person' : 'person-outline'} size={iconSize} color={color} />
             </View>
           ),
         }}
@@ -92,8 +96,8 @@ export default function TabsLayout() {
 const styles = StyleSheet.create({
   activeIconContainer: {
     backgroundColor: 'rgba(212,175,55,0.15)',
-    borderRadius: 12,
-    padding: 4,
-    paddingHorizontal: 12,
+    borderRadius: scale(12),
+    padding: scale(4),
+    paddingHorizontal: scale(12),
   },
 });

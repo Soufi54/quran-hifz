@@ -7,6 +7,7 @@ import { Audio } from 'expo-av';
 import { getSurah, getPageData, getFirstPageOfSurah, getLastPageOfSurah, getAudioUrl } from '../../lib/quran';
 import { PageData } from '../../types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { scale, fontScale, spacing, SCREEN } from '../../lib/responsive';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -885,14 +886,14 @@ const styles = StyleSheet.create({
   pager: { flex: 1 },
   page: { flex: 1, backgroundColor: COLORS.parchment },
   pageContent: {
-    paddingHorizontal: 6,
-    paddingBottom: 20,
-    paddingTop: 8,
+    paddingHorizontal: scale(6),
+    paddingBottom: scale(20),
+    paddingTop: scale(8),
   },
 
   // Header actions
-  headerActions: { flexDirection: 'row', gap: 16, marginRight: 8 },
-  headerBtn: { padding: 6 },
+  headerActions: { flexDirection: 'row', gap: spacing.md, marginRight: spacing.sm },
+  headerBtn: { padding: scale(6), minWidth: scale(44), minHeight: scale(44), justifyContent: 'center', alignItems: 'center' },
 
   // ======= MUSHAF FRAME (Islamic border) =======
   mushafFrame: {
@@ -975,8 +976,8 @@ const styles = StyleSheet.create({
   pageHeaderLeft: { flex: 1, alignItems: 'flex-start' },
   pageHeaderRight: { flex: 1, alignItems: 'flex-end' },
   juzBadge: { fontSize: 14, color: COLORS.mediumGreen, fontWeight: '600' },
-  surahHeaderText: { fontSize: 22, color: COLORS.darkGreen, fontWeight: '700' },
-  pageNumberHeader: { fontSize: 14, color: '#8B7355', fontWeight: '500' },
+  surahHeaderText: { fontSize: fontScale(22), color: COLORS.darkGreen, fontWeight: '700' },
+  pageNumberHeader: { fontSize: fontScale(14), color: '#8B7355', fontWeight: '500' },
 
   // ======= BISMILLAH - Calligraphic =======
   bismillahContainer: {
@@ -1004,10 +1005,10 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   bismillah: {
-    fontSize: 28,
+    fontSize: fontScale(28),
     textAlign: 'center',
     color: COLORS.darkGreen,
-    lineHeight: 50,
+    lineHeight: fontScale(50),
     fontWeight: '500',
   },
 
@@ -1048,9 +1049,9 @@ const styles = StyleSheet.create({
       },
     }),
   },
-  surahTitleArabic: { fontSize: 32, fontWeight: '700', color: COLORS.darkGreen, marginBottom: 6 },
-  surahTitleFrench: { fontSize: 17, color: '#374151', fontWeight: '500' },
-  surahTitleMeta: { fontSize: 13, color: '#8B7355', marginTop: 6 },
+  surahTitleArabic: { fontSize: fontScale(32), fontWeight: '700', color: COLORS.darkGreen, marginBottom: scale(6) },
+  surahTitleFrench: { fontSize: fontScale(17), color: '#374151', fontWeight: '500' },
+  surahTitleMeta: { fontSize: fontScale(13), color: '#8B7355', marginTop: scale(6) },
 
   // ======= AYAHS - Mushaf Style =======
   ayahsContainer: { paddingHorizontal: 2 },
@@ -1068,8 +1069,8 @@ const styles = StyleSheet.create({
   },
   ayahTouchable: { paddingVertical: 2 },
   ayahText: {
-    fontSize: 26,
-    lineHeight: 56,
+    fontSize: fontScale(26),
+    lineHeight: fontScale(56),
     color: COLORS.textPrimary,
     textAlign: 'right',
     writingDirection: 'rtl',
@@ -1123,9 +1124,9 @@ const styles = StyleSheet.create({
     opacity: 0.4,
   },
   translationText: {
-    fontSize: 14,
+    fontSize: fontScale(14),
     color: COLORS.textSecondary,
-    lineHeight: 22,
+    lineHeight: fontScale(22),
     flex: 1,
     fontStyle: 'italic',
   },
@@ -1143,9 +1144,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: COLORS.darkGreen,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    gap: 10,
+    paddingVertical: scale(10),
+    paddingHorizontal: scale(14),
+    paddingBottom: Platform.OS === 'ios' ? scale(10) : scale(10),
+    gap: scale(10),
     borderTopWidth: 1,
     borderTopColor: 'rgba(212,175,55,0.25)',
     ...Platform.select({
@@ -1161,9 +1163,9 @@ const styles = StyleSheet.create({
     }),
   },
   playButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: scale(50),
+    height: scale(50),
+    borderRadius: scale(25),
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
@@ -1295,8 +1297,8 @@ const styles = StyleSheet.create({
     color: COLORS.gold,
     opacity: 0.7,
   },
-  tartilSurahName: { fontSize: 30, fontWeight: '700', color: COLORS.darkGreen, marginVertical: 6 },
-  tartilSurahSubtitle: { fontSize: 14, color: COLORS.textSecondary, marginTop: 2 },
+  tartilSurahName: { fontSize: fontScale(30), fontWeight: '700', color: COLORS.darkGreen, marginVertical: scale(6) },
+  tartilSurahSubtitle: { fontSize: fontScale(14), color: COLORS.textSecondary, marginTop: scale(2) },
 
   // Tartil bismillah
   tartilBismillah: {
@@ -1305,9 +1307,9 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   tartilBismillahText: {
-    fontSize: 24,
+    fontSize: fontScale(24),
     color: COLORS.darkGreen,
-    lineHeight: 44,
+    lineHeight: fontScale(44),
     opacity: 0.7,
   },
 
@@ -1464,8 +1466,8 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   tartilAyahText: {
-    fontSize: 24,
-    lineHeight: 50,
+    fontSize: fontScale(24),
+    lineHeight: fontScale(50),
     textAlign: 'right',
     writingDirection: 'rtl',
     color: COLORS.textPrimary,
@@ -1559,9 +1561,9 @@ const styles = StyleSheet.create({
     }),
   },
   tartilScoreCircle: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
+    width: scale(90),
+    height: scale(90),
+    borderRadius: scale(45),
     backgroundColor: COLORS.goldFaint,
     borderWidth: 3,
     borderColor: COLORS.gold,
@@ -1570,7 +1572,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   tartilScorePercent: {
-    fontSize: 28,
+    fontSize: fontScale(28),
     fontWeight: '800',
     color: COLORS.darkGreen,
   },
@@ -1580,7 +1582,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginTop: -2,
   },
-  tartilSummaryTitle: { fontSize: 22, fontWeight: '700', color: COLORS.darkGreen, marginBottom: 20 },
+  tartilSummaryTitle: { fontSize: fontScale(22), fontWeight: '700', color: COLORS.darkGreen, marginBottom: scale(20) },
   tartilSummaryStats: { flexDirection: 'row', gap: 14, marginBottom: 18 },
   tartilSummaryStat: {
     alignItems: 'center',
@@ -1589,7 +1591,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     minWidth: 85,
   },
-  tartilSummaryNumber: { fontSize: 26, fontWeight: '800', marginTop: 6 },
+  tartilSummaryNumber: { fontSize: fontScale(26), fontWeight: '800', marginTop: scale(6) },
   tartilSummaryLabel: { fontSize: 12, color: COLORS.textSecondary, marginTop: 3, fontWeight: '500' },
   tartilScoreBar: { flexDirection: 'row', gap: 5, marginVertical: 16 },
   tartilScoreDot: {
@@ -1645,8 +1647,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: COLORS.darkGreen,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingVertical: scale(12),
+    paddingHorizontal: spacing.md,
+    paddingBottom: Platform.OS === 'ios' ? scale(12) : scale(12),
     borderTopWidth: 1,
     borderTopColor: 'rgba(212,175,55,0.2)',
     ...Platform.select({
