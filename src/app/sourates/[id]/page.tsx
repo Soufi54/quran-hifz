@@ -2,10 +2,11 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Play, Pause, Languages, GraduationCap, ChevronLeft, ChevronRight, EyeOff, Music, BookOpen } from 'lucide-react';
+import { ArrowLeft, Play, Pause, Languages, GraduationCap, ChevronLeft, ChevronRight, EyeOff, Music, BookOpen, Image } from 'lucide-react';
 import { getSurah, getPageData, getFirstPageOfSurah, getAudioUrl } from '../../../lib/quran';
 import { setSurahStatus, getSurahProgress, setReviewDate } from '../../../lib/storage';
 import TafsirButton from '../../../components/TafsirButton';
+import MushafImagePage from '../../../components/MushafImagePage';
 // Types pour les donnees QCF
 interface QcfWord {
   c: string;  // code glyph PUA
@@ -190,6 +191,7 @@ export default function SurahPage() {
 
   const [currentPage, setCurrentPage] = useState(1);
   const [showTranslation, setShowTranslation] = useState(false);
+  const [showImage, setShowImage] = useState(true); // par defaut : image tajweed
   const [isPlaying, setIsPlaying] = useState(false);
   const [showRecitateur, setShowRecitateur] = useState(false);
   const [recitateur, setRecitateur] = useState('Alafasy_128kbps');
@@ -429,7 +431,13 @@ export default function SurahPage() {
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
-        {showTranslation ? renderTranslation() : renderQcf()}
+        {showTranslation ? renderTranslation() : showImage ? (
+          <MushafImagePage
+            pageNumber={currentPage}
+            qcfPage={qcfPage}
+            playingAyahKey={playingAyahKey}
+          />
+        ) : renderQcf()}
       </div>
 
       {/* Barre du bas */}
@@ -440,12 +448,20 @@ export default function SurahPage() {
           <span className="mt-0.5">{isPlaying ? 'Pause' : 'Ecouter'}</span>
         </button>
 
-        <button onClick={() => setShowTranslation(!showTranslation)}
+        <button onClick={() => { setShowTranslation(!showTranslation); if (!showTranslation) setShowImage(false); }}
           className={`flex flex-col items-center text-[10px] cursor-pointer transition-colors duration-200 min-w-[44px] ${
             showTranslation ? 'text-emerald-700 font-semibold' : 'text-gray-400 hover:text-gray-600'
           }`}>
           <Languages size={20} />
           <span className="mt-0.5">Traduction</span>
+        </button>
+
+        <button onClick={() => { setShowImage(!showImage); if (showImage) setShowTranslation(false); }}
+          className={`flex flex-col items-center text-[10px] cursor-pointer transition-colors duration-200 min-w-[44px] ${
+            showImage ? 'text-emerald-700 font-semibold' : 'text-gray-400 hover:text-gray-600'
+          }`}>
+          <Image size={20} />
+          <span className="mt-0.5">Tajweed</span>
         </button>
 
         <button onClick={() => setShowRecitateur(!showRecitateur)}
