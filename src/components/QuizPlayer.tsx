@@ -168,14 +168,15 @@ export default function QuizPlayer({ questions, onComplete, onLoseLife, lives }:
     const qcfPage = qcfData ? qcfData[String(actualPage)] : undefined;
     const highlightLines = getVerseLines(qcfPage, q.surahNumber, q.ayahNumber);
 
-    // Zone de texte dans l'image mushaf classique (approximation)
-    const TEXT_ZONE = { top: 0.02, bottom: 0.98 };
+    // Image mushaf classique : 1024x1656, texte y=50 a y=1620
+    const IMG_H = 1656;
+    const TEXT_TOP = 50;
+    const TEXT_BOTTOM = 1620;
     const TOTAL_LINES = 15;
-    const lineHeight = (TEXT_ZONE.bottom - TEXT_ZONE.top) / TOTAL_LINES;
+    const LINE_H = (TEXT_BOTTOM - TEXT_TOP) / TOTAL_LINES;
 
     return (
       <div className="flex flex-col items-center min-h-[70vh]" onClick={goNext} style={{ cursor: 'pointer' }}>
-        {/* Nom sourate */}
         <div className="text-center py-2">
           <p className="text-lg font-bold text-emerald-900" style={{ fontFamily: "'Noto Naskh Arabic', serif" }}>
             {surah?.nameArabic}
@@ -187,29 +188,33 @@ export default function QuizPlayer({ questions, onComplete, onLoseLife, lives }:
           </p>
         </div>
 
-        {/* Image mushaf avec verset surligne */}
         <div className="w-full flex-1 relative rounded-xl overflow-hidden border border-gray-200">
           <img // eslint-disable-line @next/next/no-img-element
             src={getMushafUrl(actualPage)}
             alt={`Page ${actualPage}`}
             className="w-full h-auto"
           />
-          {/* Overlay surlignage des lignes du verset */}
-          {highlightLines.map(lineNum => (
-            <div
-              key={lineNum}
-              className="absolute"
-              style={{
-                top: `${(TEXT_ZONE.top + (lineNum - 1) * lineHeight) * 100}%`,
-                left: '3%',
-                width: '94%',
-                height: `${lineHeight * 100}%`,
-                backgroundColor: wasCorrect ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.15)',
-                borderRadius: '4px',
-                pointerEvents: 'none',
-              }}
-            />
-          ))}
+          {highlightLines.map(lineNum => {
+            // Position en % de la hauteur de l'image
+            const topPx = TEXT_TOP + (lineNum - 1) * LINE_H;
+            const topPct = (topPx / IMG_H) * 100;
+            const hPct = (LINE_H / IMG_H) * 100;
+            return (
+              <div
+                key={lineNum}
+                className="absolute"
+                style={{
+                  top: `${topPct}%`,
+                  left: '2%',
+                  width: '96%',
+                  height: `${hPct}%`,
+                  backgroundColor: wasCorrect ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.15)',
+                  borderRadius: '4px',
+                  pointerEvents: 'none',
+                }}
+              />
+            );
+          })}
         </div>
 
         <p className="text-xs text-gray-300 mt-2 mb-1">Appuie pour continuer</p>

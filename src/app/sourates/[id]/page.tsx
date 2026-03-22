@@ -191,7 +191,7 @@ export default function SurahPage() {
 
   const [currentPage, setCurrentPage] = useState(1);
   const [showTranslation, setShowTranslation] = useState(false);
-  const [showImage, setShowImage] = useState(false); // QCF par defaut, image en option
+  const [showImage, setShowImage] = useState(true); // mushaf classique par defaut
   const [isPlaying, setIsPlaying] = useState(false);
   const [showRecitateur, setShowRecitateur] = useState(false);
   const [recitateur, setRecitateur] = useState('Alafasy_128kbps');

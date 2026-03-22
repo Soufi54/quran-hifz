@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 
 interface QcfWord {
   c: string;
@@ -13,8 +13,8 @@ type QcfPageData = Record<string, QcfWord[]>;
 
 interface MushafImagePageProps {
   pageNumber: number;
-  qcfPage: QcfPageData | null; // donnees QCF pour le mapping lignes/versets
-  playingAyahKey: string | null; // "surah:ayah" en cours de lecture
+  qcfPage: QcfPageData | null;
+  playingAyahKey: string | null;
 }
 
 function getMushafImageUrl(pageNumber: number): string {
@@ -22,33 +22,68 @@ function getMushafImageUrl(pageNumber: number): string {
   return `https://quran.islam-db.com/public/data/pages/quranpages_1024/images/page${padded}.png`;
 }
 
+// Image mushaf classique : 1024x1656
+// Zone de texte mesuree : premiere ligne y≈50, derniere ligne y≈1620
+// En pourcentage : top=3%, bottom=97.8%
+const IMG_WIDTH = 1024;
+const IMG_HEIGHT = 1656;
+const TEXT_TOP_PX = 50;
+const TEXT_BOTTOM_PX = 1620;
+const TOTAL_LINES = 15;
+const LINE_HEIGHT_PX = (TEXT_BOTTOM_PX - TEXT_TOP_PX) / TOTAL_LINES;
+
 export default function MushafImagePage({ pageNumber, qcfPage, playingAyahKey }: MushafImagePageProps) {
+  const imgRef = useRef<HTMLImageElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [imageLoaded, setImageLoaded] = useState(false);
-  const [imgDimensions, setImgDimensions] = useState({ width: 0, height: 0 });
+  const [imageRect, setImageRect] = useState<{ top: number; left: number; width: number; height: number } | null>(null);
 
-  // Zone de texte dans l'image (approximation pour EasyQuran tajweed)
-  // L'image fait ~776x1053, la zone de texte est environ :
-  // top: 8%, bottom: 92%, left: 5%, right: 95%
-  const TEXT_ZONE = { top: 0.02, bottom: 0.98, left: 0.03, right: 0.97 };
+  // Quand l'image charge ou le conteneur resize, calculer la position reelle de l'image
+  const updateImageRect = () => {
+    if (!imgRef.current || !containerRef.current) return;
+    const container = containerRef.current;
 
-  // Calculer les lignes occupees par le verset en cours
+    // L'image est en object-fit: contain — calculer sa position reelle
+    const containerW = container.clientWidth;
+    const containerH = container.clientHeight;
+    const imgRatio = IMG_WIDTH / IMG_HEIGHT;
+    const containerRatio = containerW / containerH;
+
+    let renderW: number, renderH: number, offsetX: number, offsetY: number;
+    if (containerRatio > imgRatio) {
+      // Conteneur plus large que l'image — barres laterales
+      renderH = containerH;
+      renderW = containerH * imgRatio;
+      offsetX = (containerW - renderW) / 2;
+      offsetY = 0;
+    } else {
+      // Conteneur plus haut que l'image — barres haut/bas
+      renderW = containerW;
+      renderH = containerW / imgRatio;
+      offsetX = 0;
+      offsetY = (containerH - renderH) / 2;
+    }
+
+    setImageRect({ top: offsetY, left: offsetX, width: renderW, height: renderH });
+  };
+
+  useEffect(() => {
+    window.addEventListener('resize', updateImageRect);
+    return () => window.removeEventListener('resize', updateImageRect);
+  }, []);
+
+  // Lignes du verset en cours
   const getHighlightLines = (): number[] => {
     if (!playingAyahKey || !qcfPage) return [];
     const lines: number[] = [];
-    const lineNumbers = Object.keys(qcfPage).map(Number).sort((a, b) => a - b);
-
-    for (const lineNum of lineNumbers) {
-      const words = qcfPage[String(lineNum)];
+    for (const [lineNum, words] of Object.entries(qcfPage)) {
       if (words.some(w => w.vk === playingAyahKey)) {
-        lines.push(lineNum);
+        lines.push(parseInt(lineNum));
       }
     }
-    return lines;
+    return lines.sort((a, b) => a - b);
   };
 
   const highlightLines = getHighlightLines();
-  const totalLines = 15; // mushaf standard = 15 lignes
 
   return (
     <div
@@ -56,54 +91,42 @@ export default function MushafImagePage({ pageNumber, qcfPage, playingAyahKey }:
       className="relative overflow-hidden"
       style={{ height: 'calc(100vh - 110px)' }}
     >
-      {/* Image du mushaf tajweed */}
       <img // eslint-disable-line @next/next/no-img-element
+        ref={imgRef}
         src={getMushafImageUrl(pageNumber)}
         alt={`Page ${pageNumber}`}
         className="w-full h-full object-contain"
-        onLoad={(e) => {
-          const img = e.target as HTMLImageElement;
-          setImgDimensions({ width: img.naturalWidth, height: img.naturalHeight });
-          setImageLoaded(true);
-        }}
-        style={{ display: imageLoaded ? 'block' : 'none' }}
+        onLoad={updateImageRect}
+        style={{ display: 'block' }}
       />
 
-      {/* Spinner pendant le chargement */}
-      {!imageLoaded && (
-        <div className="flex items-center justify-center h-full">
-          <div className="w-8 h-8 border-2 border-emerald-300 border-t-emerald-700 rounded-full animate-spin" />
-        </div>
-      )}
+      {/* Overlay surlignage */}
+      {imageRect && highlightLines.length > 0 && highlightLines.map(lineNum => {
+        // Position en pixels dans l'image originale
+        const lineTopPx = TEXT_TOP_PX + (lineNum - 1) * LINE_HEIGHT_PX;
+        // Convertir en position dans le conteneur
+        const scale = imageRect.height / IMG_HEIGHT;
+        const topInContainer = imageRect.top + lineTopPx * scale;
+        const heightInContainer = LINE_HEIGHT_PX * scale;
+        const leftInContainer = imageRect.left + 20 * scale;
+        const widthInContainer = imageRect.width - 40 * scale;
 
-      {/* Overlay de surlignage des ayat */}
-      {imageLoaded && highlightLines.length > 0 && imgDimensions.height > 0 && (
-        <>
-          {highlightLines.map(lineNum => {
-            // Calculer la position verticale de cette ligne
-            const textZoneHeight = TEXT_ZONE.bottom - TEXT_ZONE.top;
-            const lineHeight = textZoneHeight / totalLines;
-            // La ligne 1 commence en haut de la zone de texte
-            const lineTop = TEXT_ZONE.top + (lineNum - 1) * lineHeight;
-
-            return (
-              <div
-                key={lineNum}
-                className="absolute transition-all duration-300"
-                style={{
-                  top: `${lineTop * 100}%`,
-                  left: `${TEXT_ZONE.left * 100}%`,
-                  width: `${(TEXT_ZONE.right - TEXT_ZONE.left) * 100}%`,
-                  height: `${lineHeight * 100}%`,
-                  backgroundColor: 'rgba(16, 185, 129, 0.15)',
-                  borderRadius: '4px',
-                  pointerEvents: 'none',
-                }}
-              />
-            );
-          })}
-        </>
-      )}
+        return (
+          <div
+            key={lineNum}
+            className="absolute transition-all duration-300"
+            style={{
+              top: `${topInContainer}px`,
+              left: `${leftInContainer}px`,
+              width: `${widthInContainer}px`,
+              height: `${heightInContainer}px`,
+              backgroundColor: 'rgba(16, 185, 129, 0.18)',
+              borderRadius: '4px',
+              pointerEvents: 'none',
+            }}
+          />
+        );
+      })}
     </div>
   );
 }
