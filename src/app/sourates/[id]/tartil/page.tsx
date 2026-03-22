@@ -30,7 +30,13 @@ export default function TartilPage() {
   const [ayahSeparators, setAyahSeparators] = useState<Map<number, number>>(new Map());
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
-  const [errorFlash, setErrorFlash] = useState(false); // flash rouge quand erreur
+  const [errorFlash, setErrorFlash] = useState(false);
+  const [voiceStatus, setVoiceStatus] = useState<'idle' | 'listening' | 'receiving' | 'error'>('idle');
+  const [debugLog, setDebugLog] = useState<string[]>([]);
+
+  const addLog = (msg: string) => {
+    setDebugLog(prev => [...prev.slice(-6), `${new Date().toLocaleTimeString()} ${msg}`]);
+  };
 
   const activeRef = useRef(false);
   const recognitionRef = useRef<{ stop: () => void } | null>(null);
@@ -342,13 +348,15 @@ export default function TartilPage() {
     rec.interimResults = true; // Interim pour feedback temps reel + capter le debut
     recognitionRef.current = rec;
     setIsListening(true);
+    setVoiceStatus('listening');
+    addLog('Ecoute demarree (ar-SA)');
 
     let lastProcessedFinal = '';
 
     rec.onresult = (event) => {
       if (!activeRef.current) return;
+      setVoiceStatus('receiving');
 
-      // Construire le transcript complet (finals + interim courant)
       let finals = '';
       let interim = '';
       for (let i = 0; i < event.results.length; i++) {
@@ -403,8 +411,9 @@ export default function TartilPage() {
     };
 
     rec.onend = () => {
+      addLog('Recognition arretee, relance...');
+      setVoiceStatus('listening');
       if (activeRef.current) {
-        // Reset pour le nouveau segment
         fullTranscriptRef.current = '';
         processedUpToRef.current = 0;
         lastProcessedFinal = '';
@@ -412,19 +421,28 @@ export default function TartilPage() {
           try {
             rec.start();
             setIsListening(true);
-          } catch {}
+            addLog('Relancee OK');
+          } catch (e) { addLog('Relance echouee: ' + e); }
         }, 100); // 100ms au lieu de 200ms — moins de gap
       }
     };
 
     rec.onerror = (e) => {
+      addLog('Erreur: ' + e.error);
+      setVoiceStatus('error');
       if (e.error === 'not-allowed') {
         setMicError('Micro refuse. Va dans les parametres du navigateur.');
         cleanup();
         return;
       }
+      if (e.error === 'no-speech') {
+        addLog('Pas de voix detectee, relance...');
+      }
       if (activeRef.current) {
-        setTimeout(() => { try { rec.start(); } catch {} }, 200);
+        setTimeout(() => {
+          try { rec.start(); setVoiceStatus('listening'); addLog('Relancee apres erreur'); }
+          catch (err) { addLog('Relance echouee: ' + err); }
+        }, 200);
       }
     };
 
@@ -602,14 +620,35 @@ export default function TartilPage() {
           </div>
         ) : (
           <div>
-            {/* Transcript en direct — petit bandeau discret */}
-            {transcript && (
-              <div className="mb-3 p-2 rounded-lg bg-white/60 backdrop-blur-sm">
+            {/* Status vocal */}
+            <div className="mb-3 p-2 rounded-lg bg-white/80 border border-gray-200">
+              <div className="flex items-center gap-2 mb-1">
+                <div className={`w-3 h-3 rounded-full ${
+                  voiceStatus === 'receiving' ? 'bg-emerald-500 animate-pulse' :
+                  voiceStatus === 'listening' ? 'bg-amber-400 animate-pulse' :
+                  voiceStatus === 'error' ? 'bg-red-500' :
+                  'bg-gray-300'
+                }`} />
+                <span className="text-xs text-gray-500">
+                  {voiceStatus === 'receiving' ? 'Voix detectee' :
+                   voiceStatus === 'listening' ? 'En attente de voix...' :
+                   voiceStatus === 'error' ? 'Erreur micro' :
+                   'Inactif'}
+                </span>
+              </div>
+              {transcript && (
                 <p className="text-xs text-gray-400 text-right" dir="rtl" style={{ fontFamily: "'Noto Naskh Arabic', serif" }}>
                   {transcript.split(' ').slice(-8).join(' ')}
                 </p>
-              </div>
-            )}
+              )}
+              {debugLog.length > 0 && (
+                <div className="mt-1 border-t border-gray-100 pt-1">
+                  {debugLog.slice(-3).map((log, i) => (
+                    <p key={i} className="text-[10px] text-gray-300 font-mono">{log}</p>
+                  ))}
+                </div>
+              )}
+            </div>
 
             {/* Page Coran avec mots caches */}
             <div className="rounded-2xl bg-white p-5 min-h-[55vh]" style={{ boxShadow: 'var(--shadow-clay)' }}>
