@@ -128,12 +128,12 @@ export default function QuizPlayer({ questions, onComplete, onLoseLife, lives }:
 
   const doGoNext = (wasCorrect: boolean) => {
     setShowSuccess(false);
+    setShowContext(false);
     if (currentIndex < questions.length - 1) {
       setCurrentIndex(prev => prev + 1);
       setAnswered(false);
       setSelectedIndex(null);
       setLastPoints(null);
-      setShowContext(true); // montrer le contexte de la prochaine question
       questionStartTime.current = Date.now();
     } else {
       const finalScore = wasCorrect ? score + 1 : score;

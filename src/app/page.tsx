@@ -24,10 +24,7 @@ export default function ChallengePage() {
     setLives(getLives());
     updateSurahDeclines(); // Verifie les sourates en declin
 
-    if (isChallengeCompletedToday()) {
-      setState('done');
-      return;
-    }
+    // Ne plus bloquer si deja fait — l'utilisateur peut refaire des challenges
 
     const learned = getLearnedSurahs();
     if (learned.length === 0) {
@@ -128,6 +125,20 @@ export default function ChallengePage() {
               <p className="text-gray-500 mt-3 text-sm">Reviens demain pour continuer ton streak</p>
             </>
           )}
+          <button
+            onClick={() => {
+              const learned = getLearnedSurahs();
+              if (learned.length > 0) {
+                const q = generateDailyChallenge(learned, 5);
+                setQuestions(q);
+                setResult(null);
+                setState('playing');
+              }
+            }}
+            className="clay-button py-3 px-8 mt-6"
+          >
+            Nouveau challenge
+          </button>
         </div>
       )}
 
