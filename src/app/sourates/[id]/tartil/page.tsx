@@ -344,9 +344,9 @@ export default function TartilPage() {
     wordsRef.current = resetWords;
 
     const rec = new Ctor();
-    rec.lang = 'ar-SA';
-    rec.continuous = true;
-    rec.interimResults = true; // Interim pour feedback temps reel + capter le debut
+    rec.lang = 'ar'; // 'ar' plus stable que 'ar-SA' sur Chrome
+    rec.continuous = false; // mode one-shot — plus stable, on relance manuellement
+    rec.interimResults = true;
     recognitionRef.current = rec;
     setIsListening(true);
     setVoiceStatus('listening');
