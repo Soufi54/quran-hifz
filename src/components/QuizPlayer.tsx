@@ -169,7 +169,7 @@ export default function QuizPlayer({ questions, onComplete, onLoseLife, lives }:
     const highlightLines = getVerseLines(qcfPage, q.surahNumber, q.ayahNumber);
 
     // Zone de texte dans l'image mushaf classique (approximation)
-    const TEXT_ZONE = { top: 0.06, bottom: 0.94 };
+    const TEXT_ZONE = { top: 0.02, bottom: 0.98 };
     const TOTAL_LINES = 15;
     const lineHeight = (TEXT_ZONE.bottom - TEXT_ZONE.top) / TOTAL_LINES;
 

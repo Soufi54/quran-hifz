@@ -30,7 +30,7 @@ export default function MushafImagePage({ pageNumber, qcfPage, playingAyahKey }:
   // Zone de texte dans l'image (approximation pour EasyQuran tajweed)
   // L'image fait ~776x1053, la zone de texte est environ :
   // top: 8%, bottom: 92%, left: 5%, right: 95%
-  const TEXT_ZONE = { top: 0.08, bottom: 0.92, left: 0.05, right: 0.95 };
+  const TEXT_ZONE = { top: 0.02, bottom: 0.98, left: 0.03, right: 0.97 };
 
   // Calculer les lignes occupees par le verset en cours
   const getHighlightLines = (): number[] => {
