@@ -7,7 +7,7 @@ import QuizPlayer from '../components/QuizPlayer';
 import { generateDailyChallenge } from '../lib/quiz-generator';
 import {
   getStreak, updateStreak, addXP, getLives, loseLive,
-  getLearnedSurahs, isChallengeCompletedToday, updateSurahDeclines,
+  getLearnedSurahs, updateSurahDeclines,
 } from '../lib/storage';
 import { QuizQuestion } from '../types';
 
