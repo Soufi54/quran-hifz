@@ -162,11 +162,12 @@ function MushafPage({
               }}
             >
               {words.map((word, wi) => (
-                <span
-                  key={wi}
-                  dangerouslySetInnerHTML={{ __html: word.c }}
-                  className={playingAyahKey && word.vk === playingAyahKey ? 'mushaf-highlight' : ''}
-                />
+                <span key={wi}>
+                  <span
+                    dangerouslySetInnerHTML={{ __html: word.c }}
+                    className={playingAyahKey && word.vk === playingAyahKey ? 'mushaf-highlight' : ''}
+                  />{' '}
+                </span>
               ))}
             </div>
           </div>
