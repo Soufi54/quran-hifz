@@ -5,6 +5,8 @@ import { Ionicons } from '@expo/vector-icons';
 import PagerView from '../../components/PagerView';
 import { Audio } from 'expo-av';
 import { getSurah, getPageData, getFirstPageOfSurah, getLastPageOfSurah, getAudioUrl } from '../../lib/quran';
+import { getSurahPages, getAyahFromLocation, getSurahFromLocation } from '../../lib/mushaf';
+import MushafPageView from '../../components/MushafPageView';
 import { PageData } from '../../types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { scale, fontScale, spacing, SCREEN } from '../../lib/responsive';
@@ -78,6 +80,11 @@ export default function SurahScreen() {
   const [tafsirLoading, setTafsirLoading] = useState(false);
   const [tafsirAyahInfo, setTafsirAyahInfo] = useState({ surah: 0, ayah: 0 });
 
+  // Mode Mushaf (disposition Mushaf Madina fidèle pour mémoire visuelle)
+  const [mushafMode, setMushafMode] = useState(true);
+  const [mushafPages, setMushafPages] = useState<number[]>([]);
+  const [mushafActiveAyah, setMushafActiveAyah] = useState<{ surah: number; ayah: number } | null>(null);
+
   // Mode Tartil
   const [tartilMode, setTartilMode] = useState(false);
   const [tartilVerses, setTartilVerses] = useState<TartilVerse[]>([]);
@@ -103,6 +110,9 @@ export default function SurahScreen() {
       pageList.push(getPageData(p));
     }
     setPages(pageList);
+    // Charger les pages Mushaf pour cette sourate
+    const mPages = getSurahPages(surahNumber);
+    setMushafPages(mPages);
     markAsLearning();
 
     // Load user settings
@@ -230,6 +240,33 @@ export default function SurahScreen() {
     soundRef.current = null;
     setIsPlaying(false);
     setActiveAyahIndex(-1);
+  };
+
+  // ---- Lecture audio d'un seul verset (pour mode Mushaf) ----
+  const playAyahAudio = async (surahNum: number, ayahNum: number) => {
+    try {
+      if (soundRef.current) {
+        await soundRef.current.stopAsync();
+        await soundRef.current.unloadAsync();
+        soundRef.current = null;
+      }
+      setMushafActiveAyah({ surah: surahNum, ayah: ayahNum });
+      const subfolder = reciter?.subfolder || 'Alafasy_128kbps';
+      const url = getAudioUrl(surahNum, ayahNum, subfolder);
+      const { sound } = await Audio.Sound.createAsync({ uri: url });
+      soundRef.current = sound;
+      await sound.playAsync();
+      sound.setOnPlaybackStatusUpdate((status) => {
+        if ('didJustFinish' in status && status.didJustFinish) {
+          setMushafActiveAyah(null);
+          sound.unloadAsync();
+          soundRef.current = null;
+        }
+      });
+    } catch (e) {
+      console.error('Erreur audio ayah:', e);
+      setMushafActiveAyah(null);
+    }
   };
 
   // ---- Mode Tartil ----
@@ -685,6 +722,9 @@ export default function SurahScreen() {
           headerTintColor: COLORS.gold,
           headerRight: () => (
             <View style={styles.headerActions}>
+              <TouchableOpacity onPress={() => setMushafMode(!mushafMode)} style={styles.headerBtn}>
+                <Ionicons name="book-outline" size={22} color={mushafMode ? COLORS.gold : 'rgba(212,175,55,0.4)'} />
+              </TouchableOpacity>
               <TouchableOpacity onPress={enterTartilMode} style={styles.headerBtn}>
                 <Ionicons name="mic-outline" size={22} color={COLORS.gold} />
               </TouchableOpacity>
@@ -696,7 +736,39 @@ export default function SurahScreen() {
         }}
       />
 
-      {/* Mushaf pages - Tarteel Style */}
+      {/* Mode Mushaf : disposition fidèle au Mushaf Madina (mémoire visuelle) */}
+      {mushafMode && mushafPages.length > 0 ? (
+        <PagerView
+          ref={pagerRef}
+          style={styles.pager}
+          initialPage={0}
+          onPageSelected={e => {
+            setCurrentPage(e.nativeEvent.position);
+            setActiveAyahIndex(-1);
+          }}
+        >
+          {mushafPages.map((pageNum) => (
+            <View key={`mushaf-${pageNum}`} style={{ flex: 1 }}>
+              <MushafPageView
+                pageNumber={pageNum}
+                activeAyah={mushafActiveAyah}
+                onAyahPress={(surah, ayah) => {
+                  // Jouer l'audio du verset
+                  if (reciter) {
+                    playAyahAudio(surah, ayah);
+                  }
+                }}
+                onAyahLongPress={(surah, ayah) => {
+                  // Ouvrir le tafsir
+                  openTafsir(surah, ayah);
+                }}
+              />
+            </View>
+          ))}
+        </PagerView>
+      ) : (
+
+      /* Mushaf pages - Tarteel Style (mode classique) */
       <PagerView
         ref={pagerRef}
         style={styles.pager}
@@ -858,6 +930,7 @@ export default function SurahScreen() {
           </ScrollView>
         ))}
       </PagerView>
+      )}
 
       {/* Bottom bar - Premium Tarteel style */}
       <View style={styles.bottomBar}>
