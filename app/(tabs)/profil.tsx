@@ -1,20 +1,53 @@
 import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView, Animated } from 'react-native';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Ionicons } from '@expo/vector-icons';
+import { router, useFocusEffect } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getMosqueLevel, getStreakMultiplier } from '../../lib/scoring';
 import { scale, fontScale, spacing } from '../../lib/responsive';
+import { getSelectedReciterId, getSelectedTranslationId, getSelectedTafsirId } from '../../lib/settings';
+import { getReciterById } from '../../lib/reciters';
+import { getTranslationById, getTafsirById } from '../../lib/translations';
 
 export default function ProfilScreen() {
   const [totalXP, setTotalXP] = useState(0);
   const [streak, setStreak] = useState(0);
   const [mastered, setMastered] = useState(0);
+  const [reciterName, setReciterName] = useState('Alafasy');
+  const [translationName, setTranslationName] = useState('Locale');
+  const [tafsirName, setTafsirName] = useState('Ibn Kathir');
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     loadStats();
+    loadSettings();
     Animated.timing(fadeAnim, { toValue: 1, duration: 400, useNativeDriver: true }).start();
   }, []);
+
+  // Refresh settings when screen is focused (after changing in settings screens)
+  useFocusEffect(
+    useCallback(() => {
+      loadSettings();
+    }, [])
+  );
+
+  const loadSettings = async () => {
+    try {
+      const recId = await getSelectedReciterId();
+      const reciter = getReciterById(recId);
+      if (reciter) setReciterName(reciter.name.split(' ').pop() || reciter.name);
+
+      const transId = await getSelectedTranslationId();
+      const trans = getTranslationById(transId);
+      if (trans) setTranslationName(trans.name);
+
+      const tafId = await getSelectedTafsirId();
+      const taf = getTafsirById(tafId);
+      if (taf) setTafsirName(taf.name);
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const loadStats = async () => {
     try {
@@ -134,20 +167,30 @@ export default function ProfilScreen() {
             <Ionicons name="chevron-forward" size={scale(18)} color="#D4AF37" />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
+          <TouchableOpacity style={styles.menuItem} activeOpacity={0.7} onPress={() => router.push('/settings/reciter')}>
             <View style={[styles.menuIcon, { backgroundColor: 'rgba(99,102,241,0.1)' }]}>
               <Ionicons name="musical-notes-outline" size={scale(20)} color="#6366F1" />
             </View>
             <Text style={styles.menuText}>Recitateur</Text>
-            <Text style={styles.menuValue}>Alafasy</Text>
+            <Text style={styles.menuValue}>{reciterName}</Text>
             <Ionicons name="chevron-forward" size={scale(18)} color="#D4AF37" />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
+          <TouchableOpacity style={styles.menuItem} activeOpacity={0.7} onPress={() => router.push('/settings/translation')}>
             <View style={[styles.menuIcon, { backgroundColor: 'rgba(249,115,22,0.1)' }]}>
-              <Ionicons name="book-outline" size={scale(20)} color="#F97316" />
+              <Ionicons name="language-outline" size={scale(20)} color="#F97316" />
             </View>
-            <Text style={styles.menuText}>Sourates connues</Text>
+            <Text style={styles.menuText}>Traduction</Text>
+            <Text style={styles.menuValue}>{translationName}</Text>
+            <Ionicons name="chevron-forward" size={scale(18)} color="#D4AF37" />
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.menuItem} activeOpacity={0.7} onPress={() => router.push('/settings/tafsir')}>
+            <View style={[styles.menuIcon, { backgroundColor: 'rgba(212,175,55,0.1)' }]}>
+              <Ionicons name="book-outline" size={scale(20)} color="#D4AF37" />
+            </View>
+            <Text style={styles.menuText}>Tafsir</Text>
+            <Text style={styles.menuValue}>{tafsirName}</Text>
             <Ionicons name="chevron-forward" size={scale(18)} color="#D4AF37" />
           </TouchableOpacity>
         </View>

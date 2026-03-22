@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions, Animated, Easing, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions, Animated, Easing, Platform, Modal, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, router, Stack } from 'expo-router';
 import { useState, useEffect, useRef } from 'react';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,6 +8,10 @@ import { getSurah, getPageData, getFirstPageOfSurah, getLastPageOfSurah, getAudi
 import { PageData } from '../../types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { scale, fontScale, spacing, SCREEN } from '../../lib/responsive';
+import { getSelectedReciterId, getSelectedTranslationId, getSelectedTafsirId } from '../../lib/settings';
+import { getReciterById, Reciter } from '../../lib/reciters';
+import { getTranslationById, getTafsirById, Translation, Tafsir } from '../../lib/translations';
+import { fetchSurahTranslation, fetchAyahTafsir } from '../../lib/quran-api';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -61,6 +65,19 @@ export default function SurahScreen() {
   const soundRef = useRef<Audio.Sound | null>(null);
   const pagerRef = useRef<PagerView>(null);
 
+  // Settings
+  const [reciter, setReciter] = useState<Reciter | null>(null);
+  const [translation, setTranslation] = useState<Translation | null>(null);
+  const [tafsir, setTafsir] = useState<Tafsir | null>(null);
+  const [customTranslations, setCustomTranslations] = useState<Record<number, string>>({});
+  const [isLoadingTranslation, setIsLoadingTranslation] = useState(false);
+
+  // Tafsir modal
+  const [tafsirModalVisible, setTafsirModalVisible] = useState(false);
+  const [tafsirText, setTafsirText] = useState('');
+  const [tafsirLoading, setTafsirLoading] = useState(false);
+  const [tafsirAyahInfo, setTafsirAyahInfo] = useState({ surah: 0, ayah: 0 });
+
   // Mode Tartil
   const [tartilMode, setTartilMode] = useState(false);
   const [tartilVerses, setTartilVerses] = useState<TartilVerse[]>([]);
@@ -87,6 +104,33 @@ export default function SurahScreen() {
     }
     setPages(pageList);
     markAsLearning();
+
+    // Load user settings
+    (async () => {
+      const recId = await getSelectedReciterId();
+      const rec = getReciterById(recId);
+      if (rec) setReciter(rec);
+
+      const transId = await getSelectedTranslationId();
+      const trans = getTranslationById(transId);
+      if (trans) setTranslation(trans);
+
+      const tafId = await getSelectedTafsirId();
+      const taf = getTafsirById(tafId);
+      if (taf) setTafsir(taf);
+
+      // Fetch custom translation if not local
+      if (trans && trans.source !== 'local') {
+        setIsLoadingTranslation(true);
+        try {
+          const transData = await fetchSurahTranslation(trans, surahNumber);
+          setCustomTranslations(transData);
+        } catch (e) {
+          console.error('Erreur chargement traduction:', e);
+        }
+        setIsLoadingTranslation(false);
+      }
+    })();
 
     // Animation d'entree
     Animated.parallel([
@@ -166,7 +210,8 @@ export default function SurahScreen() {
       const ayah = pageAyahs[i];
       setActiveAyahIndex(i);
       try {
-        const url = getAudioUrl(ayah.surahNumber, ayah.ayahNumberInSurah);
+        const subfolder = reciter?.subfolder || 'Alafasy_128kbps';
+        const url = getAudioUrl(ayah.surahNumber, ayah.ayahNumberInSurah, subfolder);
         const { sound } = await Audio.Sound.createAsync({ uri: url });
         soundRef.current = sound;
         await sound.playAsync();
@@ -752,6 +797,8 @@ export default function SurahScreen() {
                           <TouchableOpacity
                             activeOpacity={0.7}
                             onPress={() => playSpecificAyah(ayah.surahNumber, ayah.ayahNumberInSurah, ayahIndex)}
+                            onLongPress={() => openTafsir(ayah.surahNumber, ayah.ayahNumberInSurah)}
+                            delayLongPress={400}
                             style={styles.ayahTouchable}
                           >
                             <Text style={[styles.ayahText, isActive && styles.ayahTextActive]}>
@@ -765,7 +812,14 @@ export default function SurahScreen() {
                           {showTranslation && (
                             <View style={styles.translationContainer}>
                               <View style={styles.translationBar} />
-                              <Text style={styles.translationText}>{ayah.translationFr}</Text>
+                              <Text style={styles.translationText}>
+                                {(translation && translation.source !== 'local' && customTranslations[ayah.ayahNumberInSurah])
+                                  ? customTranslations[ayah.ayahNumberInSurah]
+                                  : ayah.translationFr}
+                              </Text>
+                              {isLoadingTranslation && !customTranslations[ayah.ayahNumberInSurah] && translation?.source !== 'local' && (
+                                <ActivityIndicator size="small" color={COLORS.gold} style={{ marginTop: 4 }} />
+                              )}
                             </View>
                           )}
 
@@ -842,6 +896,45 @@ export default function SurahScreen() {
           </Text>
         </View>
       </View>
+
+      {/* Tafsir Modal */}
+      <Modal
+        visible={tafsirModalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setTafsirModalVisible(false)}
+      >
+        <View style={styles.tafsirOverlay}>
+          <View style={styles.tafsirModal}>
+            <View style={styles.tafsirHeader}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.tafsirTitle}>{tafsir?.name || 'Tafsir'}</Text>
+                <Text style={styles.tafsirSubtitle}>
+                  Sourate {tafsirAyahInfo.surah}, Verset {tafsirAyahInfo.ayah}
+                </Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => setTafsirModalVisible(false)}
+                style={styles.tafsirCloseBtn}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <Ionicons name="close" size={24} color={COLORS.textSecondary} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.tafsirScroll} showsVerticalScrollIndicator={false}>
+              {tafsirLoading ? (
+                <View style={styles.tafsirLoading}>
+                  <ActivityIndicator size="large" color={COLORS.gold} />
+                  <Text style={styles.tafsirLoadingText}>Chargement du tafsir...</Text>
+                </View>
+              ) : (
+                <Text style={styles.tafsirContent}>{tafsirText}</Text>
+              )}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </Animated.View>
   );
 
@@ -851,7 +944,8 @@ export default function SurahScreen() {
     setIsPlaying(true);
     setActiveAyahIndex(index);
     try {
-      const url = getAudioUrl(surahNum, ayahNum);
+      const subfolder = reciter?.subfolder || 'Alafasy_128kbps';
+      const url = getAudioUrl(surahNum, ayahNum, subfolder);
       const { sound } = await Audio.Sound.createAsync({ uri: url });
       soundRef.current = sound;
       await sound.playAsync();
@@ -870,6 +964,27 @@ export default function SurahScreen() {
     setIsPlaying(false);
     setActiveAyahIndex(-1);
   }
+
+  // Ouvrir le tafsir d'un verset (long press)
+  async function openTafsir(surahNum: number, ayahNum: number) {
+    setTafsirAyahInfo({ surah: surahNum, ayah: ayahNum });
+    setTafsirText('');
+    setTafsirLoading(true);
+    setTafsirModalVisible(true);
+
+    if (tafsir) {
+      try {
+        const text = await fetchAyahTafsir(tafsir, surahNum, ayahNum);
+        setTafsirText(text || 'Tafsir non disponible pour ce verset.');
+      } catch (e) {
+        setTafsirText('Erreur de chargement. Verifie ta connexion internet.');
+      }
+    } else {
+      setTafsirText('Aucun tafsir selectionne. Va dans Profil > Tafsir pour en choisir un.');
+    }
+    setTafsirLoading(false);
+  }
+
 }
 
 // Convertir un nombre en chiffres arabes
@@ -1714,5 +1829,64 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 13,
     fontWeight: '600',
+  },
+
+  // Tafsir Modal
+  tafsirOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  tafsirModal: {
+    backgroundColor: '#FAFAF7',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: '75%',
+    minHeight: '40%',
+    paddingBottom: 40,
+  },
+  tafsirHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    padding: 20,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  tafsirTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#0D2818',
+  },
+  tafsirSubtitle: {
+    fontSize: 13,
+    color: '#9CA3AF',
+    marginTop: 2,
+  },
+  tafsirCloseBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#F3F4F6',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  tafsirScroll: {
+    padding: 20,
+  },
+  tafsirContent: {
+    fontSize: 15,
+    color: '#1A1A1A',
+    lineHeight: 24,
+  },
+  tafsirLoading: {
+    alignItems: 'center',
+    paddingVertical: 40,
+    gap: 12,
+  },
+  tafsirLoadingText: {
+    fontSize: 14,
+    color: '#9CA3AF',
   },
 });

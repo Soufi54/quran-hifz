@@ -66,10 +66,14 @@ export function getSurahPassages(surahNumber: number, passageSize: number = 7): 
   return passages;
 }
 
-export function getAudioUrl(surahNumber: number, ayahNumber: number): string {
+/**
+ * Retourne l'URL audio pour un verset.
+ * @param subfolder - Le dossier everyayah.com du recitateur (ex: 'Alafasy_128kbps')
+ */
+export function getAudioUrl(surahNumber: number, ayahNumber: number, subfolder: string = 'Alafasy_128kbps'): string {
   const surah = String(surahNumber).padStart(3, '0');
   const ayah = String(ayahNumber).padStart(3, '0');
-  return `https://everyayah.com/data/Alafasy_128kbps/${surah}${ayah}.mp3`;
+  return `https://everyayah.com/data/${subfolder}/${surah}${ayah}.mp3`;
 }
 
 export const TOTAL_PAGES = data.totalPages;

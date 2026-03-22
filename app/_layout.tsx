@@ -51,6 +51,30 @@ export default function RootLayout() {
             animation: 'fade',
           }}
         />
+        <Stack.Screen
+          name="settings/reciter"
+          options={{
+            title: 'Recitateur',
+            headerBackTitle: 'Retour',
+            animation: 'slide_from_right',
+          }}
+        />
+        <Stack.Screen
+          name="settings/translation"
+          options={{
+            title: 'Traduction',
+            headerBackTitle: 'Retour',
+            animation: 'slide_from_right',
+          }}
+        />
+        <Stack.Screen
+          name="settings/tafsir"
+          options={{
+            title: 'Tafsir',
+            headerBackTitle: 'Retour',
+            animation: 'slide_from_right',
+          }}
+        />
       </Stack>
     </>
   );
