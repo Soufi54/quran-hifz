@@ -366,7 +366,7 @@ export default function ApprendrePage() {
             >
               +{chunkScore} XP
             </div>
-            <p className="text-lg text-gray-700 mb-2">Chunk termine !</p>
+            <p className="text-lg text-gray-700 mb-2">Partie terminee !</p>
             {m && (
               <p className="text-sm font-semibold mb-6" style={{ color: GOLD }}>
                 {m}
@@ -433,7 +433,7 @@ export default function ApprendrePage() {
               >
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-semibold text-gray-800">
-                    Chunk {i + 1}
+                    Partie {i + 1}
                   </span>
                   <span className="text-xs text-gray-500">
                     Versets {ayahRange}
