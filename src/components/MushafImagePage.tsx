@@ -19,7 +19,7 @@ interface MushafImagePageProps {
 
 function getMushafImageUrl(pageNumber: number): string {
   const padded = String(pageNumber).padStart(3, '0');
-  return `https://easyquran.com/wp-content/HafsPages/images/${padded}.jpg`;
+  return `https://quran.islam-db.com/public/data/pages/quranpages_1024/images/page${padded}.png`;
 }
 
 export default function MushafImagePage({ pageNumber, qcfPage, playingAyahKey }: MushafImagePageProps) {
