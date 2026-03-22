@@ -79,7 +79,7 @@ export default function ApprendrePage() {
   // Etat etape "Ecouter"
   const [listenCount, setListenCount] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [highlightedWord, setHighlightedWord] = useState(-1);
+  // highlightedWord removed — surlignage par ayah entiere
   const [highlightedAyah, setHighlightedAyah] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const playingRef = useRef(false);
@@ -189,7 +189,7 @@ export default function ApprendrePage() {
 
       if (step === 'listen') {
         setListenCount(0);
-        setHighlightedWord(-1);
+        void 0 /* highlightedWord removed */;
         setHighlightedAyah(0);
       }
 
@@ -315,17 +315,15 @@ export default function ApprendrePage() {
           audio.onloadedmetadata = () => {
             const wordDuration = (audio.duration * 1000) / Math.max(words.length, 1);
             let wordIdx = 0;
-            setHighlightedWord(0);
+            void 0 /* highlightedWord removed */;
             wordInterval = setInterval(() => {
               wordIdx++;
-              if (wordIdx < words.length) {
-                setHighlightedWord(wordIdx);
-              }
+              void wordIdx; /* word-level highlight removed */
             }, wordDuration);
           };
           audio.onended = () => {
             if (wordInterval) clearInterval(wordInterval);
-            setHighlightedWord(-1);
+            void 0 /* highlightedWord removed */;
             resolve();
           };
           audio.onerror = () => {
@@ -342,7 +340,7 @@ export default function ApprendrePage() {
 
     playingRef.current = false;
     setIsPlaying(false);
-    setHighlightedWord(-1);
+    void 0 /* highlightedWord removed */;
     setListenCount((c) => c + 1);
   };
 
@@ -524,7 +522,6 @@ export default function ApprendrePage() {
             ayahs={currentAyahs}
             listenCount={listenCount}
             isPlaying={isPlaying}
-            highlightedWord={highlightedWord}
             highlightedAyah={highlightedAyah}
             onPlay={playChunkAudio}
             onReady={nextStep}
@@ -636,6 +633,16 @@ export default function ApprendrePage() {
             }}
           />
         )}
+
+        {/* Bouton Passer — toujours visible */}
+        <div className="text-center mt-6 pb-4">
+          <button
+            onClick={nextStep}
+            className="text-sm text-gray-400 underline cursor-pointer hover:text-gray-600"
+          >
+            Passer cette etape
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -685,7 +692,6 @@ function StepListen({
   ayahs,
   listenCount,
   isPlaying,
-  highlightedWord,
   highlightedAyah,
   onPlay,
   onReady,
@@ -693,7 +699,6 @@ function StepListen({
   ayahs: Ayah[];
   listenCount: number;
   isPlaying: boolean;
-  highlightedWord: number;
   highlightedAyah: number;
   onPlay: () => void;
   onReady: () => void;
@@ -707,32 +712,21 @@ function StepListen({
       </p>
 
       <div className="w-full space-y-4">
-        {ayahs.map((ayah, ai) => {
-          const words = ayah.text.split(/\s+/);
-          return (
-            <div key={ayah.numberInSurah} className="text-right" dir="rtl">
+        {ayahs.map((ayah, ai) => (
+            <div
+              key={ayah.numberInSurah}
+              className="text-right rounded-xl p-3 transition-colors duration-300"
+              dir="rtl"
+              style={{
+                backgroundColor: ai === highlightedAyah ? 'rgba(16, 185, 129, 0.12)' : 'transparent',
+              }}
+            >
               <p className="text-xl leading-[56px]" style={{ fontFamily: "'Amiri Quran', serif" }}>
-                {words.map((word, wi) => (
-                  <span
-                    key={wi}
-                    className="transition-colors duration-200"
-                    style={{
-                      backgroundColor:
-                        ai === highlightedAyah && wi === highlightedWord
-                          ? 'rgba(16, 185, 129, 0.25)'
-                          : 'transparent',
-                      borderRadius: '4px',
-                      padding: '2px 4px',
-                    }}
-                  >
-                    {word}{' '}
-                  </span>
-                ))}
-                <span className="text-sm text-gray-400">﴿{ayah.numberInSurah}﴾</span>
+                {ayah.text}
+                <span className="text-sm text-gray-400 mx-1">﴿{ayah.numberInSurah}﴾</span>
               </p>
             </div>
-          );
-        })}
+        ))}
       </div>
 
       <button

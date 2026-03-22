@@ -66,7 +66,9 @@ function MushafPage({
   playingAyahKey: string | null;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [fontSize, setFontSize] = useState(28); // commence grand, reduit si necessaire
+  // Taille initiale basee sur le nombre de lignes
+  const initialSize = lineNumbers.length <= 8 ? 28 : lineNumbers.length <= 13 ? 22 : 20;
+  const [fontSize, setFontSize] = useState(initialSize);
   const [ready, setReady] = useState(false);
 
   const isFullPage = lineNumbers.length >= 13;
@@ -75,7 +77,7 @@ function MushafPage({
   // Auto-size : apres le rendu, mesurer et ajuster
   useEffect(() => {
     setReady(false);
-    setFontSize(28);
+    setFontSize(initialSize);
 
     const autoFit = () => {
       if (!containerRef.current) return;
@@ -84,8 +86,7 @@ function MushafPage({
       const lines = container.querySelectorAll('.mushaf-line');
       if (lines.length === 0) return;
 
-      // Trouver la taille max qui fait que toutes les lignes tiennent en largeur
-      let size = 28;
+      let size = initialSize;
       const minSize = 12;
 
       while (size > minSize) {
@@ -106,13 +107,17 @@ function MushafPage({
       setReady(true);
     };
 
-    // Attendre que la police soit chargee
+    // Attendre que la police soit chargee, puis re-verifier apres 1s
     document.fonts.ready.then(() => {
       requestAnimationFrame(() => {
-        requestAnimationFrame(autoFit);
+        requestAnimationFrame(() => {
+          autoFit();
+          // Re-check apres 1s au cas ou la police se charge en retard
+          setTimeout(autoFit, 1000);
+        });
       });
     });
-  }, [lineNumbers, fontFamily]);
+  }, [lineNumbers, fontFamily, initialSize]);
 
   return (
     <div

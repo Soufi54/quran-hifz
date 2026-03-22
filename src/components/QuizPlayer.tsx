@@ -32,10 +32,30 @@ export default function QuizPlayer({ questions, onComplete, onLoseLife, lives }:
   const [lastPoints, setLastPoints] = useState<number | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const [timeLeft, setTimeLeft] = useState(MAX_TIME_S);
+  const [showContext, setShowContext] = useState(false); // contexte APRES la reponse
+  const [lastCorrect, setLastCorrect] = useState(false);
   const questionStartTime = useRef(Date.now());
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const contextTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const question = questions[currentIndex];
+  const surahInfo = question ? getSurah(question.surahNumber) : null;
+
+  // Contexte apres reponse : auto-passe apres 5s
+  useEffect(() => {
+    if (!showContext) return;
+    contextTimerRef.current = setTimeout(() => {
+      advanceAfterContext();
+    }, 5000);
+    return () => { if (contextTimerRef.current) clearTimeout(contextTimerRef.current); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showContext]);
+
+  const advanceAfterContext = () => {
+    if (contextTimerRef.current) clearTimeout(contextTimerRef.current);
+    setShowContext(false);
+    doGoNext(lastCorrect);
+  };
 
   // Timer 30s
   const startTimer = useCallback(() => {
@@ -53,9 +73,12 @@ export default function QuizPlayer({ questions, onComplete, onLoseLife, lives }:
   }, []);
 
   useEffect(() => {
-    startTimer();
+    if (!showContext) {
+      questionStartTime.current = Date.now();
+      startTimer();
+    }
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [currentIndex, startTimer]);
+  }, [currentIndex, startTimer, showContext]);
 
   // Auto-reponse quand le temps est ecoule
   useEffect(() => {
@@ -73,7 +96,12 @@ export default function QuizPlayer({ questions, onComplete, onLoseLife, lives }:
     onLoseLife?.();
     if (timerRef.current) clearInterval(timerRef.current);
 
-    setTimeout(() => goNext(false), 2000);
+    setTimeout(() => showContextScreen(false), 2000);
+  };
+
+  const showContextScreen = (wasCorrect: boolean) => {
+    setLastCorrect(wasCorrect);
+    setShowContext(true);
   };
 
   const handleAnswer = (optionIndex: number) => {
@@ -95,16 +123,17 @@ export default function QuizPlayer({ questions, onComplete, onLoseLife, lives }:
       onLoseLife?.();
     }
 
-    setTimeout(() => goNext(correct), 2000);
+    setTimeout(() => showContextScreen(correct), 2000);
   };
 
-  const goNext = (wasCorrect: boolean) => {
+  const doGoNext = (wasCorrect: boolean) => {
     setShowSuccess(false);
     if (currentIndex < questions.length - 1) {
       setCurrentIndex(prev => prev + 1);
       setAnswered(false);
       setSelectedIndex(null);
       setLastPoints(null);
+      setShowContext(true); // montrer le contexte de la prochaine question
       questionStartTime.current = Date.now();
     } else {
       const finalScore = wasCorrect ? score + 1 : score;
@@ -119,6 +148,40 @@ export default function QuizPlayer({ questions, onComplete, onLoseLife, lives }:
   const surah = getSurah(question.surahNumber);
   const surahRef = surah ? `${surah.nameFrench} (${surah.nameArabic}) - verset ${question.ayahNumber}` : '';
   const timerColor = timeLeft <= 5 ? 'text-red-500' : timeLeft <= 10 ? 'text-orange-500' : 'text-gray-500';
+
+  // Ecran contexte APRES reponse : page mushaf + verset surligne
+  if (showContext && question) {
+    const ayah = surahInfo?.ayahs.find(a => a.numberInSurah === question.ayahNumber);
+    return (
+      <div className="p-4 flex flex-col items-center justify-center min-h-[50vh]"
+        onClick={advanceAfterContext} style={{ cursor: 'pointer' }}>
+        {/* Nom sourate */}
+        <p className="text-xl font-bold text-emerald-900 mb-0.5" style={{ fontFamily: "'Noto Naskh Arabic', serif" }}>
+          {surahInfo?.nameArabic}
+        </p>
+        <p className="text-xs text-gray-400 mb-4">{surahInfo?.nameFrench} — verset {question.ayahNumber}</p>
+
+        {/* Verset surligne */}
+        <div className="w-full rounded-2xl p-5 mb-4"
+          style={{ backgroundColor: lastCorrect ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.08)' }}>
+          <p className="text-xl leading-[52px] text-right" dir="rtl"
+            style={{ fontFamily: "'Amiri Quran', serif", color: '#1A1A1A' }}>
+            {ayah?.text || question.questionArabic || question.questionText}
+            <span className="text-sm text-emerald-400 mx-1">﴿{question.ayahNumber}﴾</span>
+          </p>
+        </div>
+
+        {/* Traduction */}
+        {ayah?.translationFr && (
+          <p className="text-sm text-gray-500 text-center leading-relaxed mb-4 px-2">
+            {ayah.translationFr}
+          </p>
+        )}
+
+        <p className="text-xs text-gray-300">Appuie pour continuer</p>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 relative">
