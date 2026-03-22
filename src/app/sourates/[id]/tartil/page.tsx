@@ -45,6 +45,7 @@ export default function TartilPage() {
   const silenceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fullTranscriptRef = useRef('');
   const processedUpToRef = useRef(0);
+  const restartingRef = useRef(false); // verrou anti-double relance
   const scrollRef = useRef<HTMLDivElement>(null);
   const ayahStartIndices = useRef<number[]>([]); // index du premier mot de chaque verset
 
@@ -410,40 +411,45 @@ export default function TartilPage() {
       }
     };
 
+    const restartRec = (reason: string) => {
+      if (!activeRef.current || restartingRef.current) return;
+      restartingRef.current = true;
+      fullTranscriptRef.current = '';
+      processedUpToRef.current = 0;
+      lastProcessedFinal = '';
+      setTimeout(() => {
+        restartingRef.current = false;
+        if (!activeRef.current) return;
+        try {
+          rec.start();
+          setIsListening(true);
+          setVoiceStatus('listening');
+          addLog('Relancee (' + reason + ')');
+        } catch (e) { addLog('Relance echouee: ' + e); }
+      }, 300);
+    };
+
     rec.onend = () => {
-      addLog('Recognition arretee, relance...');
+      addLog('Recognition arretee');
       setVoiceStatus('listening');
-      if (activeRef.current) {
-        fullTranscriptRef.current = '';
-        processedUpToRef.current = 0;
-        lastProcessedFinal = '';
-        setTimeout(() => {
-          try {
-            rec.start();
-            setIsListening(true);
-            addLog('Relancee OK');
-          } catch (e) { addLog('Relance echouee: ' + e); }
-        }, 100); // 100ms au lieu de 200ms — moins de gap
-      }
+      restartRec('onend');
     };
 
     rec.onerror = (e) => {
       addLog('Erreur: ' + e.error);
-      setVoiceStatus('error');
       if (e.error === 'not-allowed') {
+        setVoiceStatus('error');
         setMicError('Micro refuse. Va dans les parametres du navigateur.');
         cleanup();
         return;
       }
       if (e.error === 'no-speech') {
-        addLog('Pas de voix detectee, relance...');
+        setVoiceStatus('listening');
+        restartRec('no-speech');
+        return;
       }
-      if (activeRef.current) {
-        setTimeout(() => {
-          try { rec.start(); setVoiceStatus('listening'); addLog('Relancee apres erreur'); }
-          catch (err) { addLog('Relance echouee: ' + err); }
-        }, 200);
-      }
+      setVoiceStatus('error');
+      restartRec('error-' + e.error);
     };
 
     try {
