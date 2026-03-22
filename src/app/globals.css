@@ -96,6 +96,19 @@ body {
   }
 }
 
+/* Mushaf QCF rendering — auto-sized */
+.mushaf-line {
+  text-align: center;
+  white-space: nowrap;
+  padding: 0;
+  margin: 0;
+}
+.mushaf-highlight {
+  background-color: rgba(16, 185, 129, 0.15);
+  border-radius: 4px;
+  transition: background-color 0.3s ease;
+}
+
 /* Tajweed colors — based on printed mushaf tajweed */
 .tajweed-text {
   font-family: 'Amiri Quran', serif;

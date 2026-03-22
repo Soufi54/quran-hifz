@@ -53,6 +53,129 @@ function loadQcfFont(pageNumber: number): Promise<void> {
   });
 }
 
+// Composant MushafPage : auto-sizing pour fitter exactement dans l'ecran
+function MushafPage({
+  fontFamily, lineNumbers, qcfPage, surahStarts, surahStartLines, firstDataLine, playingAyahKey,
+}: {
+  fontFamily: string;
+  lineNumbers: number[];
+  qcfPage: QcfPageData;
+  surahStarts: { lineNumber: number; surahNumber: number; surahName: string }[];
+  surahStartLines: Map<number, { lineNumber: number; surahNumber: number; surahName: string }>;
+  firstDataLine: number;
+  playingAyahKey: string | null;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [fontSize, setFontSize] = useState(28); // commence grand, reduit si necessaire
+  const [ready, setReady] = useState(false);
+
+  const isFullPage = lineNumbers.length >= 13;
+  const hasSurahHeader = firstDataLine > 1 && surahStarts.length > 0;
+
+  // Auto-size : apres le rendu, mesurer et ajuster
+  useEffect(() => {
+    setReady(false);
+    setFontSize(28);
+
+    const autoFit = () => {
+      if (!containerRef.current) return;
+      const container = containerRef.current;
+      const containerWidth = container.clientWidth;
+      const lines = container.querySelectorAll('.mushaf-line');
+      if (lines.length === 0) return;
+
+      // Trouver la taille max qui fait que toutes les lignes tiennent en largeur
+      let size = 28;
+      const minSize = 12;
+
+      while (size > minSize) {
+        let fits = true;
+        lines.forEach(line => {
+          (line as HTMLElement).style.fontSize = `${size}px`;
+        });
+        // Forcer le reflow
+        void container.offsetHeight;
+        lines.forEach(line => {
+          if (line.scrollWidth > containerWidth + 1) fits = false;
+        });
+        if (fits) break;
+        size -= 0.5;
+      }
+
+      setFontSize(size);
+      setReady(true);
+    };
+
+    // Attendre que la police soit chargee
+    document.fonts.ready.then(() => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(autoFit);
+      });
+    });
+  }, [lineNumbers, fontFamily]);
+
+  return (
+    <div
+      ref={containerRef}
+      className={`flex flex-col overflow-hidden ${isFullPage ? 'justify-between' : 'justify-center'}`}
+      style={{
+        height: 'calc(100vh - 110px)',
+        opacity: ready ? 1 : 0,
+        transition: 'opacity 0.2s',
+      }}
+    >
+      {/* Titre sourate + bismillah */}
+      {hasSurahHeader && (
+        <div className="text-center py-1">
+          <p className="text-lg font-bold text-gray-800" style={{ fontFamily: "'Noto Naskh Arabic', serif" }}>
+            {surahStarts[0].surahName}
+          </p>
+          {surahStarts[0].surahNumber !== 1 && surahStarts[0].surahNumber !== 9 && (
+            <p className="text-base text-gray-600 mt-0.5" style={{ fontFamily: "'Amiri Quran', serif" }}>
+              بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ
+            </p>
+          )}
+        </div>
+      )}
+
+      {lineNumbers.map(lineNum => {
+        const words = qcfPage[String(lineNum)];
+        const surahStart = surahStartLines.get(lineNum);
+        const showInlineSurahHeader = surahStart && firstDataLine !== lineNum;
+
+        return (
+          <div key={lineNum}>
+            {showInlineSurahHeader && (
+              <div className="text-center">
+                <p className="text-base font-bold text-gray-700" style={{ fontFamily: "'Noto Naskh Arabic', serif" }}>
+                  {surahStart.surahName}
+                </p>
+              </div>
+            )}
+            <div
+              dir="rtl"
+              className="mushaf-line"
+              style={{
+                fontFamily: `'${fontFamily}', sans-serif`,
+                fontSize: `${fontSize}px`,
+                lineHeight: 1.35,
+              }}
+            >
+              {words.map((word, wi) => (
+                <span
+                  key={wi}
+                  dangerouslySetInnerHTML={{ __html: word.c }}
+                  className={playingAyahKey && word.vk === playingAyahKey ? 'mushaf-highlight' : ''}
+                />
+              ))}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function SurahPage() {
   const params = useParams();
   const router = useRouter();
@@ -66,6 +189,7 @@ export default function SurahPage() {
   const [recitateur, setRecitateur] = useState('Alafasy_128kbps');
   const [fontReady, setFontReady] = useState(false);
   const [qcfPage, setQcfPage] = useState<QcfPageData | null>(null);
+  const [playingAyahKey, setPlayingAyahKey] = useState<string | null>(null); // "surah:ayah" en cours de lecture
 
   const RECITATEURS = [
     { id: 'Alafasy_128kbps', name: 'Alafasy' },
@@ -131,7 +255,8 @@ export default function SurahPage() {
   const handleTouchEnd = () => {
     const diff = touchStartX.current - touchEndX.current;
     if (Math.abs(diff) > 50) {
-      goToPage(diff > 0 ? currentPage + 1 : currentPage - 1);
+      // Sens arabe : swipe gauche = page precedente, swipe droite = page suivante
+      goToPage(diff > 0 ? currentPage - 1 : currentPage + 1);
     }
   };
 
@@ -144,9 +269,11 @@ export default function SurahPage() {
     }
     playingRef.current = true;
     setIsPlaying(true);
-    const pageData = getPageData(currentPage);
-    for (const ayah of pageData.ayahs) {
+    const pd = getPageData(currentPage);
+    for (const ayah of pd.ayahs) {
       if (!playingRef.current) break;
+      const key = `${ayah.surahNumber}:${ayah.ayahNumberInSurah}`;
+      setPlayingAyahKey(key);
       const url = getAudioUrl(ayah.surahNumber, ayah.ayahNumberInSurah);
       const audio = new Audio(url);
       audioRef.current = audio;
@@ -158,6 +285,7 @@ export default function SurahPage() {
         });
       } catch { break; }
     }
+    setPlayingAyahKey(null);
     playingRef.current = false;
     setIsPlaying(false);
   };
@@ -214,71 +342,17 @@ export default function SurahPage() {
     // La premiere ligne de donnees — les lignes avant sont titre/bismillah (dans la police)
     const firstDataLine = lineNumbers[0] || 1;
 
+
     return (
-      <div className="flex flex-col items-center justify-between overflow-hidden w-full px-1"
-        style={{ minHeight: 'calc(100vh - 140px)' }}>
-
-        {/* Lignes de titre/bismillah avant les donnees (rendues par la police QCF) */}
-        {firstDataLine > 1 && (
-          <div className="w-full text-center py-2">
-            {surahStarts.length > 0 && (
-              <div className="border-y border-amber-700/30 py-3 mb-2 mx-4"
-                style={{ background: 'linear-gradient(to right, transparent, rgba(180,130,50,0.08), transparent)' }}>
-                <p className="text-lg font-bold text-amber-800" style={{ fontFamily: "'Noto Naskh Arabic', serif" }}>
-                  {surahStarts[0].surahName}
-                </p>
-                {surahStarts[0].surahNumber !== 1 && surahStarts[0].surahNumber !== 9 && (
-                  <p className="text-sm text-amber-700/70 mt-1" style={{ fontFamily: "'Amiri Quran', serif" }}>
-                    بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ
-                  </p>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Lignes du mushaf */}
-        {lineNumbers.map(lineNum => {
-          const words = qcfPage[String(lineNum)];
-          const surahStart = surahStartLines.get(lineNum);
-          // Si une sourate commence au milieu de la page (pas en haut)
-          const showInlineSurahHeader = surahStart && firstDataLine !== lineNum;
-
-          return (
-            <div key={lineNum} className="w-full">
-              {showInlineSurahHeader && (
-                <div className="border-y border-amber-700/30 py-2 my-1 mx-4 text-center"
-                  style={{ background: 'linear-gradient(to right, transparent, rgba(180,130,50,0.08), transparent)' }}>
-                  <p className="text-base font-bold text-amber-800" style={{ fontFamily: "'Noto Naskh Arabic', serif" }}>
-                    {surahStart.surahName}
-                  </p>
-                  {surahStart.surahNumber !== 1 && surahStart.surahNumber !== 9 && (
-                    <p className="text-xs text-amber-700/70 mt-0.5" style={{ fontFamily: "'Amiri Quran', serif" }}>
-                      بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ
-                    </p>
-                  )}
-                </div>
-              )}
-              <div
-                className="w-full text-center whitespace-nowrap overflow-hidden"
-                dir="rtl"
-                style={{
-                  fontFamily: `'${fontFamily}', sans-serif`,
-                  fontSize: 'min(6.8vw, 28px)',
-                  lineHeight: 1.9,
-                }}
-              >
-                {words.map((word, wi) => (
-                  <span
-                    key={wi}
-                    dangerouslySetInnerHTML={{ __html: word.c }}
-                  />
-                ))}
-              </div>
-            </div>
-          );
-        })}
-      </div>
+      <MushafPage
+        fontFamily={fontFamily}
+        lineNumbers={lineNumbers}
+        qcfPage={qcfPage}
+        surahStarts={surahStarts}
+        surahStartLines={surahStartLines}
+        firstDataLine={firstDataLine}
+        playingAyahKey={playingAyahKey}
+      />
     );
   };
 
@@ -343,7 +417,7 @@ export default function SurahPage() {
       {/* Contenu — swipeable */}
       <div
         ref={containerRef}
-        className="flex-1 overflow-y-auto overflow-x-hidden"
+        className={`flex-1 overflow-x-hidden ${showTranslation ? 'overflow-y-auto' : 'overflow-hidden h-full'}`}
         style={{ background: showTranslation ? '#F0FDF4' : '#FFFFFF' }}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
