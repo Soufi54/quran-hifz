@@ -84,6 +84,8 @@ export default function SurahScreen() {
   const [mushafMode, setMushafMode] = useState(true);
   const [mushafPages, setMushafPages] = useState<number[]>([]);
   const [mushafActiveAyah, setMushafActiveAyah] = useState<{ surah: number; ayah: number } | null>(null);
+  // Mode Hifz intégré dans le Mushaf (mots masqués à leur position exacte)
+  const [mushafHifzMode, setMushafHifzMode] = useState(false);
 
   // Mode Tartil
   const [tartilMode, setTartilMode] = useState(false);
@@ -269,8 +271,14 @@ export default function SurahScreen() {
     }
   };
 
-  // ---- Mode Tartil ----
+  // ---- Mode Tartil / Hifz ----
   const enterTartilMode = () => {
+    // En mode Mushaf, utiliser le Hifz intégré (mots masqués sur la page Mushaf)
+    if (mushafMode && mushafPages.length > 0) {
+      setMushafHifzMode(true);
+      return;
+    }
+    // Sinon, mode Tartil classique (cartes)
     if (!pages[currentPage]) return;
     const verses: TartilVerse[] = pages[currentPage].ayahs.map(a => ({
       surahNumber: a.surahNumber,
@@ -284,6 +292,13 @@ export default function SurahScreen() {
     setTartilVerses(verses);
     setTartilCurrentIndex(0);
     setTartilMode(true);
+  };
+
+  // Callback quand une page Hifz est complétée
+  const handleHifzComplete = (stats: { correct: number; error: number; hesitation: number; total: number }) => {
+    const score = stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) : 0;
+    console.log(`Hifz page terminée: ${score}% (${stats.correct}/${stats.total} correct, ${stats.hesitation} hésitations, ${stats.error} erreurs)`);
+    // TODO: sauvegarder les stats de progression
   };
 
   const revealTartilVerse = () => {
@@ -722,11 +737,11 @@ export default function SurahScreen() {
           headerTintColor: COLORS.gold,
           headerRight: () => (
             <View style={styles.headerActions}>
-              <TouchableOpacity onPress={() => setMushafMode(!mushafMode)} style={styles.headerBtn}>
+              <TouchableOpacity onPress={() => { setMushafMode(!mushafMode); if (mushafMode) setMushafHifzMode(false); }} style={styles.headerBtn}>
                 <Ionicons name="book-outline" size={22} color={mushafMode ? COLORS.gold : 'rgba(212,175,55,0.4)'} />
               </TouchableOpacity>
-              <TouchableOpacity onPress={enterTartilMode} style={styles.headerBtn}>
-                <Ionicons name="mic-outline" size={22} color={COLORS.gold} />
+              <TouchableOpacity onPress={() => mushafHifzMode ? setMushafHifzMode(false) : enterTartilMode()} style={styles.headerBtn}>
+                <Ionicons name={mushafHifzMode ? 'eye-off' : 'mic-outline'} size={22} color={mushafHifzMode ? COLORS.gold : 'rgba(212,175,55,0.7)'} />
               </TouchableOpacity>
               <TouchableOpacity onPress={() => setShowTranslation(!showTranslation)} style={styles.headerBtn}>
                 <Ionicons name="language" size={22} color={showTranslation ? COLORS.gold : 'rgba(212,175,55,0.4)'} />
@@ -751,6 +766,7 @@ export default function SurahScreen() {
             <View key={`mushaf-${pageNum}`} style={{ flex: 1 }}>
               <MushafPageView
                 pageNumber={pageNum}
+                mode={mushafHifzMode ? 'hifz' : 'read'}
                 activeAyah={mushafActiveAyah}
                 onAyahPress={(surah, ayah) => {
                   // Jouer l'audio du verset
@@ -762,6 +778,7 @@ export default function SurahScreen() {
                   // Ouvrir le tafsir
                   openTafsir(surah, ayah);
                 }}
+                onHifzComplete={handleHifzComplete}
               />
             </View>
           ))}
@@ -945,11 +962,15 @@ export default function SurahScreen() {
           </View>
         </TouchableOpacity>
 
-        {/* Tartil button */}
-        <TouchableOpacity style={styles.tartilButton} onPress={enterTartilMode} activeOpacity={0.8}>
+        {/* Tartil / Hifz button */}
+        <TouchableOpacity
+          style={[styles.tartilButton, mushafHifzMode && { borderColor: COLORS.gold, borderWidth: 1 }]}
+          onPress={() => mushafHifzMode ? setMushafHifzMode(false) : enterTartilMode()}
+          activeOpacity={0.8}
+        >
           <View style={styles.tartilButtonGlow} />
-          <Ionicons name="mic" size={18} color={COLORS.gold} />
-          <Text style={styles.tartilButtonText}>Tartil</Text>
+          <Ionicons name={mushafHifzMode ? 'eye-off' : 'mic'} size={18} color={COLORS.gold} />
+          <Text style={styles.tartilButtonText}>{mushafHifzMode ? 'Hifz ✓' : (mushafMode ? 'Hifz' : 'Tartil')}</Text>
         </TouchableOpacity>
 
         {/* Quiz button */}
