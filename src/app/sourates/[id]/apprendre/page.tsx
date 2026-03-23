@@ -712,21 +712,30 @@ function StepListen({
       </p>
 
       <div className="w-full space-y-4">
-        {ayahs.map((ayah, ai) => (
+        {ayahs.map((ayah, ai) => {
+          const isCurrent = ai === highlightedAyah;
+          const isRevealed = ai < highlightedAyah; // deja ecoute
+          return (
             <div
               key={ayah.numberInSurah}
-              className="text-right rounded-xl p-3 transition-colors duration-300"
+              className={`text-right rounded-xl p-3 transition-all duration-500 ${
+                isCurrent ? 'bg-emerald-50 border border-emerald-200' :
+                isRevealed ? 'opacity-40' : ''
+              }`}
               dir="rtl"
-              style={{
-                backgroundColor: ai === highlightedAyah ? 'rgba(16, 185, 129, 0.12)' : 'transparent',
-              }}
+              style={!isCurrent && !isRevealed ? {
+                filter: 'blur(6px)',
+                opacity: 0.2,
+                userSelect: 'none',
+              } : undefined}
             >
               <p className="text-xl leading-[56px]" style={{ fontFamily: "'Amiri Quran', serif" }}>
                 {ayah.text}
                 <span className="text-sm text-gray-400 mx-1">﴿{ayah.numberInSurah}﴾</span>
               </p>
             </div>
-        ))}
+          );
+        })}
       </div>
 
       <button
