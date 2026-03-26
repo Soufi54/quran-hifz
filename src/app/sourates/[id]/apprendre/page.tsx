@@ -114,6 +114,16 @@ export default function ApprendrePage() {
   // Flash feedback
   const [flashColor, setFlashColor] = useState<string | null>(null);
 
+  // ─── Cleanup au demontage ──────────────────────────────────
+
+  useEffect(() => {
+    return () => {
+      playingRef.current = false;
+      if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, []);
+
   // ─── Init ───────────────────────────────────────────────────
 
   useEffect(() => {
@@ -181,10 +191,24 @@ export default function ApprendrePage() {
     flash(RED);
   };
 
+  // ─── Arret audio propre ────────────────────────────────────
+
+  const stopAudio = useCallback(() => {
+    playingRef.current = false;
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+      audioRef.current = null;
+    }
+    setIsPlaying(false);
+  }, []);
+
   // ─── Navigation etapes ─────────────────────────────────────
 
   const goToStep = useCallback(
     (step: Step) => {
+      // TOUJOURS arreter l'audio quand on change d'etape
+      stopAudio();
       setCurrentStep(step);
 
       if (step === 'listen') {
@@ -289,9 +313,7 @@ export default function ApprendrePage() {
 
   const playChunkAudio = async () => {
     if (isPlaying) {
-      playingRef.current = false;
-      audioRef.current?.pause();
-      setIsPlaying(false);
+      stopAudio();
       return;
     }
 
@@ -306,42 +328,23 @@ export default function ApprendrePage() {
       const audio = new Audio(url);
       audioRef.current = audio;
 
-      // Surlignage mot par mot (estimation basee sur la duree)
-      const words = ayah.text.split(/\s+/);
-      let wordInterval: ReturnType<typeof setInterval> | null = null;
-
       try {
         await new Promise<void>((resolve, reject) => {
-          audio.onloadedmetadata = () => {
-            const wordDuration = (audio.duration * 1000) / Math.max(words.length, 1);
-            let wordIdx = 0;
-            void 0 /* highlightedWord removed */;
-            wordInterval = setInterval(() => {
-              wordIdx++;
-              void wordIdx; /* word-level highlight removed */
-            }, wordDuration);
-          };
-          audio.onended = () => {
-            if (wordInterval) clearInterval(wordInterval);
-            void 0 /* highlightedWord removed */;
-            resolve();
-          };
-          audio.onerror = () => {
-            if (wordInterval) clearInterval(wordInterval);
-            reject();
-          };
+          audio.onended = () => resolve();
+          audio.onerror = () => reject();
           audio.play().catch(reject);
         });
       } catch {
-        if (wordInterval) clearInterval(wordInterval);
         break;
       }
     }
 
+    if (playingRef.current) {
+      // Audio terminee naturellement (pas stoppee)
+      setListenCount((c) => c + 1);
+    }
     playingRef.current = false;
     setIsPlaying(false);
-    void 0 /* highlightedWord removed */;
-    setListenCount((c) => c + 1);
   };
 
   // ─── Rendu conditionnel ────────────────────────────────────
@@ -382,7 +385,7 @@ export default function ApprendrePage() {
                   className="px-6 py-3 rounded-xl text-white font-semibold cursor-pointer transition-transform active:scale-95"
                   style={{ backgroundColor: GREEN }}
                 >
-                  Chunk suivant
+                  Partie suivante
                 </button>
               )}
               <button
@@ -489,7 +492,7 @@ export default function ApprendrePage() {
       <Header
         surahName={surah.nameArabic}
         progress={globalProgress()}
-        onBack={() => setActiveChunk(null)}
+        onBack={() => { stopAudio(); setActiveChunk(null); }}
       />
 
       {/* ComboBar */}
@@ -638,7 +641,7 @@ export default function ApprendrePage() {
         {/* Bouton Passer — toujours visible */}
         <div className="text-center mt-6 pb-4">
           <button
-            onClick={nextStep}
+            onClick={() => { stopAudio(); nextStep(); }}
             className="text-sm text-gray-400 underline cursor-pointer hover:text-gray-600"
           >
             Passer cette etape
