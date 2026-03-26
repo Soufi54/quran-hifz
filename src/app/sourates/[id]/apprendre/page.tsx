@@ -520,6 +520,7 @@ export default function ApprendrePage() {
         {currentStep === 'listen' && (
           <StepListen
             ayahs={currentAyahs}
+            surahNumber={surahNumber}
             listenCount={listenCount}
             isPlaying={isPlaying}
             highlightedAyah={highlightedAyah}
@@ -688,8 +689,33 @@ function Header({
 
 // ─── Etape 1 : Ecouter ──────────────────────────────────────
 
+// Image mushaf classique
+function getMushafUrl(page: number): string {
+  return `https://quran.islam-db.com/public/data/pages/quranpages_1024/images/page${String(page).padStart(3, '0')}.png`;
+}
+
+// Dimensions image mushaf classique
+const IMG_H = 1656;
+const TEXT_TOP = 50;
+const TEXT_BOTTOM = 1620;
+const MUSHAF_LINES = 15;
+const LINE_H = (TEXT_BOTTOM - TEXT_TOP) / MUSHAF_LINES;
+
+// QCF data pour mapping lignes/versets
+interface QcfWord { c: string; t: string; p: number; vk: string; }
+type QcfPageData = Record<string, QcfWord[]>;
+type QcfAllPages = Record<string, QcfPageData>;
+let qcfCacheLearn: QcfAllPages | null = null;
+async function getQcfDataLearn(): Promise<QcfAllPages> {
+  if (qcfCacheLearn) return qcfCacheLearn;
+  const mod = await import('../../../../data/qcf-pages.json');
+  qcfCacheLearn = mod.default as QcfAllPages;
+  return qcfCacheLearn;
+}
+
 function StepListen({
   ayahs,
+  surahNumber,
   listenCount,
   isPlaying,
   highlightedAyah,
@@ -697,6 +723,7 @@ function StepListen({
   onReady,
 }: {
   ayahs: Ayah[];
+  surahNumber: number;
   listenCount: number;
   isPlaying: boolean;
   highlightedAyah: number;
@@ -704,64 +731,118 @@ function StepListen({
   onReady: () => void;
 }) {
   const ready = listenCount >= LISTEN_COUNT;
+  const currentAyah = ayahs[highlightedAyah];
+  const pageNumber = currentAyah?.page || 1;
+
+  const [qcfData, setQcfData] = useState<QcfAllPages | null>(null);
+  useEffect(() => { getQcfDataLearn().then(setQcfData); }, []);
+
+  // Trouver les lignes du verset courant
+  const highlightLines: number[] = [];
+  if (qcfData && currentAyah) {
+    const qcfPage = qcfData[String(pageNumber)];
+    if (qcfPage) {
+      const vk = `${surahNumber}:${currentAyah.numberInSurah}`;
+      for (const [lineNum, words] of Object.entries(qcfPage)) {
+        if (words.some(w => w.vk === vk)) highlightLines.push(parseInt(lineNum));
+      }
+      highlightLines.sort((a, b) => a - b);
+    }
+  }
 
   return (
-    <div className="flex flex-col items-center gap-6">
+    <div className="flex flex-col items-center gap-4">
       <p className="text-sm text-gray-500">
         Ecoute {Math.min(listenCount + 1, LISTEN_COUNT)}/{LISTEN_COUNT}
+        <span className="text-xs text-gray-400 ml-2">— verset {currentAyah?.numberInSurah}</span>
       </p>
 
-      <div className="w-full space-y-4">
-        {ayahs.map((ayah, ai) => {
-          const isCurrent = ai === highlightedAyah;
-          const isRevealed = ai < highlightedAyah; // deja ecoute
+      {/* Image mushaf avec spotlight sur l'ayah courante */}
+      <div className="w-full relative rounded-xl overflow-hidden border border-gray-200">
+        {/* Image de base — assombrie */}
+        <img // eslint-disable-line @next/next/no-img-element
+          src={getMushafUrl(pageNumber)}
+          alt={`Page ${pageNumber}`}
+          className="w-full h-auto"
+          style={{ opacity: 0.2 }}
+        />
+
+        {/* Image revelee uniquement sur les lignes du verset — clip-path */}
+        {highlightLines.length > 0 && (() => {
+          // Construire un clip-path polygon qui couvre les lignes du verset
+          const rects = highlightLines.map(lineNum => {
+            const topPct = ((TEXT_TOP + (lineNum - 1) * LINE_H) / IMG_H) * 100;
+            const bottomPct = ((TEXT_TOP + lineNum * LINE_H) / IMG_H) * 100;
+            return { top: topPct, bottom: bottomPct };
+          });
+          // Fusionner les rects contigus
+          const merged: { top: number; bottom: number }[] = [];
+          for (const r of rects) {
+            if (merged.length > 0 && Math.abs(r.top - merged[merged.length - 1].bottom) < 0.5) {
+              merged[merged.length - 1].bottom = r.bottom;
+            } else {
+              merged.push({ ...r });
+            }
+          }
+          // Construire le polygon
+          const points: string[] = [];
+          for (const r of merged) {
+            points.push(`0% ${r.top}%`, `100% ${r.top}%`, `100% ${r.bottom}%`, `0% ${r.bottom}%`);
+          }
+          const clipPath = `polygon(${points.join(', ')})`;
+
+          return (
+            <img // eslint-disable-line @next/next/no-img-element
+              src={getMushafUrl(pageNumber)}
+              alt=""
+              className="absolute inset-0 w-full h-auto transition-all duration-500"
+              style={{ clipPath, opacity: 1 }}
+            />
+          );
+        })()}
+
+        {/* Bordure verte subtile sur les lignes revelees */}
+        {highlightLines.map(lineNum => {
+          const topPct = ((TEXT_TOP + (lineNum - 1) * LINE_H) / IMG_H) * 100;
+          const hPct = (LINE_H / IMG_H) * 100;
           return (
             <div
-              key={ayah.numberInSurah}
-              className={`text-right rounded-xl p-3 transition-all duration-500 ${
-                isCurrent ? 'bg-emerald-50 border border-emerald-200' :
-                isRevealed ? 'opacity-40' : ''
-              }`}
-              dir="rtl"
-              style={!isCurrent && !isRevealed ? {
-                filter: 'blur(6px)',
-                opacity: 0.2,
-                userSelect: 'none',
-              } : undefined}
-            >
-              <p className="text-xl leading-[56px]" style={{ fontFamily: "'Amiri Quran', serif" }}>
-                {ayah.text}
-                <span className="text-sm text-gray-400 mx-1">﴿{ayah.numberInSurah}﴾</span>
-              </p>
-            </div>
+              key={lineNum}
+              className="absolute"
+              style={{
+                top: `${topPct}%`,
+                left: '1%',
+                width: '98%',
+                height: `${hPct}%`,
+                border: '1px solid rgba(16, 185, 129, 0.3)',
+                borderRadius: '4px',
+                pointerEvents: 'none',
+              }}
+            />
           );
         })}
       </div>
 
-      <button
-        onClick={onPlay}
-        className="w-16 h-16 rounded-full flex items-center justify-center cursor-pointer transition-transform active:scale-90"
-        style={{ backgroundColor: isPlaying ? RED : GREEN }}
-      >
-        {isPlaying ? <Pause size={28} color="white" /> : <Play size={28} color="white" />}
-      </button>
-
-      {ready && (
+      {/* Controles */}
+      <div className="flex items-center gap-4">
         <button
-          onClick={onReady}
-          className="px-8 py-3 rounded-xl text-white font-semibold cursor-pointer transition-transform active:scale-95"
-          style={{ backgroundColor: GREEN, animation: 'fadeIn 0.3s ease-out' }}
+          onClick={onPlay}
+          className="w-14 h-14 rounded-full flex items-center justify-center cursor-pointer transition-transform active:scale-90"
+          style={{ backgroundColor: isPlaying ? RED : GREEN }}
         >
-          Je suis pret
+          {isPlaying ? <Pause size={24} color="white" /> : <Play size={24} color="white" />}
         </button>
-      )}
 
-      <style jsx>{`
-        @keyframes fadeIn {
-          0% { opacity: 0; transform: translateY(8px); }
-          100% { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
+        {ready && (
+          <button
+            onClick={onReady}
+            className="px-6 py-3 rounded-xl text-white font-semibold cursor-pointer transition-transform active:scale-95"
+            style={{ backgroundColor: GREEN }}
+          >
+            Je suis pret
+          </button>
+        )}
+      </div>
     </div>
   );
 }
