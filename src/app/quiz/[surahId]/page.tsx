@@ -15,14 +15,15 @@ export default function QuizPage() {
   const surahNumber = parseInt(params.surahId as string);
   const surah = getSurah(surahNumber);
 
-  const [questions, setQuestions] = useState(generateQuizForSurah(surahNumber, 10));
+  const [questions, setQuestions] = useState<ReturnType<typeof generateQuizForSurah>>([]);
   const [lives, setLives] = useState(5);
   const [done, setDone] = useState(false);
   const [result, setResult] = useState<{ score: number; total: number; xp: number; mastered: boolean } | null>(null);
 
   useEffect(() => {
+    setQuestions(generateQuizForSurah(surahNumber, 10));
     setLives(getLives());
-  }, []);
+  }, [surahNumber]);
 
   const handleComplete = (score: number, total: number, totalPoints: number) => {
     const percentage = (score / total) * 100;

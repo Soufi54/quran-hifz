@@ -166,25 +166,25 @@ export function generateRecognitionQ(
   const questionVerset = chunk.versets[questionIdx];
   const correctVerset = chunk.versets[questionIdx + 1];
 
-  // Trouver un mauvais choix parmi les autres versets de la sourate
+  // Trouver 3 mauvais choix parmi les autres versets de la sourate
   const otherAyahs = surah.ayahs.filter(
     a => a.numberInSurah !== correctVerset.number && a.numberInSurah !== questionVerset.number
   );
 
-  let wrongText: string;
-  if (otherAyahs.length > 0) {
-    wrongText = otherAyahs[Math.floor(Math.random() * otherAyahs.length)].text;
-  } else {
-    // Sourate tres courte, on inverse les mots du correct comme leurre
+  const wrongTexts: string[] = [];
+  const shuffledOthers = [...otherAyahs].sort(() => Math.random() - 0.5);
+  for (const a of shuffledOthers) {
+    if (wrongTexts.length >= 3) break;
+    if (a.text !== correctVerset.text) wrongTexts.push(a.text);
+  }
+  if (wrongTexts.length === 0) {
     const words = correctVerset.text.split(' ');
-    wrongText = [...words].reverse().join(' ');
+    wrongTexts.push([...words].reverse().join(' '));
   }
 
-  // Placer la bonne reponse aleatoirement
-  const correctIndex = Math.random() < 0.5 ? 0 : 1;
-  const options = correctIndex === 0
-    ? [correctVerset.text, wrongText]
-    : [wrongText, correctVerset.text];
+  const allOptions = [correctVerset.text, ...wrongTexts];
+  const options = allOptions.sort(() => Math.random() - 0.5);
+  const correctIndex = options.indexOf(correctVerset.text);
 
   return {
     question: questionVerset.text,
@@ -214,11 +214,13 @@ export function generateCompletionQ(
   const blankCount = words.length >= 6 ? 2 : 1;
   const positions: number[] = [];
 
-  while (positions.length < blankCount) {
+  let attempts = 0;
+  while (positions.length < blankCount && attempts < words.length * 3) {
     const pos = Math.floor(Math.random() * words.length);
     if (!positions.includes(pos)) {
       positions.push(pos);
     }
+    attempts++;
   }
   positions.sort((a, b) => a - b);
 

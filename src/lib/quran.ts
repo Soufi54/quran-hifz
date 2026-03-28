@@ -72,7 +72,7 @@ export function getAudioUrl(surahNumber: number, ayahNumber: number): string {
 }
 
 export function getTafsirUrl(surahNumber: number, ayahNumber: number, lang: 'ar' | 'en' = 'ar'): string {
-  const slug = lang === 'ar' ? 'ar-tafsir-ibn-kathir' : 'en-tafisr-ibn-kathir';
+  const slug = lang === 'ar' ? 'ar-tafsir-ibn-kathir' : 'en-tafsir-ibn-kathir';
   return `https://cdn.jsdelivr.net/gh/spa5k/tafsir_api@main/tafsir/${slug}/${surahNumber}/${ayahNumber}.json`;
 }
 

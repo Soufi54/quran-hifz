@@ -1,9 +1,9 @@
-const CACHE_NAME = 'quranduel-v1';
+const CACHE_NAME = 'quranduel-v2';
 const STATIC_ASSETS = [
   '/',
-  '/sourates',
-  '/progression',
-  '/profil',
+  '/sourates/',
+  '/progression/',
+  '/profil/',
 ];
 
 self.addEventListener('install', (event) => {

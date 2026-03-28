@@ -559,7 +559,7 @@ export default function SurahPage() {
           className={`flex flex-col items-center text-[10px] cursor-pointer transition-colors duration-200 min-w-[44px] ${
             showImage ? 'text-emerald-700 font-semibold' : 'text-gray-400 hover:text-gray-600'
           }`}>
-          <Image size={20} />
+          <Image size={20} aria-hidden="true" />
           <span className="mt-0.5">Tajweed</span>
         </button>
 

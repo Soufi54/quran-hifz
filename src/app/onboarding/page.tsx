@@ -60,11 +60,11 @@ export default function OnboardingPage() {
 
           <div className="space-y-3">
             <button
-              onClick={() => { setStep('goal'); }}
+              onClick={() => { setSelectedSurahs(new Set([1])); setStep('goal'); }}
               className="clay-card w-full p-5 text-left cursor-pointer"
             >
               <p className="font-semibold text-emerald-800">Debutant</p>
-              <p className="text-sm text-gray-500 mt-1">Je commence a memoriser</p>
+              <p className="text-sm text-gray-500 mt-1">Je commence a memoriser (Al-Fatiha)</p>
             </button>
             <button
               onClick={() => { setStep('surahs'); }}

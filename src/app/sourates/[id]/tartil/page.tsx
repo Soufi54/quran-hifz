@@ -458,12 +458,15 @@ export default function TartilPage() {
       setMicError('Impossible de demarrer. Recharge la page.');
     }
 
-    // Timeout silence initial (10s)
+    // Timeout silence initial (15s) — marque le premier mot en erreur si rien dit
     silenceTimeoutRef.current = setTimeout(() => {
       if (activeRef.current && currentWordRef.current === 0) {
-        // Toujours rien apres 10s — rappel visuel (pas d'erreur)
+        markWord(0, 'wrong');
+        flashError();
+        setCurrentWordIndex(1);
+        currentWordRef.current = 1;
       }
-    }, 10000);
+    }, 15000);
   }
 
   function handleStop() {
@@ -495,6 +498,14 @@ export default function TartilPage() {
     }
   }
 
+  // Mettre a jour le statut quand termine
+  useEffect(() => {
+    if (!done || !surah) return;
+    const correct = words.filter(w => w.status === 'correct').length;
+    const pct = words.length > 0 ? Math.round((correct / words.length) * 100) : 0;
+    if (pct >= 80) setSurahStatus(surahNumber, 'mastered');
+  }, [done, words, surahNumber, surah]);
+
   if (!surah) return <div className="p-8 text-center text-gray-500">Sourate non trouvee</div>;
 
   // Ecran resultats
@@ -503,7 +514,6 @@ export default function TartilPage() {
     const correct = words.filter(w => w.status === 'correct').length;
     const pct = total > 0 ? Math.round((correct / total) * 100) : 0;
     const mastered = pct >= 80;
-    if (mastered) setSurahStatus(surahNumber, 'mastered');
 
     return (
       <div className="min-h-screen page-enter">
@@ -647,7 +657,7 @@ export default function TartilPage() {
                   {transcript.split(' ').slice(-8).join(' ')}
                 </p>
               )}
-              {debugLog.length > 0 && (
+              {process.env.NODE_ENV === 'development' && debugLog.length > 0 && (
                 <div className="mt-1 border-t border-gray-100 pt-1">
                   {debugLog.slice(-3).map((log, i) => (
                     <p key={i} className="text-[10px] text-gray-300 font-mono">{log}</p>

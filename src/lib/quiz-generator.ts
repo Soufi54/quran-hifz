@@ -38,7 +38,9 @@ function generateNextAyahQuestion(surah: Surah): QuizQuestion | null {
     3
   );
   const correctText = getFirstWords(nextAyah.text, 4);
-  const options = shuffle([correctText, ...distractors.map(d => getFirstWords(d.text, 4))]);
+  const distractorTexts = distractors.map(d => getFirstWords(d.text, 4)).filter(t => t !== correctText);
+  if (distractorTexts.length === 0) return null;
+  const options = shuffle([correctText, ...distractorTexts.slice(0, 3)]);
   return {
     type: 'next_ayah',
     questionText: 'Quel est le verset suivant ?',
@@ -60,10 +62,12 @@ function generateCompleteAyahQuestion(surah: Surah): QuizQuestion | null {
     3
   ).map(d => {
     const w = d.text.split(' ');
-    const s = Math.floor(w.length * 0.3);
-    return w.slice(s, s + Math.min(3, Math.floor(w.length * 0.3))).join(' ') || w[0];
-  });
-  const options = shuffle([missing, ...distractors]);
+    const gapLen = missing.split(' ').length;
+    const s = Math.floor(Math.random() * Math.max(1, w.length - gapLen));
+    return w.slice(s, s + gapLen).join(' ') || w.slice(0, gapLen).join(' ');
+  }).filter(t => t !== missing);
+  if (distractors.length === 0) return null;
+  const options = shuffle([missing, ...distractors.slice(0, 3)]);
   return {
     type: 'complete_ayah',
     questionText: 'Complete le verset :',
@@ -75,7 +79,6 @@ function generateCompleteAyahQuestion(surah: Surah): QuizQuestion | null {
   };
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function generateIdentifySurahQuestion(surahNumber: number): QuizQuestion | null {
   const surah = getSurah(surahNumber);
   if (!surah || surah.ayahs.length === 0) return null;
@@ -117,10 +120,16 @@ function generateTranslationQuestion(surah: Surah): QuizQuestion | null {
 }
 
 // 85% verset suivant, 15% autres types
-function pickGenerator(): ((s: Surah) => QuizQuestion | null) {
+function pickGenerator(surahNumber?: number): ((s: Surah) => QuizQuestion | null) {
   const roll = Math.random();
   if (roll < 0.85) return generateNextAyahQuestion;
-  const others = [generateCompleteAyahQuestion, generateTranslationQuestion];
+  const others: ((s: Surah) => QuizQuestion | null)[] = [
+    generateCompleteAyahQuestion,
+    generateTranslationQuestion,
+  ];
+  if (surahNumber !== undefined) {
+    others.push((s: Surah) => generateIdentifySurahQuestion(s.number));
+  }
   return others[Math.floor(Math.random() * others.length)];
 }
 

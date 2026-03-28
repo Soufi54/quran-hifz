@@ -23,13 +23,20 @@ export function getBestStreak(): number {
   return parseInt(get('bestStreak') || '0');
 }
 
+function toLocalDateStr(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
 export function updateStreak(): number {
-  const today = new Date().toISOString().split('T')[0];
+  const today = toLocalDateStr(new Date());
   const lastChallenge = get('lastChallengeDate');
 
   const yesterday = new Date();
   yesterday.setDate(yesterday.getDate() - 1);
-  const yesterdayStr = yesterday.toISOString().split('T')[0];
+  const yesterdayStr = toLocalDateStr(yesterday);
 
   let newStreak = 1;
   if (lastChallenge === yesterdayStr) {
@@ -82,10 +89,17 @@ export function loseLive(): number {
 
 // --- Progression sourates ---
 
+function safeParse<T>(json: string | null, fallback: T): T {
+  if (!json) return fallback;
+  try {
+    return JSON.parse(json);
+  } catch {
+    return fallback;
+  }
+}
+
 export function getSurahProgress(): Record<number, SurahStatus> {
-  const stored = get('surahProgress');
-  if (!stored) return {};
-  return JSON.parse(stored);
+  return safeParse(get('surahProgress'), {});
 }
 
 export function setSurahStatus(surahNumber: number, status: SurahStatus): void {
@@ -104,13 +118,13 @@ export function getLearnedSurahs(): number[] {
 // --- Review dates ---
 
 export function setReviewDate(surahNumber: number): void {
-  const dates = JSON.parse(get('surahReviewDates') || '{}');
+  const dates = safeParse<Record<string, string>>(get('surahReviewDates'), {});
   dates[surahNumber] = new Date().toISOString();
   set('surahReviewDates', JSON.stringify(dates));
 }
 
 export function getReviewDate(surahNumber: number): string | null {
-  const dates = JSON.parse(get('surahReviewDates') || '{}');
+  const dates = safeParse<Record<string, string>>(get('surahReviewDates'), {});
   return dates[surahNumber] || null;
 }
 
@@ -118,7 +132,7 @@ export function getReviewDate(surahNumber: number): string | null {
 
 export function updateSurahDeclines(): void {
   const progress = getSurahProgress();
-  const dates = JSON.parse(get('surahReviewDates') || '{}');
+  const dates = safeParse<Record<string, string>>(get('surahReviewDates'), {});
   const now = Date.now();
 
   Object.entries(progress).forEach(([numStr, status]) => {
@@ -137,6 +151,6 @@ export function updateSurahDeclines(): void {
 // --- Challenge quotidien ---
 
 export function isChallengeCompletedToday(): boolean {
-  const today = new Date().toISOString().split('T')[0];
+  const today = toLocalDateStr(new Date());
   return get('lastChallengeDate') === today;
 }

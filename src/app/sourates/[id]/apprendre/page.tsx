@@ -254,7 +254,8 @@ export default function ApprendrePage() {
         setReciteRevealed(false);
       }
     },
-    [currentAyahs, surahNumber]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [currentAyahs, surahNumber, stopAudio, activeChunk]
   );
 
   const nextStep = () => {

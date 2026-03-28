@@ -13,9 +13,9 @@ export function getStreakMultiplier(streak: number): number {
   return 1;
 }
 
-export function calculateChallengeXP(correctAnswers: number, streak: number): number {
+export function calculateChallengeXP(correctAnswers: number, streak: number, totalQuestions: number = 5): number {
   const baseXP = correctAnswers * 10;
-  const bonus = correctAnswers === 5 ? 20 : 0;
+  const bonus = correctAnswers === totalQuestions ? 20 : 0;
   return Math.floor((baseXP + bonus) * getStreakMultiplier(streak));
 }
 

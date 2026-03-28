@@ -79,6 +79,7 @@ export function createSpeechRecognition(): SpeechRecognitionLike | null {
   rec.continuous = true;
   rec.interimResults = true;
   rec.maxAlternatives = 1;
+  activeRecognition = rec;
   return rec;
 }
 

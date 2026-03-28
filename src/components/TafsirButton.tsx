@@ -85,8 +85,9 @@ export default function TafsirButton({ surahNumber, ayahNumber }: TafsirButtonPr
               <div
                 className={`text-sm leading-relaxed ${lang === 'ar' ? 'text-right' : 'text-left'} text-gray-700`}
                 dir={lang === 'ar' ? 'rtl' : 'ltr'}
-                dangerouslySetInnerHTML={{ __html: currentText || 'Non disponible' }}
-              />
+              >
+                {(currentText || 'Non disponible').replace(/<[^>]*>/g, '')}
+              </div>
             </>
           )}
         </div>

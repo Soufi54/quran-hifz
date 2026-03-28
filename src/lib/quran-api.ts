@@ -63,6 +63,7 @@ export async function fetchSurahTranslation(
     if (translation.source === 'qurancom') {
       const url = `${QURANCOM_BASE}/quran/translations/${translation.resourceId}?chapter_number=${surahNumber}`;
       const resp = await fetch(url);
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       const data = await resp.json();
 
       if (data.translations) {
@@ -77,6 +78,7 @@ export async function fetchSurahTranslation(
     } else if (translation.source === 'alquran_cloud') {
       const url = `${ALQURAN_BASE}/surah/${surahNumber}/${translation.resourceId}`;
       const resp = await fetch(url);
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       const data = await resp.json();
 
       if (data.data?.ayahs) {
@@ -122,6 +124,7 @@ export async function fetchAyahTafsir(
       const verseKey = `${surahNumber}:${ayahNumber}`;
       const url = `${QURANCOM_BASE}/tafsirs/${tafsir.resourceId}/by_ayah/${verseKey}`;
       const resp = await fetch(url);
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       const data = await resp.json();
 
       if (data.tafsir?.text) {
