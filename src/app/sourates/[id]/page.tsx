@@ -191,8 +191,10 @@ export default function SurahPage() {
 
   const [currentPage, setCurrentPage] = useState(1);
   const [showTranslation, setShowTranslation] = useState(false);
+  const [showPhonetic, setShowPhonetic] = useState(false);
   const [showImage, setShowImage] = useState(true); // mushaf classique par defaut
   const [isPlaying, setIsPlaying] = useState(false);
+  const [translitData, setTranslitData] = useState<Record<string, Record<string, string>> | null>(null);
   const [showRecitateur, setShowRecitateur] = useState(false);
   const [recitateur, setRecitateur] = useState('Alafasy_128kbps');
   const [fontReady, setFontReady] = useState(false);
@@ -217,6 +219,14 @@ export default function SurahPage() {
     const saved = localStorage.getItem('recitateur');
     if (saved) setRecitateur(saved);
   }, []);
+
+  // Charger la transliteration quand active
+  useEffect(() => {
+    if (!showPhonetic || translitData) return;
+    import('../../../data/transliteration.json').then(mod => {
+      setTranslitData(mod.default as Record<string, Record<string, string>>);
+    });
+  }, [showPhonetic, translitData]);
 
   useEffect(() => {
     if (!surah) return;
@@ -364,6 +374,38 @@ export default function SurahPage() {
     );
   };
 
+  // Rendu phonetique
+  const renderPhonetic = () => {
+    const pd = getPageData(currentPage);
+    return (
+      <div className="px-4 py-5 overflow-y-auto">
+        <div className="flex justify-between items-center pb-2 mb-4 border-b border-gray-200 text-xs text-gray-500">
+          <span>Page {currentPage}</span>
+          <span style={{ fontFamily: "'Noto Naskh Arabic', serif" }}>
+            {pd.ayahs[0]?.surahNameArabic}
+          </span>
+        </div>
+        <div className="space-y-5">
+          {pd.ayahs.map((ayah) => {
+            const translit = translitData?.[String(ayah.surahNumber)]?.[String(ayah.ayahNumberInSurah)] || '';
+            return (
+              <div key={`${ayah.surahNumber}-${ayah.ayahNumberInSurah}`} className="pb-4 border-b border-gray-100 last:border-0">
+                <p className="text-xl leading-[52px] text-right text-gray-900 mb-2" dir="rtl"
+                  style={{ fontFamily: "'Amiri Quran', serif" }}>
+                  {ayah.text}
+                  <span className="text-sm text-gray-400 mx-1">﴿{ayah.ayahNumberInSurah}﴾</span>
+                </p>
+                <p className="text-base text-emerald-700 leading-relaxed italic">
+                  {translit || '...'}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
   // Rendu traduction
   const renderTranslation = () => (
     <div className="px-4 py-5">
@@ -431,7 +473,7 @@ export default function SurahPage() {
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
-        {showTranslation ? renderTranslation() : showImage ? (
+        {showPhonetic ? renderPhonetic() : showTranslation ? renderTranslation() : showImage ? (
           <MushafImagePage
             pageNumber={currentPage}
             qcfPage={qcfPage}
@@ -448,7 +490,7 @@ export default function SurahPage() {
           <span className="mt-0.5">{isPlaying ? 'Pause' : 'Ecouter'}</span>
         </button>
 
-        <button onClick={() => { setShowTranslation(!showTranslation); if (!showTranslation) setShowImage(false); }}
+        <button onClick={() => { setShowTranslation(!showTranslation); if (!showTranslation) { setShowImage(false); setShowPhonetic(false); } }}
           className={`flex flex-col items-center text-[10px] cursor-pointer transition-colors duration-200 min-w-[44px] ${
             showTranslation ? 'text-emerald-700 font-semibold' : 'text-gray-400 hover:text-gray-600'
           }`}>
@@ -456,7 +498,15 @@ export default function SurahPage() {
           <span className="mt-0.5">Traduction</span>
         </button>
 
-        <button onClick={() => { setShowImage(!showImage); if (showImage) setShowTranslation(false); }}
+        <button onClick={() => { setShowPhonetic(!showPhonetic); if (!showPhonetic) { setShowTranslation(false); setShowImage(false); } }}
+          className={`flex flex-col items-center text-[10px] cursor-pointer transition-colors duration-200 min-w-[44px] ${
+            showPhonetic ? 'text-emerald-700 font-semibold' : 'text-gray-400 hover:text-gray-600'
+          }`}>
+          <span className="text-base">أ</span>
+          <span className="mt-0.5">Phonetique</span>
+        </button>
+
+        <button onClick={() => { setShowImage(!showImage); if (showImage) { setShowTranslation(false); setShowPhonetic(false); } }}
           className={`flex flex-col items-center text-[10px] cursor-pointer transition-colors duration-200 min-w-[44px] ${
             showImage ? 'text-emerald-700 font-semibold' : 'text-gray-400 hover:text-gray-600'
           }`}>
