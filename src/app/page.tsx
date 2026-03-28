@@ -114,15 +114,13 @@ export default function ChallengePage() {
             </>
           ) : (
             <>
-              <div className="w-24 h-24 rounded-3xl bg-emerald-50 flex items-center justify-center mb-5" style={{ boxShadow: 'var(--shadow-clay)' }}>
-                <CheckCircle size={44} className="text-emerald-500" />
+              <div className="w-20 h-20 rounded-3xl bg-emerald-50 flex items-center justify-center mb-4" style={{ boxShadow: 'var(--shadow-clay)' }}>
+                <CheckCircle size={40} className="text-emerald-500" />
               </div>
-              <h2 className="text-xl font-bold text-emerald-900 mb-2">Challenge du jour termine !</h2>
-              <div className="flex items-center gap-2 mt-3">
+              <div className="flex items-center gap-2 mb-2">
                 <Flame size={24} className="text-amber-500" />
                 <span className="text-lg font-bold text-amber-600">{streak} jours</span>
               </div>
-              <p className="text-gray-500 mt-3 text-sm">Reviens demain pour continuer ton streak</p>
             </>
           )}
           <button
@@ -135,7 +133,7 @@ export default function ChallengePage() {
                 setState('playing');
               }
             }}
-            className="clay-button py-3 px-8 mt-6"
+            className="clay-button py-4 px-10 mt-4 text-lg"
           >
             Nouveau challenge
           </button>
