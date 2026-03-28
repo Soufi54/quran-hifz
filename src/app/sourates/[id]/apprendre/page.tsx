@@ -198,7 +198,6 @@ export default function ApprendrePage() {
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
-      audioRef.current = null;
     }
     setIsPlaying(false);
   }, []);
@@ -321,18 +320,22 @@ export default function ApprendrePage() {
     playingRef.current = true;
     setIsPlaying(true);
 
+    // Reutiliser un seul element Audio (obligatoire sur iOS Safari)
+    const audio = audioRef.current || new Audio();
+    audioRef.current = audio;
+
     for (let i = 0; i < currentAyahs.length; i++) {
       if (!playingRef.current) break;
       const ayah = currentAyahs[i];
       setHighlightedAyah(i);
       const url = getAudioUrl(surahNumber, ayah.numberInSurah);
-      const audio = new Audio(url);
-      audioRef.current = audio;
 
       try {
         await new Promise<void>((resolve, reject) => {
           audio.onended = () => resolve();
-          audio.onerror = () => reject();
+          audio.onerror = () => reject(new Error('audio error'));
+          audio.src = url;
+          audio.load();
           audio.play().catch(reject);
         });
       } catch {
@@ -341,7 +344,6 @@ export default function ApprendrePage() {
     }
 
     if (playingRef.current) {
-      // Audio terminee naturellement (pas stoppee)
       setListenCount((c) => c + 1);
     }
     playingRef.current = false;

@@ -298,18 +298,23 @@ export default function SurahPage() {
     }
     playingRef.current = true;
     setIsPlaying(true);
+
+    // Reutiliser un seul element Audio (obligatoire sur iOS Safari)
+    const audio = audioRef.current || new Audio();
+    audioRef.current = audio;
+
     const pd = getPageData(currentPage);
     for (const ayah of pd.ayahs) {
       if (!playingRef.current) break;
       const key = `${ayah.surahNumber}:${ayah.ayahNumberInSurah}`;
       setPlayingAyahKey(key);
       const url = getAudioUrl(ayah.surahNumber, ayah.ayahNumberInSurah);
-      const audio = new Audio(url);
-      audioRef.current = audio;
       try {
         await new Promise<void>((resolve, reject) => {
           audio.onended = () => resolve();
-          audio.onerror = () => reject();
+          audio.onerror = () => reject(new Error('audio error'));
+          audio.src = url;
+          audio.load();
           audio.play().catch(reject);
         });
       } catch { break; }
