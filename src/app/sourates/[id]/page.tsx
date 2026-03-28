@@ -84,11 +84,12 @@ function MushafPage({
       if (!containerRef.current) return;
       const container = containerRef.current;
       const containerWidth = container.clientWidth;
+      const containerHeight = container.clientHeight;
       const lines = container.querySelectorAll('.mushaf-line');
       if (lines.length === 0) return;
 
       let size = initialSize;
-      const minSize = 12;
+      const minSize = 10;
 
       while (size > minSize) {
         let fits = true;
@@ -97,9 +98,14 @@ function MushafPage({
         });
         // Forcer le reflow
         void container.offsetHeight;
+        // Check largeur
         lines.forEach(line => {
           if (line.scrollWidth > containerWidth + 1) fits = false;
         });
+        // Check hauteur — le contenu ne doit pas depasser le conteneur
+        if (fits && container.scrollHeight > containerHeight + 5) {
+          fits = false;
+        }
         if (fits) break;
         size -= 0.5;
       }
@@ -152,10 +158,15 @@ function MushafPage({
         return (
           <div key={lineNum}>
             {showInlineSurahHeader && (
-              <div className="text-center">
+              <div className="text-center py-1 my-1 border-t border-b border-gray-200" style={{ background: 'linear-gradient(to right, transparent, rgba(0,0,0,0.03), transparent)' }}>
                 <p className="text-base font-bold text-gray-700" style={{ fontFamily: "'Noto Naskh Arabic', serif" }}>
                   {surahStart.surahName}
                 </p>
+                {surahStart.surahNumber !== 9 && (
+                  <p className="text-xs text-gray-500" style={{ fontFamily: "'Amiri Quran', serif" }}>
+                    بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ
+                  </p>
+                )}
               </div>
             )}
             <div
@@ -164,7 +175,7 @@ function MushafPage({
               style={{
                 fontFamily: `'${fontFamily}', sans-serif`,
                 fontSize: `${fontSize}px`,
-                lineHeight: 1.35,
+                lineHeight: 1.8,
               }}
             >
               {words.map((word, wi) => (
