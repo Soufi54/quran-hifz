@@ -31,24 +31,15 @@ export function getChunks(surahNumber: number): Chunk[] {
   const chunks: Chunk[] = [];
   let chunkIndex = 0;
 
-  // Bismillah a stripper du verset 1 (sauf Fatiha et Tawba)
-  const bismillah = 'بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ';
-  const stripBismillah = surahNumber !== 1 && surahNumber !== 9;
+  // Bismillah deja strippee dans quran.json
 
   for (let i = 0; i < surah.ayahs.length; i += CHUNK_SIZE) {
     const slice = surah.ayahs.slice(i, i + CHUNK_SIZE);
-    const versets = slice.map(a => {
-      let text = a.text;
-      // Stripper la bismillah du verset 1
-      if (stripBismillah && a.numberInSurah === 1 && text.includes(bismillah)) {
-        text = text.replace(bismillah, '').trim();
-      }
-      return {
-        number: a.numberInSurah,
-        text,
-        translationFr: a.translationFr,
-      };
-    });
+    const versets = slice.map(a => ({
+      number: a.numberInSurah,
+      text: a.text,
+      translationFr: a.translationFr,
+    }));
 
     const locked = chunkIndex > 0 && !isChunkUnlocked(surahNumber, chunkIndex);
 
