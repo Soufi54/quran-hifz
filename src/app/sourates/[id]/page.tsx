@@ -397,18 +397,36 @@ export default function SurahPage() {
           </span>
         </div>
         <div className="space-y-5">
-          {pd.ayahs.map((ayah) => {
+          {pd.ayahs.map((ayah, idx) => {
             const translit = translitData?.[String(ayah.surahNumber)]?.[String(ayah.ayahNumberInSurah)] || '';
+            const prevSurah = idx > 0 ? pd.ayahs[idx - 1].surahNumber : ayah.surahNumber;
+            const isNewSurah = ayah.surahNumber !== prevSurah;
+            const surahInfo = isNewSurah ? getSurah(ayah.surahNumber) : null;
             return (
-              <div key={`${ayah.surahNumber}-${ayah.ayahNumberInSurah}`} className="pb-4 border-b border-gray-100 last:border-0">
-                <p className="text-xl leading-[52px] text-right text-gray-900 mb-2" dir="rtl"
-                  style={{ fontFamily: "'Amiri Quran', serif" }}>
-                  {ayah.text}
-                  <span className="text-sm text-gray-400 mx-1">﴿{ayah.ayahNumberInSurah}﴾</span>
-                </p>
-                <p className="text-base text-emerald-700 leading-relaxed italic">
-                  {translit || '...'}
-                </p>
+              <div key={`${ayah.surahNumber}-${ayah.ayahNumberInSurah}`}>
+                {isNewSurah && surahInfo && (
+                  <div className="text-center py-3 my-2 border-t border-b border-gray-200" style={{ background: 'linear-gradient(to right, transparent, rgba(0,0,0,0.03), transparent)' }}>
+                    <p className="text-lg font-bold text-gray-800" style={{ fontFamily: "'Noto Naskh Arabic', serif" }}>
+                      {surahInfo.nameArabic}
+                    </p>
+                    <p className="text-xs text-gray-500">{surahInfo.nameFrench}</p>
+                    {ayah.surahNumber !== 9 && (
+                      <p className="text-sm text-gray-500 mt-1" style={{ fontFamily: "'Amiri Quran', serif" }}>
+                        بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ
+                      </p>
+                    )}
+                  </div>
+                )}
+                <div className="pb-4 border-b border-gray-100 last:border-0">
+                  <p className="text-xl leading-[52px] text-right text-gray-900 mb-2" dir="rtl"
+                    style={{ fontFamily: "'Amiri Quran', serif" }}>
+                    {ayah.text}
+                    <span className="text-sm text-gray-400 mx-1">﴿{ayah.ayahNumberInSurah}﴾</span>
+                  </p>
+                  <p className="text-base text-emerald-700 leading-relaxed italic">
+                    {translit || '...'}
+                  </p>
+                </div>
               </div>
             );
           })}
@@ -427,22 +445,42 @@ export default function SurahPage() {
         </span>
       </div>
       <div className="space-y-4">
-        {pageData.ayahs.map((ayah) => (
-          <div key={`${ayah.surahNumber}-${ayah.ayahNumberInSurah}`} className="clay-card p-4">
-            <p className="text-xl leading-[52px] text-right text-emerald-900 mb-3" dir="rtl"
-              style={{ fontFamily: "'Amiri Quran', serif" }}>
-              {ayah.text}
-              <span className="text-sm text-emerald-400 mx-1">﴿{ayah.ayahNumberInSurah}﴾</span>
-            </p>
-            <div className="border-t border-emerald-100 pt-3">
-              <p className="text-sm text-gray-600 leading-relaxed">
-                <span className="text-xs font-semibold text-emerald-600 mr-1">{ayah.ayahNumberInSurah}.</span>
-                {ayah.translationFr}
-              </p>
-              <TafsirButton surahNumber={ayah.surahNumber} ayahNumber={ayah.ayahNumberInSurah} />
+        {pageData.ayahs.map((ayah, idx) => {
+          const prevSurah = idx > 0 ? pageData.ayahs[idx - 1].surahNumber : ayah.surahNumber;
+          const isNewSurah = ayah.surahNumber !== prevSurah;
+          const surahInfo = isNewSurah ? getSurah(ayah.surahNumber) : null;
+          return (
+            <div key={`${ayah.surahNumber}-${ayah.ayahNumberInSurah}`}>
+              {isNewSurah && surahInfo && (
+                <div className="text-center py-3 my-2 border-t border-b border-emerald-200" style={{ background: 'linear-gradient(to right, transparent, rgba(16,185,129,0.05), transparent)' }}>
+                  <p className="text-lg font-bold text-emerald-900" style={{ fontFamily: "'Noto Naskh Arabic', serif" }}>
+                    {surahInfo.nameArabic}
+                  </p>
+                  <p className="text-xs text-emerald-600">{surahInfo.nameFrench}</p>
+                  {ayah.surahNumber !== 9 && (
+                    <p className="text-sm text-emerald-500 mt-1" style={{ fontFamily: "'Amiri Quran', serif" }}>
+                      بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ
+                    </p>
+                  )}
+                </div>
+              )}
+              <div className="clay-card p-4">
+                <p className="text-xl leading-[52px] text-right text-emerald-900 mb-3" dir="rtl"
+                  style={{ fontFamily: "'Amiri Quran', serif" }}>
+                  {ayah.text}
+                  <span className="text-sm text-emerald-400 mx-1">﴿{ayah.ayahNumberInSurah}﴾</span>
+                </p>
+                <div className="border-t border-emerald-100 pt-3">
+                  <p className="text-sm text-gray-600 leading-relaxed">
+                    <span className="text-xs font-semibold text-emerald-600 mr-1">{ayah.ayahNumberInSurah}.</span>
+                    {ayah.translationFr}
+                  </p>
+                  <TafsirButton surahNumber={ayah.surahNumber} ayahNumber={ayah.ayahNumberInSurah} />
+                </div>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
       <p className="text-center text-sm text-emerald-400 mt-6">Page {currentPage} / 604</p>
     </div>
