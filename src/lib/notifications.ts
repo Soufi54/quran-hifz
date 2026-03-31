@@ -25,7 +25,7 @@ export function scheduleStreakReminder(): void {
     const today = new Date().toISOString().split('T')[0];
 
     if (lastChallenge !== today) {
-      new Notification('QuranDuel', {
+      new Notification('Quran Hifz', {
         body: 'Ne perds pas ton streak ! Fais ton challenge quotidien.',
         icon: '/icon-192.png',
         tag: 'streak-reminder',

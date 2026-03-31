@@ -1,4 +1,4 @@
-const CACHE_NAME = 'quranduel-v2';
+const CACHE_NAME = 'quranhifz-v1';
 const STATIC_ASSETS = [
   '/',
   '/sourates/',

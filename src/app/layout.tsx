@@ -4,8 +4,8 @@ import OnboardingGuard from "../components/OnboardingGuard";
 import PWAInstall from "../components/PWAInstall";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://quranduel.pages.dev"),
-  title: "QuranDuel - Le Duolingo du Coran",
+  metadataBase: new URL("https://quranhifz.pages.dev"),
+  title: "Quran Hifz - Le Duolingo du Coran",
   description: "Memorise le Coran un verset a la fois. Challenge quotidien, progression visuelle, mosquee evolutive.",
   manifest: "/manifest.json",
   icons: {
@@ -15,16 +15,16 @@ export const metadata: Metadata = {
     apple: "/apple-touch-icon.png",
   },
   openGraph: {
-    title: "QuranDuel - Le Duolingo du Coran",
+    title: "Quran Hifz - Le Duolingo du Coran",
     description: "Memorise le Coran un verset a la fois. Challenge quotidien, progression visuelle, mosquee evolutive.",
     type: "website",
     locale: "fr_FR",
-    siteName: "QuranDuel",
-    images: [{ url: "/icon-512.png", width: 512, height: 512, alt: "QuranDuel" }],
+    siteName: "Quran Hifz",
+    images: [{ url: "/icon-512.png", width: 512, height: 512, alt: "Quran Hifz" }],
   },
   twitter: {
     card: "summary",
-    title: "QuranDuel - Le Duolingo du Coran",
+    title: "Quran Hifz - Le Duolingo du Coran",
     description: "Memorise le Coran un verset a la fois. Challenge quotidien, progression visuelle.",
     images: ["/icon-512.png"],
   },

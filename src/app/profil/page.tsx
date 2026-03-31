@@ -72,7 +72,7 @@ export default function ProfilPage() {
           <User size={36} className="text-white/90" />
         </div>
         <h2 className="text-lg font-bold mt-3">Utilisateur</h2>
-        <p className="text-sm text-emerald-200 mt-1">QuranDuel MVP</p>
+        <p className="text-sm text-emerald-200 mt-1">Quran Hifz</p>
       </div>
 
       <div className="p-4 space-y-5 mt-2">
@@ -176,7 +176,7 @@ export default function ProfilPage() {
           </div>
         </div>
 
-        <p className="text-center text-[11px] text-gray-300 mt-8">QuranDuel v1.0.0 — MVP</p>
+        <p className="text-center text-[11px] text-gray-300 mt-8">Quran Hifz v1.0.0</p>
       </div>
 
       <BottomNav />

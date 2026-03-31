@@ -1,7 +1,7 @@
 {
-  "name": "QuranDuel",
-  "short_name": "QuranDuel",
-  "description": "Le Duolingo du Coran - Memorise, revise, progresse",
+  "name": "Quran Hifz",
+  "short_name": "Quran Hifz",
+  "description": "Memorise le Coran en jouant - Challenge quotidien, progression visuelle",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

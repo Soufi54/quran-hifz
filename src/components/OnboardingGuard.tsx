@@ -25,7 +25,7 @@ export default function OnboardingGuard({ children }: { children: React.ReactNod
           <div className="w-12 h-12 rounded-2xl bg-emerald-100 flex items-center justify-center mx-auto mb-3" style={{ boxShadow: '6px 6px 12px rgba(6,78,59,0.08)' }}>
             <span className="text-2xl">📖</span>
           </div>
-          <p className="text-emerald-700 font-semibold">QuranDuel</p>
+          <p className="text-emerald-700 font-semibold">Quran Hifz</p>
         </div>
       </div>
     );
@@ -38,7 +38,7 @@ export default function OnboardingGuard({ children }: { children: React.ReactNod
           <div className="w-12 h-12 rounded-2xl bg-emerald-100 flex items-center justify-center mx-auto mb-3" style={{ boxShadow: '6px 6px 12px rgba(6,78,59,0.08)' }}>
             <span className="text-2xl">📖</span>
           </div>
-          <p className="text-emerald-700 font-semibold">QuranDuel</p>
+          <p className="text-emerald-700 font-semibold">Quran Hifz</p>
         </div>
       </div>
     );

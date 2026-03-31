@@ -53,7 +53,7 @@ export default function PWAInstall() {
         <Download size={20} className="text-emerald-600" />
       </div>
       <div className="flex-1">
-        <p className="text-sm font-semibold text-emerald-900">Installer QuranDuel</p>
+        <p className="text-sm font-semibold text-emerald-900">Installer Quran Hifz</p>
         <p className="text-xs text-gray-500">Ajoute l&apos;app a ton ecran d&apos;accueil</p>
       </div>
       {deferredPrompt ? (

@@ -43,7 +43,7 @@ export default function OnboardingPage() {
           <div className="w-24 h-24 rounded-3xl bg-emerald-100 flex items-center justify-center mb-6" style={{ boxShadow: 'var(--shadow-clay)' }}>
             <BookOpen size={48} className="text-emerald-600" />
           </div>
-          <h1 className="text-3xl font-bold text-emerald-900 mb-3">QuranDuel</h1>
+          <h1 className="text-3xl font-bold text-emerald-900 mb-3">Quran Hifz</h1>
           <p className="text-gray-500 leading-relaxed mb-10">
             Memorise le Coran, un verset a la fois. Challenge quotidien, progression visuelle, et bientot des duels entre amis.
           </p>
