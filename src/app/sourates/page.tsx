@@ -38,7 +38,7 @@ export default function SouratesPage() {
     return (
       <Link
         href={`/sourates/${surah.number}`}
-        className="flex items-center px-4 py-3.5 cursor-pointer transition-colors hover:bg-emerald-50/50 border-b border-gray-100 last:border-b-0"
+        className="flex items-center px-4 py-3.5 cursor-pointer transition-colors hover:bg-[#F0F9F6] border-b border-gray-100 last:border-b-0"
       >
         {/* Numero + indicateur */}
         <div className="relative mr-4">
@@ -57,7 +57,7 @@ export default function SouratesPage() {
 
         {/* Nom arabe */}
         <div className="text-right">
-          <p className="text-lg text-emerald-800" style={{ fontFamily: "'Noto Naskh Arabic', serif" }}>
+          <p className="text-lg text-[#0D5C4D]" style={{ fontFamily: "'Noto Naskh Arabic', serif" }}>
             {surah.nameArabic}
           </p>
         </div>
@@ -68,18 +68,18 @@ export default function SouratesPage() {
   return (
     <div className="min-h-screen pb-20 page-enter bg-white">
       {/* Header */}
-      <div className="bg-gradient-to-br from-emerald-800 to-emerald-900 text-white px-5 pt-5 pb-4 rounded-b-3xl" style={{ boxShadow: '0 4px 20px rgba(6, 78, 59, 0.2)' }}>
+      <div className="islamic-header text-white px-5 pt-5 pb-4 rounded-b-3xl" style={{ boxShadow: '0 4px 20px rgba(13, 92, 77, 0.2)' }}>
         <h1 className="text-xl font-bold text-center mb-4">Sourates</h1>
 
         {/* Search */}
         <div className="relative">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-emerald-300" />
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
           <input
             type="text"
             placeholder="Rechercher une sourate..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-white/15 rounded-xl pl-9 pr-4 py-2.5 text-sm placeholder:text-emerald-300 text-white outline-none focus:bg-white/25 transition-colors"
+            className="w-full bg-white/10 rounded-xl pl-9 pr-4 py-2.5 text-sm placeholder:text-white/40 text-white outline-none focus:bg-white/25 transition-colors"
           />
         </div>
       </div>
@@ -87,8 +87,8 @@ export default function SouratesPage() {
       {/* Stats */}
       <div className="flex justify-around py-3 border-b border-gray-100">
         <div className="text-center flex items-center gap-1.5">
-          <CheckCircle size={14} className="text-emerald-500" />
-          <span className="text-sm font-bold text-emerald-600">{masteredCount}</span>
+          <CheckCircle size={14} className="text-[#0D5C4D]" />
+          <span className="text-sm font-bold text-[#0D5C4D]">{masteredCount}</span>
           <span className="text-[10px] text-gray-400">maitrisees</span>
         </div>
         <div className="text-center flex items-center gap-1.5">
@@ -107,13 +107,13 @@ export default function SouratesPage() {
       <div className="flex mx-4 mt-3 mb-1 p-0.5 rounded-lg bg-gray-100">
         <button
           onClick={() => setViewMode('list')}
-          className={`flex-1 py-2 text-xs rounded-md cursor-pointer transition-all ${viewMode === 'list' ? 'bg-white text-emerald-700 font-semibold shadow-sm' : 'text-gray-500'}`}
+          className={`flex-1 py-2 text-xs rounded-md cursor-pointer transition-all ${viewMode === 'list' ? 'bg-white text-[#0D5C4D] font-semibold shadow-sm' : 'text-gray-500'}`}
         >
           Sourates
         </button>
         <button
           onClick={() => setViewMode('juz')}
-          className={`flex-1 py-2 text-xs rounded-md cursor-pointer transition-all ${viewMode === 'juz' ? 'bg-white text-emerald-700 font-semibold shadow-sm' : 'text-gray-500'}`}
+          className={`flex-1 py-2 text-xs rounded-md cursor-pointer transition-all ${viewMode === 'juz' ? 'bg-white text-[#0D5C4D] font-semibold shadow-sm' : 'text-gray-500'}`}
         >
           Juz
         </button>
@@ -126,7 +126,7 @@ export default function SouratesPage() {
         ) : (
           juzList.map(juz => (
             <div key={juz}>
-              <div className="sticky top-0 bg-emerald-50 px-4 py-2 text-xs font-bold text-emerald-700 uppercase tracking-wider border-b border-emerald-100">
+              <div className="sticky top-0 bg-[#F0F9F6] px-4 py-2 text-xs font-bold text-[#0D5C4D] uppercase tracking-wider border-b border-[#E2EBE8]">
                 Juz {juz}
               </div>
               {getSurahsByJuz(juz).map(s => <SurahItem key={s.number} surah={s} />)}

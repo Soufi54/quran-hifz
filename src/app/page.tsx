@@ -54,11 +54,11 @@ export default function ChallengePage() {
   return (
     <div className="min-h-screen pb-20 page-enter">
       {/* Header */}
-      <div className="bg-gradient-to-br from-emerald-800 to-emerald-900 text-white px-5 py-5 rounded-b-3xl" style={{ boxShadow: '0 4px 20px rgba(6, 78, 59, 0.2)' }}>
+      <div className="islamic-header text-white px-5 py-5 rounded-b-3xl" style={{ boxShadow: '0 4px 20px rgba(13, 92, 77, 0.2)' }}>
         <h1 className="text-xl font-bold text-center">Challenge du jour</h1>
         <div className="flex justify-center gap-8 mt-3">
           <div className="flex items-center gap-1.5">
-            <Flame size={18} className="text-amber-400" />
+            <Flame size={18} className="text-[#C9A84C]" />
             <span className="font-semibold">{streak} jours</span>
           </div>
           <div className="flex items-center gap-1.5">
@@ -76,10 +76,10 @@ export default function ChallengePage() {
 
       {state === 'no_surahs' && (
         <div className="flex flex-col items-center justify-center px-8 text-center mt-16">
-          <div className="w-20 h-20 rounded-2xl bg-emerald-50 flex items-center justify-center mb-5" style={{ boxShadow: 'var(--shadow-clay)' }}>
-            <BookOpen size={36} className="text-emerald-600" />
+          <div className="w-20 h-20 rounded-2xl bg-[#F0F9F6] flex items-center justify-center mb-5" style={{ boxShadow: 'var(--shadow-clay)' }}>
+            <BookOpen size={36} className="text-[#0D5C4D]" />
           </div>
-          <h2 className="text-xl font-bold text-emerald-900 mb-2">Pas encore de sourates</h2>
+          <h2 className="text-xl font-bold text-[#1C2B2A] mb-2">Pas encore de sourates</h2>
           <p className="text-sm text-gray-500 leading-relaxed">
             Commence par apprendre une sourate dans l&apos;onglet &quot;Sourates&quot; pour debloquer le challenge quotidien.
           </p>
@@ -99,13 +99,13 @@ export default function ChallengePage() {
         <div className="flex flex-col items-center justify-center px-8 text-center mt-12">
           {result ? (
             <>
-              <div className="w-24 h-24 rounded-3xl bg-amber-50 flex items-center justify-center mb-5" style={{ boxShadow: 'var(--shadow-clay)' }}>
-                <Trophy size={44} className="text-amber-500" />
+              <div className="w-24 h-24 rounded-3xl bg-[#C9A84C]/10 flex items-center justify-center mb-5" style={{ boxShadow: 'var(--shadow-clay)' }}>
+                <Trophy size={44} className="text-[#C9A84C]" />
               </div>
-              <h2 className="text-2xl font-bold text-emerald-900 mb-2">Challenge termine !</h2>
+              <h2 className="text-2xl font-bold text-[#1C2B2A] mb-2">Challenge termine !</h2>
               <p className="text-lg text-gray-600">{result.score}/{result.total} bonnes reponses</p>
               <div className="clay-card px-6 py-3 mt-4">
-                <span className="text-xl font-bold text-emerald-700">+{result.xp} XP</span>
+                <span className="text-xl font-bold text-[#0D5C4D]">+{result.xp} XP</span>
               </div>
               <div className="flex items-center gap-2 mt-5">
                 <Flame size={24} className="text-amber-500" />
@@ -114,8 +114,8 @@ export default function ChallengePage() {
             </>
           ) : (
             <>
-              <div className="w-20 h-20 rounded-3xl bg-emerald-50 flex items-center justify-center mb-4" style={{ boxShadow: 'var(--shadow-clay)' }}>
-                <CheckCircle size={40} className="text-emerald-500" />
+              <div className="w-20 h-20 rounded-3xl bg-[#F0F9F6] flex items-center justify-center mb-4" style={{ boxShadow: 'var(--shadow-clay)' }}>
+                <CheckCircle size={40} className="text-[#0D5C4D]" />
               </div>
               <div className="flex items-center gap-2 mb-2">
                 <Flame size={24} className="text-amber-500" />
@@ -133,7 +133,7 @@ export default function ChallengePage() {
                 setState('playing');
               }
             }}
-            className="clay-button py-4 px-10 mt-4 text-lg"
+            className="gold-accent rounded-xl font-semibold shadow-lg py-4 px-10 mt-4 text-lg border-none cursor-pointer transition-transform active:scale-[0.97]"
           >
             Nouveau challenge
           </button>

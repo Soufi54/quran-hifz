@@ -34,21 +34,21 @@ export default function ProgressionPage() {
 
   return (
     <div className="min-h-screen pb-20 page-enter">
-      <div className="bg-gradient-to-br from-emerald-800 to-emerald-900 text-white px-5 py-5 rounded-b-3xl" style={{ boxShadow: '0 4px 20px rgba(6, 78, 59, 0.2)' }}>
+      <div className="islamic-header text-white px-5 py-5 rounded-b-3xl" style={{ boxShadow: '0 4px 20px rgba(13, 92, 77, 0.2)' }}>
         <h1 className="text-xl font-bold text-center">Progression</h1>
       </div>
 
       <div className="p-4 space-y-4 mt-2">
         {/* Mosquee */}
         <div className="clay-card p-6 text-center">
-          <div className="text-5xl mb-3">{mosque.emoji}</div>
-          <h2 className="text-xl font-bold text-emerald-800">{mosque.name}</h2>
+          <div className="w-20 h-20 rounded-full bg-[#C9A84C]/10 flex items-center justify-center mx-auto mb-3"><span className="text-4xl">{mosque.emoji}</span></div>
+          <h2 className="text-xl font-bold text-[#0D5C4D]">{mosque.name}</h2>
           <p className="text-sm text-gray-400 mt-1">Niveau {mosqueLevel}/7</p>
           {nextLevel && (
             <div className="mt-5">
-              <div className="h-2.5 rounded-full overflow-hidden" style={{ background: '#E8F5E9', boxShadow: 'var(--shadow-clay-inset)' }}>
+              <div className="h-2.5 rounded-full overflow-hidden" style={{ background: '#E2EBE8', boxShadow: 'var(--shadow-clay-inset)' }}>
                 <div
-                  className="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 rounded-full transition-all duration-500"
+                  className="h-full bg-gradient-to-r from-[#0D5C4D] to-[#1A8A6E] rounded-full transition-all duration-500"
                   style={{ width: `${Math.min(100, progressToNext)}%` }}
                 />
               </div>
@@ -62,21 +62,21 @@ export default function ProgressionPage() {
         {/* Streak */}
         <div className="clay-card p-4 flex items-center">
           <div className="flex-1 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center">
-              <Flame size={22} className="text-amber-500" />
+            <div className="w-10 h-10 rounded-xl bg-[#C9A84C]/10 flex items-center justify-center">
+              <Flame size={22} className="text-[#C9A84C]" />
             </div>
             <div>
-              <p className="text-lg font-bold text-emerald-900">{streak} jours</p>
+              <p className="text-lg font-bold text-[#1C2B2A]">{streak} jours</p>
               <p className="text-[11px] text-gray-400">Streak actuel</p>
             </div>
           </div>
           <div className="w-px h-10 bg-emerald-100 mx-3" />
           <div className="flex-1 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center">
-              <Trophy size={22} className="text-amber-500" />
+            <div className="w-10 h-10 rounded-xl bg-[#C9A84C]/10 flex items-center justify-center">
+              <Trophy size={22} className="text-[#C9A84C]" />
             </div>
             <div>
-              <p className="text-lg font-bold text-emerald-900">{bestStreak} jours</p>
+              <p className="text-lg font-bold text-[#1C2B2A]">{bestStreak} jours</p>
               <p className="text-[11px] text-gray-400">Meilleur streak</p>
             </div>
           </div>
@@ -86,12 +86,12 @@ export default function ProgressionPage() {
         <div className="grid grid-cols-2 gap-3">
           <div className="clay-card p-4 text-center">
             <Zap size={20} className="text-amber-500 mx-auto mb-1" />
-            <p className="text-2xl font-bold text-emerald-900">{totalXP}</p>
+            <p className="text-2xl font-bold text-[#1C2B2A]">{totalXP}</p>
             <p className="text-[11px] text-gray-400 mt-1">XP Total</p>
           </div>
           <div className="clay-card p-4 text-center">
-            <CheckCircle size={20} className="text-emerald-500 mx-auto mb-1" />
-            <p className="text-2xl font-bold text-emerald-600">{mastered}</p>
+            <CheckCircle size={20} className="text-[#0D5C4D] mx-auto mb-1" />
+            <p className="text-2xl font-bold text-[#0D5C4D]">{mastered}</p>
             <p className="text-[11px] text-gray-400 mt-1">Maitrisees</p>
           </div>
           <div className="clay-card p-4 text-center">

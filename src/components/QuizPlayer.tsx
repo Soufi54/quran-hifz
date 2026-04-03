@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { Heart } from 'lucide-react';
 import { QuizQuestion } from '../types';
 import { getSurah, getFirstPageOfSurah } from '../lib/quran';
 
@@ -178,11 +179,11 @@ export default function QuizPlayer({ questions, onComplete, onLoseLife, lives }:
     return (
       <div className="flex flex-col items-center min-h-[70vh]" onClick={goNext} style={{ cursor: 'pointer' }}>
         <div className="text-center py-2">
-          <p className="text-lg font-bold text-emerald-900" style={{ fontFamily: "'Noto Naskh Arabic', serif" }}>
+          <p className="text-lg font-bold text-[#1C2B2A]" style={{ fontFamily: "'Noto Naskh Arabic', serif" }}>
             {surah?.nameArabic}
           </p>
           <p className="text-xs text-gray-400">{surah?.nameFrench} — verset {q.ayahNumber} — page {actualPage}</p>
-          <p className={`text-sm font-semibold mt-1 ${wasCorrect ? 'text-emerald-600' : 'text-red-500'}`}>
+          <p className={`text-sm font-semibold mt-1 ${wasCorrect ? 'text-[#0D5C4D]' : 'text-[#C45B5B]'}`}>
             {wasCorrect ? 'Correct !' : 'Incorrect'}
             {pts > 0 && ` +${pts} pts`}
           </p>
@@ -208,7 +209,7 @@ export default function QuizPlayer({ questions, onComplete, onLoseLife, lives }:
                   left: '2%',
                   width: '96%',
                   height: `${hPct}%`,
-                  backgroundColor: wasCorrect ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.15)',
+                  backgroundColor: wasCorrect ? 'rgba(13, 92, 77, 0.2)' : 'rgba(196, 91, 91, 0.15)',
                   borderRadius: '4px',
                   pointerEvents: 'none',
                 }}
@@ -227,24 +228,24 @@ export default function QuizPlayer({ questions, onComplete, onLoseLife, lives }:
     <div className="p-4 relative">
       {/* Progress bar */}
       <div className="h-2 bg-gray-200 rounded-full overflow-hidden mb-3">
-        <div className="h-full bg-[#1B4332] rounded-full transition-all duration-300" style={{ width: `${progress}%` }} />
+        <div className="h-full bg-[#0D5C4D] rounded-full transition-all duration-300" style={{ width: `${progress}%` }} />
       </div>
 
       {/* Header */}
       <div className="flex justify-between items-center mb-4 text-sm">
         <div className="flex items-center gap-1">
-          <span>❤️</span>
-          <span className="font-bold text-red-500">{lives}</span>
+          <Heart size={16} className="text-[#C45B5B]" fill="currentColor" />
+          <span className="font-bold text-[#C45B5B]">{lives}</span>
         </div>
         <div className={`font-mono font-bold text-lg ${timerColor}`}>{timeLeft}s</div>
-        <span className="text-green-600 font-semibold">{totalPoints} pts</span>
+        <span className="text-[#0D5C4D] font-semibold">{totalPoints} pts</span>
       </div>
 
       {/* Timer bar */}
       <div className="h-1 bg-gray-200 rounded-full overflow-hidden mb-6">
         <div
           className={`h-full rounded-full transition-all duration-1000 ${
-            timeLeft <= 5 ? 'bg-red-500' : timeLeft <= 10 ? 'bg-orange-400' : 'bg-[#1B4332]'
+            timeLeft <= 5 ? 'bg-red-500' : timeLeft <= 10 ? 'bg-orange-400' : 'bg-[#0D5C4D]'
           }`}
           style={{ width: `${(timeLeft / MAX_TIME_S) * 100}%` }}
         />
@@ -268,7 +269,7 @@ export default function QuizPlayer({ questions, onComplete, onLoseLife, lives }:
           let border = 'border-gray-200';
           let bg = 'bg-white';
           if (answered) {
-            if (i === q.correctIndex) { border = 'border-green-500'; bg = 'bg-green-50'; }
+            if (i === q.correctIndex) { border = 'border-[#1A8A6E]'; bg = 'bg-[#F0F9F6]'; }
             else if (i === selected) { border = 'border-red-500'; bg = 'bg-red-50'; }
           }
           return (
@@ -277,7 +278,7 @@ export default function QuizPlayer({ questions, onComplete, onLoseLife, lives }:
               onClick={() => doAnswer(i)}
               disabled={answered}
               className={`w-full text-right p-4 rounded-xl border-2 ${border} ${bg} transition-all ${
-                !answered ? 'hover:border-[#1B4332] active:scale-[0.98]' : ''
+                !answered ? 'hover:border-[#0D5C4D] active:scale-[0.98]' : ''
               }`}
               dir="rtl"
             >

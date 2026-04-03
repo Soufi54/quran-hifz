@@ -5,21 +5,21 @@
 @import url('https://fonts.googleapis.com/css2?family=Amiri+Quran&family=Noto+Naskh+Arabic:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
-  --primary: #059669;
-  --primary-dark: #064E3B;
-  --primary-light: #ECFDF5;
-  --secondary: #10B981;
-  --accent: #FBBF24;
-  --accent-dark: #CA8A04;
-  --bg: #F0FDF4;
+  --primary: #0D5C4D;
+  --primary-dark: #0A3D33;
+  --primary-light: #F0F9F6;
+  --secondary: #1A8A6E;
+  --accent: #C9A84C;
+  --accent-dark: #A68B3E;
+  --bg: #FAFAF7;
   --bg-card: #FFFFFF;
-  --text: #064E3B;
-  --text-muted: #6B7280;
-  --border: #D1FAE5;
-  --danger: #EF4444;
-  --shadow-clay: 6px 6px 12px rgba(6, 78, 59, 0.08), -2px -2px 8px rgba(255, 255, 255, 0.9);
-  --shadow-clay-sm: 3px 3px 6px rgba(6, 78, 59, 0.06), -1px -1px 4px rgba(255, 255, 255, 0.8);
-  --shadow-clay-inset: inset 2px 2px 4px rgba(6, 78, 59, 0.06), inset -1px -1px 3px rgba(255, 255, 255, 0.7);
+  --text: #1C2B2A;
+  --text-muted: #5F7572;
+  --border: #E2EBE8;
+  --danger: #C45B5B;
+  --shadow-clay: 0 2px 8px rgba(13, 92, 77, 0.06), 0 1px 3px rgba(13, 92, 77, 0.08);
+  --shadow-clay-sm: 0 1px 4px rgba(13, 92, 77, 0.05);
+  --shadow-clay-inset: inset 0 1px 2px rgba(13, 92, 77, 0.06);
 }
 
 * {
@@ -28,6 +28,7 @@
 
 body {
   background: var(--bg);
+  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%230D5C4D' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   color: var(--text);
   margin: 0;
@@ -42,7 +43,7 @@ body {
   body {
     border-left: 1px solid var(--border);
     border-right: 1px solid var(--border);
-    box-shadow: 0 0 40px rgba(6, 78, 59, 0.05);
+    box-shadow: 0 0 40px rgba(13, 92, 77, 0.05);
   }
 }
 
@@ -77,6 +78,25 @@ body {
   box-shadow: var(--shadow-clay-inset);
 }
 
+.gold-accent {
+  background: linear-gradient(135deg, #C9A84C, #E2C878);
+  color: #FFFFFF;
+}
+
+.islamic-header {
+  background: linear-gradient(135deg, #0D5C4D 0%, #0A3D33 50%, #0D5C4D 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.islamic-header::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M20 0l20 20-20 20L0 20z'/%3E%3C/g%3E%3C/svg%3E");
+  pointer-events: none;
+}
+
 /* Smooth page transitions */
 @media (prefers-reduced-motion: no-preference) {
   .page-enter {
@@ -105,7 +125,7 @@ body {
   margin: 0;
 }
 .mushaf-highlight {
-  background-color: rgba(16, 185, 129, 0.15);
+  background-color: rgba(13, 92, 77, 0.15);
   border-radius: 4px;
   transition: background-color 0.3s ease;
 }
