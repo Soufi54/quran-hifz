@@ -122,7 +122,21 @@ export default function SouratesPage() {
       {/* List */}
       <div className="overflow-y-auto">
         {viewMode === 'list' ? (
-          filteredSurahs.map(s => <SurahItem key={s.number} surah={s} />)
+          filteredSurahs.map((s, i) => {
+            const surahJuz = s.ayahs[0]?.juz || 1;
+            const prevJuz = i > 0 ? (filteredSurahs[i - 1].ayahs[0]?.juz || 1) : 0;
+            const showJuzHeader = surahJuz !== prevJuz;
+            return (
+              <div key={s.number}>
+                {showJuzHeader && (
+                  <div className="sticky top-0 z-10 bg-[#F0F9F6] px-4 py-2 text-xs font-bold text-[#0D5C4D] uppercase tracking-wider border-b border-[#E2EBE8]">
+                    Juz {surahJuz}
+                  </div>
+                )}
+                <SurahItem surah={s} />
+              </div>
+            );
+          })
         ) : (
           juzList.map(juz => (
             <div key={juz}>
