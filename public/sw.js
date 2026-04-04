@@ -1,4 +1,5 @@
-const CACHE_NAME = 'quranhifz-v1';
+const CACHE_VERSION = 2;
+const CACHE_NAME = 'quranhifz-v' + CACHE_VERSION;
 const STATIC_ASSETS = [
   '/',
   '/sourates/',
@@ -23,7 +24,6 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Network first for API/CDN, cache first for app shell
   const url = new URL(event.request.url);
 
   if (url.origin !== location.origin) {
@@ -40,14 +40,36 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // App shell — cache first, network fallback
+  // HTML navigation — network first so updates are always picked up
+  if (event.request.mode === 'navigate' || event.request.headers.get('accept')?.includes('text/html')) {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+          return response;
+        })
+        .catch(() => caches.match(event.request))
+    );
+    return;
+  }
+
+  // Static assets (JS, CSS, images) — stale-while-revalidate
   event.respondWith(
     caches.match(event.request).then((cached) => {
-      return cached || fetch(event.request).then((response) => {
+      const fetchPromise = fetch(event.request).then((response) => {
         const clone = response.clone();
         caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
         return response;
       });
+      return cached || fetchPromise;
     })
   );
+});
+
+// Listen for messages from the app
+self.addEventListener('message', (event) => {
+  if (event.data === 'skipWaiting') {
+    self.skipWaiting();
+  }
 });

@@ -8,9 +8,23 @@ export default function PWAInstall() {
   const [deferredPrompt, setDeferredPrompt] = useState<Event | null>(null);
 
   useEffect(() => {
-    // Register service worker
+    // Register service worker with update detection
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').catch(() => {});
+      navigator.serviceWorker.register('/sw.js').then((reg) => {
+        // Check for updates every 60 seconds
+        setInterval(() => reg.update(), 60 * 1000);
+
+        reg.addEventListener('updatefound', () => {
+          const newWorker = reg.installing;
+          if (!newWorker) return;
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'activated') {
+              // New version active — reload to pick up changes
+              window.location.reload();
+            }
+          });
+        });
+      }).catch(() => {});
     }
 
     // Capture install prompt (Android/Chrome)
