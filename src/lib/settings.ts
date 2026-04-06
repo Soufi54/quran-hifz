@@ -3,7 +3,8 @@
  */
 
 import { DEFAULT_RECITER_ID, getReciterById } from './reciters';
-import { DEFAULT_TRANSLATION_ID, DEFAULT_TAFSIR_ID, getTranslationById, getTafsirById } from './translations';
+import { DEFAULT_TRANSLATION_ID, DEFAULT_TAFSIR_ID, getTranslationById, getTafsirById, getTranslationsByLanguage } from './translations';
+import { getUserLanguage } from './storage';
 
 const KEYS = {
   RECITER: 'setting_reciter_id',
@@ -36,6 +37,10 @@ export function setSelectedReciterId(id: string): void {
 export function getSelectedTranslationId(): string {
   const id = get(KEYS.TRANSLATION);
   if (id && getTranslationById(id)) return id;
+  // Choisir la traduction par defaut selon la langue de l'utilisateur
+  const lang = getUserLanguage();
+  const translationsForLang = getTranslationsByLanguage(lang);
+  if (translationsForLang.length > 0) return translationsForLang[0].id;
   return DEFAULT_TRANSLATION_ID;
 }
 

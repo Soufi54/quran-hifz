@@ -154,3 +154,24 @@ export function isChallengeCompletedToday(): boolean {
   const today = toLocalDateStr(new Date());
   return get('lastChallengeDate') === today;
 }
+
+// --- Langue de l'interface ---
+
+const SUPPORTED_LANGUAGES = ['fr', 'en', 'ar', 'tr', 'es', 'de', 'id', 'ur', 'ber'];
+
+function detectBrowserLanguage(): string {
+  if (typeof navigator === 'undefined') return 'en';
+  const lang = navigator.language?.toLowerCase().split('-')[0] || 'en';
+  if (SUPPORTED_LANGUAGES.includes(lang)) return lang;
+  return 'en';
+}
+
+export function getUserLanguage(): string {
+  const stored = get('userLanguage');
+  if (stored && SUPPORTED_LANGUAGES.includes(stored)) return stored;
+  return detectBrowserLanguage();
+}
+
+export function setUserLanguage(lang: string): void {
+  set('userLanguage', lang);
+}

@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { User, Clock, Music, RefreshCw, BookOpen, ChevronRight, Bell } from 'lucide-react';
+import { User, Clock, Music, RefreshCw, BookOpen, ChevronRight, Bell, Globe } from 'lucide-react';
 import BottomNav from '../../components/BottomNav';
-import { getLearnedSurahs } from '../../lib/storage';
+import { getLearnedSurahs, getUserLanguage, setUserLanguage } from '../../lib/storage';
 import { requestNotificationPermission, scheduleStreakReminder } from '../../lib/notifications';
 
 const RECITATEURS = [
@@ -15,12 +15,26 @@ const RECITATEURS = [
   { id: 'Saood_ash-Shuraym_128kbps', name: 'Saood ash-Shuraym' },
 ];
 
+const LANGUES = [
+  { code: 'fr', label: 'Francais', native: 'Francais' },
+  { code: 'en', label: 'Anglais', native: 'English' },
+  { code: 'ar', label: 'Arabe', native: 'العربية' },
+  { code: 'tr', label: 'Turc', native: 'Turkce' },
+  { code: 'es', label: 'Espagnol', native: 'Espanol' },
+  { code: 'de', label: 'Allemand', native: 'Deutsch' },
+  { code: 'id', label: 'Indonesien', native: 'Bahasa Indonesia' },
+  { code: 'ur', label: 'Ourdou', native: 'اردو' },
+  { code: 'ber', label: 'Amazigh', native: 'Tamazight' },
+];
+
 export default function ProfilPage() {
   const router = useRouter();
   const [dailyGoal, setDailyGoal] = useState(10);
   const [recitateur, setRecitateur] = useState('Alafasy_128kbps');
   const [showRecitateur, setShowRecitateur] = useState(false);
   const [showGoal, setShowGoal] = useState(false);
+  const [showLangue, setShowLangue] = useState(false);
+  const [langue, setLangue] = useState('fr');
   const [learnedCount, setLearnedCount] = useState(0);
   const [notifEnabled, setNotifEnabled] = useState(false);
 
@@ -30,6 +44,7 @@ export default function ProfilPage() {
     const rec = localStorage.getItem('recitateur');
     if (rec) setRecitateur(rec);
     setLearnedCount(getLearnedSurahs().length);
+    setLangue(getUserLanguage());
     if (typeof Notification !== 'undefined') {
       setNotifEnabled(Notification.permission === 'granted');
     }
@@ -56,6 +71,14 @@ export default function ProfilPage() {
     setShowRecitateur(false);
   };
 
+  const updateLangue = (code: string) => {
+    setLangue(code);
+    setUserLanguage(code);
+    // Effacer la preference de traduction pour que la nouvelle langue soit utilisee
+    localStorage.removeItem('setting_translation_id');
+    setShowLangue(false);
+  };
+
   const handleReset = () => {
     if (confirm('Veux-tu vraiment reinitialiser toute ta progression ?')) {
       localStorage.clear();
@@ -64,6 +87,7 @@ export default function ProfilPage() {
   };
 
   const recitateurName = RECITATEURS.find(r => r.id === recitateur)?.name || 'Alafasy';
+  const langueName = LANGUES.find(l => l.code === langue)?.native || 'Francais';
 
   return (
     <div className="min-h-screen pb-20 page-enter">
@@ -136,7 +160,7 @@ export default function ProfilPage() {
             {/* Recitateur */}
             <button
               onClick={() => setShowRecitateur(!showRecitateur)}
-              className="w-full p-4 flex items-center gap-3 cursor-pointer transition-colors duration-200 hover:bg-emerald-50/50 rounded-b-2xl"
+              className="w-full p-4 flex items-center gap-3 cursor-pointer transition-colors duration-200 hover:bg-emerald-50/50"
             >
               <Music size={20} className="text-emerald-600" />
               <span className="flex-1 text-left text-sm text-emerald-900 font-medium">Recitateur</span>
@@ -155,6 +179,34 @@ export default function ProfilPage() {
                     }`}
                   >
                     {r.name}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Langue */}
+            <button
+              onClick={() => setShowLangue(!showLangue)}
+              className="w-full p-4 flex items-center gap-3 cursor-pointer transition-colors duration-200 hover:bg-emerald-50/50 rounded-b-2xl"
+            >
+              <Globe size={20} className="text-emerald-600" />
+              <span className="flex-1 text-left text-sm text-emerald-900 font-medium">Langue / Language</span>
+              <span className="text-sm text-gray-400">{langueName}</span>
+            </button>
+            {showLangue && (
+              <div className="p-2">
+                {LANGUES.map(l => (
+                  <button
+                    key={l.code}
+                    onClick={() => updateLangue(l.code)}
+                    className={`w-full text-left p-3 rounded-xl text-sm cursor-pointer transition-colors ${
+                      langue === l.code
+                        ? 'bg-emerald-50 text-emerald-700 font-semibold'
+                        : 'text-gray-600 hover:bg-gray-50'
+                    }`}
+                  >
+                    <span>{l.native}</span>
+                    <span className="text-xs text-gray-400 ml-2">({l.label})</span>
                   </button>
                 ))}
               </div>
