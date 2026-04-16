@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions, Animated, Easing, Platform, Modal, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, router, Stack } from 'expo-router';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import PagerView from '../../components/PagerView';
 import { Audio } from 'expo-av';
@@ -14,6 +14,8 @@ import { getSelectedReciterId, getSelectedTranslationId, getSelectedTafsirId } f
 import { getReciterById, Reciter } from '../../lib/reciters';
 import { getTranslationById, getTafsirById, Translation, Tafsir } from '../../lib/translations';
 import { fetchSurahTranslation, fetchAyahTafsir } from '../../lib/quran-api';
+import { useTheme } from '../../context/ThemeContext';
+import { ThemeColors } from '../../lib/theme';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -25,16 +27,8 @@ type TartilVerse = {
   selfRating: 'correct' | 'error' | 'hesitation' | null;
 };
 
-// Color palette
-const COLORS = {
-  parchment: '#FDF6E3',
-  parchmentDark: '#F5ECD0',
-  gold: '#D4AF37',
-  goldLight: 'rgba(212,175,55,0.15)',
-  goldFaint: 'rgba(212,175,55,0.06)',
-  darkGreen: '#0D2818',
-  mediumGreen: '#1B4332',
-  lightGreen: '#2D6A4F',
+// Status-specific colors (semantic, same in light & dark)
+const STATUS_COLORS = {
   correct: '#10B981',
   correctBg: '#D1FAE5',
   correctBgStrong: '#A7F3D0',
@@ -47,17 +41,14 @@ const COLORS = {
   hesitationBg: '#FEF3C7',
   hesitationBgStrong: '#FDE68A',
   hesitationDark: '#92400E',
-  textPrimary: '#1A1A1A',
-  textSecondary: '#6B7280',
-  textMuted: '#9CA3AF',
-  border: '#E5E7EB',
-  white: '#FFFFFF',
 };
 
 export default function SurahScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const surahNumber = parseInt(id);
   const surah = getSurah(surahNumber);
+  const { colors, isDark } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   const [showTranslation, setShowTranslation] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
@@ -91,6 +82,10 @@ export default function SurahScreen() {
   const [tartilMode, setTartilMode] = useState(false);
   const [tartilVerses, setTartilVerses] = useState<TartilVerse[]>([]);
   const [tartilCurrentIndex, setTartilCurrentIndex] = useState(0);
+
+  // Last read tracking (>10s = considered "read")
+  const entryTimeRef = useRef<number>(Date.now());
+  const surahNumberRef = useRef<number>(surahNumber);
 
   // Animations
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -151,9 +146,21 @@ export default function SurahScreen() {
       Animated.timing(headerAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
     ]).start();
 
+    // Reset entry time when surah changes
+    entryTimeRef.current = Date.now();
+    surahNumberRef.current = surahNumber;
+
     return () => {
       if (soundRef.current) {
         soundRef.current.unloadAsync();
+      }
+      // Save last read surah if spent > 10 seconds
+      const elapsed = Date.now() - entryTimeRef.current;
+      if (elapsed >= 10000) {
+        AsyncStorage.setItem('lastReadSurah', JSON.stringify({
+          surahNumber: surahNumberRef.current,
+          timestamp: new Date().toISOString(),
+        })).catch(() => {});
       }
     };
   }, [surahNumber]);
@@ -373,8 +380,8 @@ export default function SurahScreen() {
       <View style={styles.container}>
         <Stack.Screen options={{
           title: `Tartil - ${surah.nameArabic}`,
-          headerStyle: { backgroundColor: COLORS.darkGreen },
-          headerTintColor: COLORS.gold,
+          headerStyle: { backgroundColor: colors.headerBg },
+          headerTintColor: colors.gold,
         }} />
 
         {/* Progress bar tartil - premium gradient feel */}
@@ -430,34 +437,34 @@ export default function SurahScreen() {
             const rating = verse?.selfRating;
 
             // Rating-based highlight colors (THE KEY FEATURE - colored background on text)
-            let verseBgColor = COLORS.white;
+            let verseBgColor = colors.surfaceCard;
             let textHighlightBg = 'transparent';
-            let verseBorderColor = COLORS.border;
-            let verseTextColor = COLORS.textPrimary;
-            let ratingIconBg = COLORS.mediumGreen;
-            let numberBadgeBg = COLORS.mediumGreen;
+            let verseBorderColor = colors.border;
+            let verseTextColor = colors.textPrimary;
+            let ratingIconBg = colors.mediumGreen;
+            let numberBadgeBg = colors.mediumGreen;
 
             if (rating === 'correct') {
-              verseBgColor = COLORS.correctBg;
-              textHighlightBg = COLORS.correctBgStrong;
-              verseBorderColor = COLORS.correct;
-              verseTextColor = COLORS.correctDark;
-              ratingIconBg = COLORS.correct;
-              numberBadgeBg = COLORS.correct;
+              verseBgColor = STATUS_COLORS.correctBg;
+              textHighlightBg = STATUS_COLORS.correctBgStrong;
+              verseBorderColor = STATUS_COLORS.correct;
+              verseTextColor = STATUS_COLORS.correctDark;
+              ratingIconBg = STATUS_COLORS.correct;
+              numberBadgeBg = STATUS_COLORS.correct;
             } else if (rating === 'error') {
-              verseBgColor = COLORS.errorBg;
-              textHighlightBg = COLORS.errorBgStrong;
-              verseBorderColor = COLORS.error;
-              verseTextColor = COLORS.errorDark;
-              ratingIconBg = COLORS.error;
-              numberBadgeBg = COLORS.error;
+              verseBgColor = STATUS_COLORS.errorBg;
+              textHighlightBg = STATUS_COLORS.errorBgStrong;
+              verseBorderColor = STATUS_COLORS.error;
+              verseTextColor = STATUS_COLORS.errorDark;
+              ratingIconBg = STATUS_COLORS.error;
+              numberBadgeBg = STATUS_COLORS.error;
             } else if (rating === 'hesitation') {
-              verseBgColor = COLORS.hesitationBg;
-              textHighlightBg = COLORS.hesitationBgStrong;
-              verseBorderColor = COLORS.hesitation;
-              verseTextColor = COLORS.hesitationDark;
-              ratingIconBg = COLORS.hesitation;
-              numberBadgeBg = COLORS.hesitation;
+              verseBgColor = STATUS_COLORS.hesitationBg;
+              textHighlightBg = STATUS_COLORS.hesitationBgStrong;
+              verseBorderColor = STATUS_COLORS.hesitation;
+              verseTextColor = STATUS_COLORS.hesitationDark;
+              ratingIconBg = STATUS_COLORS.hesitation;
+              numberBadgeBg = STATUS_COLORS.hesitation;
             }
 
             const revealAnim = tartilRevealAnims.current[index];
@@ -467,7 +474,7 @@ export default function SurahScreen() {
             const animatedBg = colorAnim
               ? colorAnim.interpolate({
                   inputRange: [0, 1],
-                  outputRange: [COLORS.white, verseBgColor],
+                  outputRange: [colors.surfaceCard, verseBgColor],
                 })
               : verseBgColor;
 
@@ -528,7 +535,7 @@ export default function SurahScreen() {
                       </>
                     ) : (
                       <View style={styles.tartilHiddenLocked}>
-                        <Ionicons name="lock-closed" size={18} color={COLORS.textMuted} />
+                        <Ionicons name="lock-closed" size={18} color={colors.textMuted} />
                         <Text style={styles.tartilHiddenLockedText}>Verset cache</Text>
                       </View>
                     )}
@@ -635,19 +642,19 @@ export default function SurahScreen() {
               <Text style={styles.tartilSummaryTitle}>Resultats du Tartil</Text>
 
               <View style={styles.tartilSummaryStats}>
-                <View style={[styles.tartilSummaryStat, { backgroundColor: COLORS.correctBg }]}>
-                  <Ionicons name="checkmark-circle" size={28} color={COLORS.correct} />
-                  <Text style={[styles.tartilSummaryNumber, { color: COLORS.correctDark }]}>{correctCount}</Text>
+                <View style={[styles.tartilSummaryStat, { backgroundColor: STATUS_COLORS.correctBg }]}>
+                  <Ionicons name="checkmark-circle" size={28} color={STATUS_COLORS.correct} />
+                  <Text style={[styles.tartilSummaryNumber, { color: STATUS_COLORS.correctDark }]}>{correctCount}</Text>
                   <Text style={styles.tartilSummaryLabel}>Parfait</Text>
                 </View>
-                <View style={[styles.tartilSummaryStat, { backgroundColor: COLORS.hesitationBg }]}>
-                  <Ionicons name="help-circle" size={28} color={COLORS.hesitation} />
-                  <Text style={[styles.tartilSummaryNumber, { color: COLORS.hesitationDark }]}>{hesitationCount}</Text>
+                <View style={[styles.tartilSummaryStat, { backgroundColor: STATUS_COLORS.hesitationBg }]}>
+                  <Ionicons name="help-circle" size={28} color={STATUS_COLORS.hesitation} />
+                  <Text style={[styles.tartilSummaryNumber, { color: STATUS_COLORS.hesitationDark }]}>{hesitationCount}</Text>
                   <Text style={styles.tartilSummaryLabel}>Hesitations</Text>
                 </View>
-                <View style={[styles.tartilSummaryStat, { backgroundColor: COLORS.errorBg }]}>
-                  <Ionicons name="close-circle" size={28} color={COLORS.error} />
-                  <Text style={[styles.tartilSummaryNumber, { color: COLORS.errorDark }]}>{errorCount}</Text>
+                <View style={[styles.tartilSummaryStat, { backgroundColor: STATUS_COLORS.errorBg }]}>
+                  <Ionicons name="close-circle" size={28} color={STATUS_COLORS.error} />
+                  <Text style={[styles.tartilSummaryNumber, { color: STATUS_COLORS.errorDark }]}>{errorCount}</Text>
                   <Text style={styles.tartilSummaryLabel}>Erreurs</Text>
                 </View>
               </View>
@@ -660,8 +667,8 @@ export default function SurahScreen() {
                     style={[
                       styles.tartilScoreDot,
                       {
-                        backgroundColor: v.selfRating === 'correct' ? COLORS.correct :
-                          v.selfRating === 'error' ? COLORS.error : COLORS.hesitation
+                        backgroundColor: v.selfRating === 'correct' ? STATUS_COLORS.correct :
+                          v.selfRating === 'error' ? STATUS_COLORS.error : STATUS_COLORS.hesitation
                       }
                     ]}
                   />
@@ -710,15 +717,15 @@ export default function SurahScreen() {
 
           <View style={styles.tartilBottomStats}>
             <View style={styles.tartilBottomStatItem}>
-              <View style={[styles.tartilBottomStatDot, { backgroundColor: COLORS.correct }]} />
+              <View style={[styles.tartilBottomStatDot, { backgroundColor: STATUS_COLORS.correct }]} />
               <Text style={styles.tartilBottomStatNum}>{correctCount}</Text>
             </View>
             <View style={styles.tartilBottomStatItem}>
-              <View style={[styles.tartilBottomStatDot, { backgroundColor: COLORS.hesitation }]} />
+              <View style={[styles.tartilBottomStatDot, { backgroundColor: STATUS_COLORS.hesitation }]} />
               <Text style={styles.tartilBottomStatNum}>{hesitationCount}</Text>
             </View>
             <View style={styles.tartilBottomStatItem}>
-              <View style={[styles.tartilBottomStatDot, { backgroundColor: COLORS.error }]} />
+              <View style={[styles.tartilBottomStatDot, { backgroundColor: STATUS_COLORS.error }]} />
               <Text style={styles.tartilBottomStatNum}>{errorCount}</Text>
             </View>
           </View>
@@ -733,18 +740,18 @@ export default function SurahScreen() {
       <Stack.Screen
         options={{
           title: '',
-          headerStyle: { backgroundColor: COLORS.darkGreen },
-          headerTintColor: COLORS.gold,
+          headerStyle: { backgroundColor: colors.headerBg },
+          headerTintColor: colors.gold,
           headerRight: () => (
             <View style={styles.headerActions}>
               <TouchableOpacity onPress={() => { setMushafMode(!mushafMode); if (mushafMode) setMushafHifzMode(false); }} style={styles.headerBtn}>
-                <Ionicons name="book-outline" size={22} color={mushafMode ? COLORS.gold : 'rgba(212,175,55,0.4)'} />
+                <Ionicons name="book-outline" size={22} color={mushafMode ? colors.gold : 'rgba(212,175,55,0.4)'} />
               </TouchableOpacity>
               <TouchableOpacity onPress={() => mushafHifzMode ? setMushafHifzMode(false) : enterTartilMode()} style={styles.headerBtn}>
-                <Ionicons name={mushafHifzMode ? 'eye-off' : 'mic-outline'} size={22} color={mushafHifzMode ? COLORS.gold : 'rgba(212,175,55,0.7)'} />
+                <Ionicons name={mushafHifzMode ? 'eye-off' : 'mic-outline'} size={22} color={mushafHifzMode ? colors.gold : 'rgba(212,175,55,0.7)'} />
               </TouchableOpacity>
               <TouchableOpacity onPress={() => setShowTranslation(!showTranslation)} style={styles.headerBtn}>
-                <Ionicons name="language" size={22} color={showTranslation ? COLORS.gold : 'rgba(212,175,55,0.4)'} />
+                <Ionicons name="language" size={22} color={showTranslation ? colors.gold : 'rgba(212,175,55,0.4)'} />
               </TouchableOpacity>
             </View>
           ),
@@ -907,7 +914,7 @@ export default function SurahScreen() {
                                   : ayah.translationFr}
                               </Text>
                               {isLoadingTranslation && !customTranslations[ayah.ayahNumberInSurah] && translation?.source !== 'local' && (
-                                <ActivityIndicator size="small" color={COLORS.gold} style={{ marginTop: 4 }} />
+                                <ActivityIndicator size="small" color={colors.gold} style={{ marginTop: 4 }} />
                               )}
                             </View>
                           )}
@@ -964,12 +971,12 @@ export default function SurahScreen() {
 
         {/* Tartil / Hifz button */}
         <TouchableOpacity
-          style={[styles.tartilButton, mushafHifzMode && { borderColor: COLORS.gold, borderWidth: 1 }]}
+          style={[styles.tartilButton, mushafHifzMode && { borderColor: colors.gold, borderWidth: 1 }]}
           onPress={() => mushafHifzMode ? setMushafHifzMode(false) : enterTartilMode()}
           activeOpacity={0.8}
         >
           <View style={styles.tartilButtonGlow} />
-          <Ionicons name={mushafHifzMode ? 'eye-off' : 'mic'} size={18} color={COLORS.gold} />
+          <Ionicons name={mushafHifzMode ? 'eye-off' : 'mic'} size={18} color={colors.gold} />
           <Text style={styles.tartilButtonText}>{mushafHifzMode ? 'Hifz ✓' : (mushafMode ? 'Hifz' : 'Tartil')}</Text>
         </TouchableOpacity>
 
@@ -1012,14 +1019,14 @@ export default function SurahScreen() {
                 style={styles.tafsirCloseBtn}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
-                <Ionicons name="close" size={24} color={COLORS.textSecondary} />
+                <Ionicons name="close" size={24} color={colors.textSecondary} />
               </TouchableOpacity>
             </View>
 
             <ScrollView style={styles.tafsirScroll} showsVerticalScrollIndicator={false}>
               {tafsirLoading ? (
                 <View style={styles.tafsirLoading}>
-                  <ActivityIndicator size="large" color={COLORS.gold} />
+                  <ActivityIndicator size="large" color={colors.gold} />
                   <Text style={styles.tafsirLoadingText}>Chargement du tafsir...</Text>
                 </View>
               ) : (
@@ -1087,13 +1094,13 @@ function toArabicNumeral(num: number): string {
   return String(num).split('').map(d => arabicDigits[parseInt(d)]).join('');
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.parchment,
+    backgroundColor: colors.parchment,
   },
   pager: { flex: 1 },
-  page: { flex: 1, backgroundColor: COLORS.parchment },
+  page: { flex: 1, backgroundColor: colors.parchment },
   pageContent: {
     paddingHorizontal: scale(6),
     paddingBottom: scale(20),
@@ -1131,20 +1138,20 @@ const styles = StyleSheet.create({
   },
   frameBorderLeft: {
     width: 2,
-    backgroundColor: COLORS.gold,
+    backgroundColor: colors.gold,
     opacity: 0.25,
     borderRadius: 1,
   },
   frameBorderRight: {
     width: 2,
-    backgroundColor: COLORS.gold,
+    backgroundColor: colors.gold,
     opacity: 0.25,
     borderRadius: 1,
   },
   frameBorderTop: {
     flex: 1,
     height: 2,
-    backgroundColor: COLORS.gold,
+    backgroundColor: colors.gold,
     opacity: 0.3,
   },
   frameCornerLeft: {
@@ -1157,7 +1164,7 @@ const styles = StyleSheet.create({
   },
   frameCornerGlyph: {
     fontSize: 16,
-    color: COLORS.gold,
+    color: colors.gold,
     opacity: 0.6,
   },
   frameOrnamentCenter: {
@@ -1165,7 +1172,7 @@ const styles = StyleSheet.create({
   },
   frameOrnamentText: {
     fontSize: 18,
-    color: COLORS.gold,
+    color: colors.gold,
     opacity: 0.7,
   },
 
@@ -1176,7 +1183,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 10,
     paddingHorizontal: 14,
-    backgroundColor: COLORS.goldFaint,
+    backgroundColor: colors.goldFaint,
     borderRadius: 10,
     marginBottom: 14,
     borderWidth: 1,
@@ -1184,9 +1191,9 @@ const styles = StyleSheet.create({
   },
   pageHeaderLeft: { flex: 1, alignItems: 'flex-start' },
   pageHeaderRight: { flex: 1, alignItems: 'flex-end' },
-  juzBadge: { fontSize: 14, color: COLORS.mediumGreen, fontWeight: '600', fontFamily: 'UthmanicHafs' },
-  surahHeaderText: { fontSize: fontScale(22), color: COLORS.darkGreen, fontWeight: '700', fontFamily: 'UthmanicHafs' },
-  pageNumberHeader: { fontSize: fontScale(14), color: '#8B7355', fontWeight: '500' },
+  juzBadge: { fontSize: 14, color: colors.mediumGreen, fontWeight: '600', fontFamily: 'UthmanicHafs' },
+  surahHeaderText: { fontSize: fontScale(22), color: colors.darkGreen, fontWeight: '700', fontFamily: 'UthmanicHafs' },
+  pageNumberHeader: { fontSize: fontScale(14), color: colors.textSubtle, fontWeight: '500' },
 
   // ======= BISMILLAH - Calligraphic =======
   bismillahContainer: {
@@ -1197,7 +1204,7 @@ const styles = StyleSheet.create({
   bismillahDecorLine: {
     width: '70%',
     height: 1.5,
-    backgroundColor: COLORS.gold,
+    backgroundColor: colors.gold,
     opacity: 0.3,
   },
   bismillahContent: {
@@ -1210,13 +1217,13 @@ const styles = StyleSheet.create({
   },
   bismillahStar: {
     fontSize: 16,
-    color: COLORS.gold,
+    color: colors.gold,
     opacity: 0.7,
   },
   bismillah: {
     fontSize: fontScale(28),
     textAlign: 'center',
-    color: COLORS.darkGreen,
+    color: colors.darkGreen,
     lineHeight: fontScale(50),
     fontFamily: 'UthmanicHafs',
   },
@@ -1229,10 +1236,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: '100%',
   },
-  surahTitleLine: { flex: 1, height: 1.5, backgroundColor: COLORS.gold, opacity: 0.35 },
+  surahTitleLine: { flex: 1, height: 1.5, backgroundColor: colors.gold, opacity: 0.35 },
   surahTitleOrnament: {
     fontSize: 16,
-    color: COLORS.gold,
+    color: colors.gold,
     marginHorizontal: 10,
     opacity: 0.7,
   },
@@ -1240,7 +1247,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 18,
     paddingHorizontal: 24,
-    backgroundColor: COLORS.goldFaint,
+    backgroundColor: colors.goldFaint,
     borderRadius: 14,
     borderWidth: 1,
     borderColor: 'rgba(212,175,55,0.18)',
@@ -1248,7 +1255,7 @@ const styles = StyleSheet.create({
     width: '100%',
     ...Platform.select({
       ios: {
-        shadowColor: COLORS.gold,
+        shadowColor: colors.gold,
         shadowOffset: { width: 0, height: 3 },
         shadowOpacity: 0.12,
         shadowRadius: 10,
@@ -1258,9 +1265,9 @@ const styles = StyleSheet.create({
       },
     }),
   },
-  surahTitleArabic: { fontSize: fontScale(32), fontWeight: '700', color: COLORS.darkGreen, marginBottom: scale(6), fontFamily: 'UthmanicHafs' },
-  surahTitleFrench: { fontSize: fontScale(17), color: '#374151', fontWeight: '500' },
-  surahTitleMeta: { fontSize: fontScale(13), color: '#8B7355', marginTop: scale(6) },
+  surahTitleArabic: { fontSize: fontScale(32), fontWeight: '700', color: colors.darkGreen, marginBottom: scale(6), fontFamily: 'UthmanicHafs' },
+  surahTitleFrench: { fontSize: fontScale(17), color: colors.textSubtle, fontWeight: '500' },
+  surahTitleMeta: { fontSize: fontScale(13), color: colors.textSecondary, marginTop: scale(6) },
 
   // ======= AYAHS - Mushaf Style =======
   ayahsContainer: { paddingHorizontal: 2 },
@@ -1273,30 +1280,30 @@ const styles = StyleSheet.create({
   ayahActive: {
     backgroundColor: 'rgba(16,185,129,0.10)',
     borderLeftWidth: 3,
-    borderLeftColor: COLORS.correct,
+    borderLeftColor: STATUS_COLORS.correct,
     borderRadius: 10,
   },
   ayahTouchable: { paddingVertical: 2 },
   ayahText: {
     fontSize: fontScale(26),
     lineHeight: fontScale(56),
-    color: COLORS.textPrimary,
+    color: colors.textPrimary,
     textAlign: 'right',
     writingDirection: 'rtl',
     width: '100%',
     fontFamily: 'UthmanicHafs',
   },
   ayahTextActive: {
-    color: COLORS.correctDark,
+    color: STATUS_COLORS.correctDark,
     fontWeight: '600',
   },
   ayahNumber: {
     fontSize: 15,
-    color: COLORS.gold,
+    color: colors.gold,
     fontWeight: '700',
   },
   ayahNumberActive: {
-    color: COLORS.correct,
+    color: STATUS_COLORS.correct,
   },
 
   // Gold ornamental separator between ayahs
@@ -1310,12 +1317,12 @@ const styles = StyleSheet.create({
   ayahSeparatorLine: {
     flex: 1,
     height: 1,
-    backgroundColor: COLORS.gold,
+    backgroundColor: colors.gold,
     opacity: 0.4,
   },
   ayahSeparatorDot: {
     fontSize: 12,
-    color: COLORS.gold,
+    color: colors.gold,
     marginHorizontal: 8,
   },
 
@@ -1328,14 +1335,14 @@ const styles = StyleSheet.create({
   },
   translationBar: {
     width: 3,
-    backgroundColor: COLORS.gold,
+    backgroundColor: colors.gold,
     borderRadius: 2,
     marginRight: 12,
     opacity: 0.4,
   },
   translationText: {
     fontSize: fontScale(14),
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     lineHeight: fontScale(22),
     flex: 1,
     fontStyle: 'italic',
@@ -1344,7 +1351,7 @@ const styles = StyleSheet.create({
   // Page number
   pageNumberBottom: {
     fontSize: 15,
-    color: COLORS.gold,
+    color: colors.gold,
     marginHorizontal: 12,
     fontWeight: '600',
   },
@@ -1353,7 +1360,7 @@ const styles = StyleSheet.create({
   bottomBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.darkGreen,
+    backgroundColor: colors.darkGreen,
     paddingVertical: scale(10),
     paddingHorizontal: scale(14),
     paddingBottom: Platform.OS === 'ios' ? scale(10) : scale(10),
@@ -1379,19 +1386,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: COLORS.gold,
+    borderColor: colors.gold,
     overflow: 'hidden',
   },
   playButtonInner: {
     width: '100%',
     height: '100%',
     borderRadius: 25,
-    backgroundColor: COLORS.mediumGreen,
+    backgroundColor: colors.mediumGreen,
     justifyContent: 'center',
     alignItems: 'center',
   },
   playButtonActive: {
-    borderColor: COLORS.correct,
+    borderColor: STATUS_COLORS.correct,
   },
   tartilButton: {
     flexDirection: 'row',
@@ -1400,7 +1407,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 22,
     borderWidth: 1.5,
-    borderColor: COLORS.gold,
+    borderColor: colors.gold,
     gap: 6,
     overflow: 'hidden',
   },
@@ -1412,7 +1419,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     backgroundColor: 'rgba(212,175,55,0.08)',
   },
-  tartilButtonText: { color: COLORS.gold, fontWeight: '700', fontSize: 14 },
+  tartilButtonText: { color: colors.gold, fontWeight: '700', fontSize: 14 },
   quizButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1421,7 +1428,7 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     gap: 6,
     marginLeft: 'auto',
-    backgroundColor: COLORS.mediumGreen,
+    backgroundColor: colors.mediumGreen,
     ...Platform.select({
       ios: {
         shadowColor: '#000',
@@ -1436,12 +1443,12 @@ const styles = StyleSheet.create({
   },
   quizButtonText: { color: '#fff', fontWeight: '700', fontSize: 14 },
   pageIndicatorContainer: {
-    backgroundColor: COLORS.goldLight,
+    backgroundColor: colors.goldLight,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 14,
   },
-  pageIndicator: { fontSize: 13, color: COLORS.gold, fontWeight: '600' },
+  pageIndicator: { fontSize: 13, color: colors.gold, fontWeight: '600' },
 
   // ======= TARTIL MODE STYLES =======
   tartilProgress: {
@@ -1450,7 +1457,7 @@ const styles = StyleSheet.create({
   },
   tartilProgressFill: {
     height: '100%',
-    backgroundColor: COLORS.correct,
+    backgroundColor: STATUS_COLORS.correct,
     borderRadius: 3,
     overflow: 'hidden',
   },
@@ -1463,7 +1470,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.3)',
     borderRadius: 3,
   },
-  tartilContainer: { flex: 1, backgroundColor: COLORS.parchment },
+  tartilContainer: { flex: 1, backgroundColor: colors.parchment },
   tartilContent: { padding: 14, paddingBottom: 40 },
 
   // Tartil surah header - ornamental
@@ -1471,13 +1478,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 20,
     paddingVertical: 20,
-    backgroundColor: COLORS.goldFaint,
+    backgroundColor: colors.goldFaint,
     borderRadius: 16,
     borderWidth: 1,
     borderColor: 'rgba(212,175,55,0.15)',
     ...Platform.select({
       ios: {
-        shadowColor: COLORS.gold,
+        shadowColor: colors.gold,
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 8,
@@ -1496,7 +1503,7 @@ const styles = StyleSheet.create({
   tartilHeaderLine: {
     flex: 1,
     height: 1.5,
-    backgroundColor: COLORS.gold,
+    backgroundColor: colors.gold,
     opacity: 0.3,
   },
   tartilHeaderOrnament: {
@@ -1504,11 +1511,11 @@ const styles = StyleSheet.create({
   },
   tartilHeaderOrnamentText: {
     fontSize: 16,
-    color: COLORS.gold,
+    color: colors.gold,
     opacity: 0.7,
   },
-  tartilSurahName: { fontSize: fontScale(30), fontWeight: '700', color: COLORS.darkGreen, marginVertical: scale(6) },
-  tartilSurahSubtitle: { fontSize: fontScale(14), color: COLORS.textSecondary, marginTop: scale(2) },
+  tartilSurahName: { fontSize: fontScale(30), fontWeight: '700', color: colors.darkGreen, marginVertical: scale(6) },
+  tartilSurahSubtitle: { fontSize: fontScale(14), color: colors.textSecondary, marginTop: scale(2) },
 
   // Tartil bismillah
   tartilBismillah: {
@@ -1518,7 +1525,7 @@ const styles = StyleSheet.create({
   },
   tartilBismillahText: {
     fontSize: fontScale(24),
-    color: COLORS.darkGreen,
+    color: colors.darkGreen,
     lineHeight: fontScale(44),
     opacity: 0.7,
   },
@@ -1528,9 +1535,9 @@ const styles = StyleSheet.create({
     marginBottom: 14,
     borderRadius: 14,
     borderWidth: 2,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
     overflow: 'hidden',
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surfaceCard,
     ...Platform.select({
       ios: {
         shadowColor: '#000',
@@ -1544,11 +1551,11 @@ const styles = StyleSheet.create({
     }),
   },
   tartilVerseActive: {
-    borderColor: COLORS.gold,
+    borderColor: colors.gold,
     borderWidth: 2.5,
     ...Platform.select({
       ios: {
-        shadowColor: COLORS.gold,
+        shadowColor: colors.gold,
         shadowOffset: { width: 0, height: 3 },
         shadowOpacity: 0.2,
         shadowRadius: 10,
@@ -1565,7 +1572,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: COLORS.mediumGreen,
+    backgroundColor: colors.mediumGreen,
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 2,
@@ -1603,7 +1610,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     minHeight: 90,
     justifyContent: 'center',
-    backgroundColor: 'rgba(0,0,0,0.015)',
+    backgroundColor: colors.hiddenOverlay,
   },
   tartilHiddenPrompt: {
     alignItems: 'center',
@@ -1617,7 +1624,7 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: COLORS.gold,
+    backgroundColor: colors.gold,
     opacity: 0.4,
   },
   tartilDot1: { opacity: 0.3 },
@@ -1625,7 +1632,7 @@ const styles = StyleSheet.create({
   tartilDot3: { opacity: 0.7 },
   tartilHiddenCurrentText: {
     fontSize: 14,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 20,
   },
@@ -1637,14 +1644,14 @@ const styles = StyleSheet.create({
   tartilRevealButtonInner: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.gold,
+    backgroundColor: colors.gold,
     paddingHorizontal: 22,
     paddingVertical: 11,
     borderRadius: 24,
     gap: 8,
     ...Platform.select({
       ios: {
-        shadowColor: COLORS.gold,
+        shadowColor: colors.gold,
         shadowOffset: { width: 0, height: 3 },
         shadowOpacity: 0.3,
         shadowRadius: 6,
@@ -1664,7 +1671,7 @@ const styles = StyleSheet.create({
   },
   tartilHiddenLockedText: {
     fontSize: 14,
-    color: COLORS.textMuted,
+    color: colors.textMuted,
   },
 
   // Revealed verse
@@ -1680,7 +1687,7 @@ const styles = StyleSheet.create({
     lineHeight: fontScale(50),
     textAlign: 'right',
     writingDirection: 'rtl',
-    color: COLORS.textPrimary,
+    color: colors.textPrimary,
     fontFamily: 'UthmanicHafs',
   },
   tartilAyahTextError: {
@@ -1695,7 +1702,7 @@ const styles = StyleSheet.create({
   },
   tartilAyahNumber: {
     fontSize: 14,
-    color: COLORS.gold,
+    color: colors.gold,
     fontWeight: '700',
   },
 
@@ -1720,10 +1727,10 @@ const styles = StyleSheet.create({
   tartilRatingButtons: { marginTop: 14 },
   tartilRatingDivider: {
     height: 1,
-    backgroundColor: COLORS.border,
+    backgroundColor: colors.border,
     marginBottom: 14,
   },
-  tartilRatingLabel: { fontSize: 14, color: COLORS.textSecondary, textAlign: 'center', marginBottom: 12, fontWeight: '500' },
+  tartilRatingLabel: { fontSize: 14, color: colors.textSecondary, textAlign: 'center', marginBottom: 12, fontWeight: '500' },
   tartilRatingRow: { flexDirection: 'row', gap: 10, justifyContent: 'center' },
   tartilRatingBtn: {
     flexDirection: 'column',
@@ -1745,23 +1752,23 @@ const styles = StyleSheet.create({
       },
     }),
   },
-  tartilRatingCorrect: { backgroundColor: COLORS.correct },
-  tartilRatingHesitation: { backgroundColor: COLORS.hesitation },
-  tartilRatingError: { backgroundColor: COLORS.error },
+  tartilRatingCorrect: { backgroundColor: STATUS_COLORS.correct },
+  tartilRatingHesitation: { backgroundColor: STATUS_COLORS.hesitation },
+  tartilRatingError: { backgroundColor: STATUS_COLORS.error },
   tartilRatingBtnText: { color: '#fff', fontWeight: '700', fontSize: 13 },
 
   // ======= TARTIL SUMMARY =======
   tartilSummary: {
     marginTop: 28,
-    backgroundColor: COLORS.white,
+    backgroundColor: colors.surfaceCard,
     borderRadius: 20,
     padding: 28,
     borderWidth: 2,
-    borderColor: COLORS.gold,
+    borderColor: colors.gold,
     alignItems: 'center',
     ...Platform.select({
       ios: {
-        shadowColor: COLORS.gold,
+        shadowColor: colors.gold,
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.15,
         shadowRadius: 12,
@@ -1775,9 +1782,9 @@ const styles = StyleSheet.create({
     width: scale(90),
     height: scale(90),
     borderRadius: scale(45),
-    backgroundColor: COLORS.goldFaint,
+    backgroundColor: colors.goldFaint,
     borderWidth: 3,
-    borderColor: COLORS.gold,
+    borderColor: colors.gold,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
@@ -1785,15 +1792,15 @@ const styles = StyleSheet.create({
   tartilScorePercent: {
     fontSize: fontScale(28),
     fontWeight: '800',
-    color: COLORS.darkGreen,
+    color: colors.darkGreen,
   },
   tartilScoreLabel: {
     fontSize: 11,
-    color: COLORS.textSecondary,
+    color: colors.textSecondary,
     fontWeight: '600',
     marginTop: -2,
   },
-  tartilSummaryTitle: { fontSize: fontScale(22), fontWeight: '700', color: COLORS.darkGreen, marginBottom: scale(20) },
+  tartilSummaryTitle: { fontSize: fontScale(22), fontWeight: '700', color: colors.darkGreen, marginBottom: scale(20) },
   tartilSummaryStats: { flexDirection: 'row', gap: 14, marginBottom: 18 },
   tartilSummaryStat: {
     alignItems: 'center',
@@ -1803,7 +1810,7 @@ const styles = StyleSheet.create({
     minWidth: 85,
   },
   tartilSummaryNumber: { fontSize: fontScale(26), fontWeight: '800', marginTop: scale(6) },
-  tartilSummaryLabel: { fontSize: 12, color: COLORS.textSecondary, marginTop: 3, fontWeight: '500' },
+  tartilSummaryLabel: { fontSize: 12, color: colors.textSecondary, marginTop: 3, fontWeight: '500' },
   tartilScoreBar: { flexDirection: 'row', gap: 5, marginVertical: 16 },
   tartilScoreDot: {
     width: 14,
@@ -1825,7 +1832,7 @@ const styles = StyleSheet.create({
   tartilRetryBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.mediumGreen,
+    backgroundColor: colors.mediumGreen,
     paddingHorizontal: 24,
     paddingVertical: 14,
     borderRadius: 14,
@@ -1848,16 +1855,16 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 14,
     borderWidth: 1.5,
-    borderColor: COLORS.border,
+    borderColor: colors.border,
   },
-  tartilExitText: { color: '#374151', fontWeight: '600', fontSize: 16 },
+  tartilExitText: { color: colors.textSubtle, fontWeight: '600', fontSize: 16 },
 
   // ======= TARTIL BOTTOM BAR - Premium =======
   tartilBottomBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: COLORS.darkGreen,
+    backgroundColor: colors.darkGreen,
     paddingVertical: scale(12),
     paddingHorizontal: spacing.md,
     paddingBottom: Platform.OS === 'ios' ? scale(12) : scale(12),
@@ -1884,18 +1891,18 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 20,
   },
-  tartilBottomQuitText: { color: COLORS.error, fontWeight: '600', fontSize: 13 },
+  tartilBottomQuitText: { color: STATUS_COLORS.error, fontWeight: '600', fontSize: 13 },
   tartilBottomCenter: {
     alignItems: 'center',
   },
   tartilBottomProgressPill: {
-    backgroundColor: COLORS.goldLight,
+    backgroundColor: colors.goldLight,
     paddingHorizontal: 14,
     paddingVertical: 4,
     borderRadius: 12,
   },
   tartilBottomProgressText: {
-    color: COLORS.gold,
+    color: colors.gold,
     fontWeight: '700',
     fontSize: 15,
   },
@@ -1932,7 +1939,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   tafsirModal: {
-    backgroundColor: '#FAFAF7',
+    backgroundColor: colors.background,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     maxHeight: '75%',
@@ -1946,23 +1953,23 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: colors.surfaceBorder,
   },
   tafsirTitle: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#0D2818',
+    color: colors.textPrimary,
   },
   tafsirSubtitle: {
     fontSize: 13,
-    color: '#9CA3AF',
+    color: colors.textMuted,
     marginTop: 2,
   },
   tafsirCloseBtn: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: colors.surfaceBorder,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -1971,7 +1978,7 @@ const styles = StyleSheet.create({
   },
   tafsirContent: {
     fontSize: 15,
-    color: '#1A1A1A',
+    color: colors.textPrimary,
     lineHeight: 24,
   },
   tafsirLoading: {
@@ -1981,6 +1988,6 @@ const styles = StyleSheet.create({
   },
   tafsirLoadingText: {
     fontSize: 14,
-    color: '#9CA3AF',
+    color: colors.textMuted,
   },
 });

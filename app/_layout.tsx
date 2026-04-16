@@ -2,32 +2,23 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
 import { View, ActivityIndicator } from 'react-native';
+import { ThemeProvider, useTheme } from '../context/ThemeContext';
 
-export default function RootLayout() {
-  const [fontsLoaded] = useFonts({
-    'UthmanicHafs': require('../assets/fonts/UthmanicHafs.ttf'),
-  });
-
-  if (!fontsLoaded) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0D2818' }}>
-        <ActivityIndicator size="large" color="#D4AF37" />
-      </View>
-    );
-  }
+function InnerLayout() {
+  const { colors, isDark } = useTheme();
 
   return (
     <>
-      <StatusBar style="light" />
+      <StatusBar style={isDark ? 'light' : 'dark'} />
       <Stack
         screenOptions={{
           headerStyle: {
-            backgroundColor: '#0D2818',
+            backgroundColor: colors.headerBg,
           },
-          headerTintColor: '#D4AF37',
+          headerTintColor: colors.gold,
           headerTitleStyle: {
             fontWeight: '700',
-            color: '#fff',
+            color: colors.textOnHeader,
           },
           headerShadowVisible: false,
           animation: 'slide_from_right',
@@ -77,5 +68,25 @@ export default function RootLayout() {
         />
       </Stack>
     </>
+  );
+}
+
+export default function RootLayout() {
+  const [fontsLoaded] = useFonts({
+    'UthmanicHafs': require('../assets/fonts/UthmanicHafs.ttf'),
+  });
+
+  if (!fontsLoaded) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0D2818' }}>
+        <ActivityIndicator size="large" color="#D4AF37" />
+      </View>
+    );
+  }
+
+  return (
+    <ThemeProvider>
+      <InnerLayout />
+    </ThemeProvider>
   );
 }
