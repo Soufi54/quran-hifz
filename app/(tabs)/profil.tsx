@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView, Animated } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView, Animated, Switch } from 'react-native';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
@@ -8,6 +8,7 @@ import { scale, fontScale, spacing } from '../../lib/responsive';
 import { getSelectedReciterId, getSelectedTranslationId, getSelectedTafsirId } from '../../lib/settings';
 import { getReciterById } from '../../lib/reciters';
 import { getTranslationById, getTafsirById } from '../../lib/translations';
+import { useTheme } from '../../context/ThemeContext';
 
 export default function ProfilScreen() {
   const [totalXP, setTotalXP] = useState(0);
@@ -17,6 +18,7 @@ export default function ProfilScreen() {
   const [translationName, setTranslationName] = useState('Locale');
   const [tafsirName, setTafsirName] = useState('Ibn Kathir');
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const { colors, isDark, toggleTheme } = useTheme();
 
   useEffect(() => {
     loadStats();
@@ -86,6 +88,7 @@ export default function ProfilScreen() {
               'lives',
               'onboardingDone',
               'surahReviewDates',
+              'lastReadSurah',
             ]);
             setTotalXP(0);
             setStreak(0);
@@ -101,105 +104,140 @@ export default function ProfilScreen() {
   const multiplier = getStreakMultiplier(streak);
 
   return (
-    <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
+    <Animated.View style={[styles.container, { opacity: fadeAnim, backgroundColor: colors.background }]}>
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Header profil */}
-        <View style={styles.header}>
+        <View style={[styles.header, { backgroundColor: colors.headerBg }]}>
           <View style={styles.avatarContainer}>
-            <View style={styles.avatar}>
-              <Ionicons name="person" size={scale(36)} color="#D4AF37" />
+            <View style={[styles.avatar, { borderColor: colors.gold, backgroundColor: colors.goldLight }]}>
+              <Ionicons name="person" size={scale(36)} color={colors.gold} />
             </View>
-            <View style={styles.levelBadge}>
-              <Text style={styles.levelBadgeText}>{mosqueLevel}</Text>
+            <View style={[styles.levelBadge, { backgroundColor: colors.gold, borderColor: colors.headerBg }]}>
+              <Text style={[styles.levelBadgeText, { color: colors.headerBg }]}>{mosqueLevel}</Text>
             </View>
           </View>
-          <Text style={styles.name}>Apprenant</Text>
-          <Text style={styles.subtitle}>QuranDuel</Text>
+          <Text style={[styles.name, { color: colors.textOnHeader }]}>Apprenant</Text>
+          <Text style={[styles.subtitle, { color: colors.textOnHeaderMuted }]}>QuranDuel</Text>
 
           {/* Mini stats */}
           <View style={styles.headerStats}>
             <View style={styles.headerStat}>
-              <Ionicons name="flash" size={scale(18)} color="#D4AF37" />
-              <Text style={styles.headerStatNumber}>{totalXP.toLocaleString()}</Text>
-              <Text style={styles.headerStatLabel}>XP</Text>
+              <Ionicons name="flash" size={scale(18)} color={colors.gold} />
+              <Text style={[styles.headerStatNumber, { color: colors.textOnHeader }]}>{totalXP.toLocaleString()}</Text>
+              <Text style={[styles.headerStatLabel, { color: colors.textOnHeaderMuted }]}>XP</Text>
             </View>
             <View style={styles.headerStatDivider} />
             <View style={styles.headerStat}>
               <Ionicons name="flame" size={scale(18)} color="#F97316" />
-              <Text style={styles.headerStatNumber}>{streak}</Text>
-              <Text style={styles.headerStatLabel}>Streak</Text>
+              <Text style={[styles.headerStatNumber, { color: colors.textOnHeader }]}>{streak}</Text>
+              <Text style={[styles.headerStatLabel, { color: colors.textOnHeaderMuted }]}>Streak</Text>
             </View>
             <View style={styles.headerStatDivider} />
             <View style={styles.headerStat}>
               <Ionicons name="checkmark-circle" size={scale(18)} color="#10B981" />
-              <Text style={styles.headerStatNumber}>{mastered}</Text>
-              <Text style={styles.headerStatLabel}>Maitrisees</Text>
+              <Text style={[styles.headerStatNumber, { color: colors.textOnHeader }]}>{mastered}</Text>
+              <Text style={[styles.headerStatLabel, { color: colors.textOnHeaderMuted }]}>Maitrisees</Text>
             </View>
           </View>
 
           {/* Multiplier badge */}
           {multiplier > 1 && (
-            <View style={styles.multiplierBadge}>
-              <Ionicons name="flash" size={scale(16)} color="#D4AF37" />
-              <Text style={styles.multiplierText}>Multiplicateur x{multiplier} actif !</Text>
+            <View style={[styles.multiplierBadge, { backgroundColor: colors.goldLight }]}>
+              <Ionicons name="flash" size={scale(16)} color={colors.gold} />
+              <Text style={[styles.multiplierText, { color: colors.gold }]}>Multiplicateur x{multiplier} actif !</Text>
             </View>
           )}
         </View>
 
         {/* Settings */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>PARAMETRES</Text>
+          <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>PARAMETRES</Text>
 
-          <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
-            <View style={[styles.menuIcon, { backgroundColor: 'rgba(212,175,55,0.1)' }]}>
-              <Ionicons name="notifications-outline" size={scale(20)} color="#D4AF37" />
+          {/* Dark Mode toggle */}
+          <View style={[styles.menuItem, {
+            backgroundColor: colors.surface,
+            borderColor: colors.surfaceBorder,
+          }]}>
+            <View style={[styles.menuIcon, { backgroundColor: isDark ? 'rgba(99,102,241,0.15)' : 'rgba(99,102,241,0.1)' }]}>
+              <Ionicons name={isDark ? 'moon' : 'moon-outline'} size={scale(20)} color="#6366F1" />
             </View>
-            <Text style={styles.menuText}>Notifications</Text>
-            <Ionicons name="chevron-forward" size={scale(18)} color="#D4AF37" />
+            <Text style={[styles.menuText, { color: colors.textPrimary }]}>Mode sombre</Text>
+            <Switch
+              value={isDark}
+              onValueChange={toggleTheme}
+              trackColor={{ false: colors.border, true: colors.gold }}
+              thumbColor={colors.surface}
+            />
+          </View>
+
+          <TouchableOpacity style={[styles.menuItem, {
+            backgroundColor: colors.surface,
+            borderColor: colors.surfaceBorder,
+          }]} activeOpacity={0.7}>
+            <View style={[styles.menuIcon, { backgroundColor: 'rgba(212,175,55,0.1)' }]}>
+              <Ionicons name="notifications-outline" size={scale(20)} color={colors.gold} />
+            </View>
+            <Text style={[styles.menuText, { color: colors.textPrimary }]}>Notifications</Text>
+            <Ionicons name="chevron-forward" size={scale(18)} color={colors.gold} />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
+          <TouchableOpacity style={[styles.menuItem, {
+            backgroundColor: colors.surface,
+            borderColor: colors.surfaceBorder,
+          }]} activeOpacity={0.7}>
             <View style={[styles.menuIcon, { backgroundColor: 'rgba(16,185,129,0.1)' }]}>
               <Ionicons name="time-outline" size={scale(20)} color="#10B981" />
             </View>
-            <Text style={styles.menuText}>Objectif quotidien</Text>
-            <Text style={styles.menuValue}>10 min</Text>
-            <Ionicons name="chevron-forward" size={scale(18)} color="#D4AF37" />
+            <Text style={[styles.menuText, { color: colors.textPrimary }]}>Objectif quotidien</Text>
+            <Text style={[styles.menuValue, { color: colors.textMuted }]}>10 min</Text>
+            <Ionicons name="chevron-forward" size={scale(18)} color={colors.gold} />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.menuItem} activeOpacity={0.7} onPress={() => router.push('/settings/reciter')}>
+          <TouchableOpacity style={[styles.menuItem, {
+            backgroundColor: colors.surface,
+            borderColor: colors.surfaceBorder,
+          }]} activeOpacity={0.7} onPress={() => router.push('/settings/reciter')}>
             <View style={[styles.menuIcon, { backgroundColor: 'rgba(99,102,241,0.1)' }]}>
               <Ionicons name="musical-notes-outline" size={scale(20)} color="#6366F1" />
             </View>
-            <Text style={styles.menuText}>Recitateur</Text>
-            <Text style={styles.menuValue}>{reciterName}</Text>
-            <Ionicons name="chevron-forward" size={scale(18)} color="#D4AF37" />
+            <Text style={[styles.menuText, { color: colors.textPrimary }]}>Recitateur</Text>
+            <Text style={[styles.menuValue, { color: colors.textMuted }]}>{reciterName}</Text>
+            <Ionicons name="chevron-forward" size={scale(18)} color={colors.gold} />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.menuItem} activeOpacity={0.7} onPress={() => router.push('/settings/translation')}>
+          <TouchableOpacity style={[styles.menuItem, {
+            backgroundColor: colors.surface,
+            borderColor: colors.surfaceBorder,
+          }]} activeOpacity={0.7} onPress={() => router.push('/settings/translation')}>
             <View style={[styles.menuIcon, { backgroundColor: 'rgba(249,115,22,0.1)' }]}>
               <Ionicons name="language-outline" size={scale(20)} color="#F97316" />
             </View>
-            <Text style={styles.menuText}>Traduction</Text>
-            <Text style={styles.menuValue}>{translationName}</Text>
-            <Ionicons name="chevron-forward" size={scale(18)} color="#D4AF37" />
+            <Text style={[styles.menuText, { color: colors.textPrimary }]}>Traduction</Text>
+            <Text style={[styles.menuValue, { color: colors.textMuted }]}>{translationName}</Text>
+            <Ionicons name="chevron-forward" size={scale(18)} color={colors.gold} />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.menuItem} activeOpacity={0.7} onPress={() => router.push('/settings/tafsir')}>
+          <TouchableOpacity style={[styles.menuItem, {
+            backgroundColor: colors.surface,
+            borderColor: colors.surfaceBorder,
+          }]} activeOpacity={0.7} onPress={() => router.push('/settings/tafsir')}>
             <View style={[styles.menuIcon, { backgroundColor: 'rgba(212,175,55,0.1)' }]}>
-              <Ionicons name="book-outline" size={scale(20)} color="#D4AF37" />
+              <Ionicons name="book-outline" size={scale(20)} color={colors.gold} />
             </View>
-            <Text style={styles.menuText}>Tafsir</Text>
-            <Text style={styles.menuValue}>{tafsirName}</Text>
-            <Ionicons name="chevron-forward" size={scale(18)} color="#D4AF37" />
+            <Text style={[styles.menuText, { color: colors.textPrimary }]}>Tafsir</Text>
+            <Text style={[styles.menuValue, { color: colors.textMuted }]}>{tafsirName}</Text>
+            <Ionicons name="chevron-forward" size={scale(18)} color={colors.gold} />
           </TouchableOpacity>
         </View>
 
         {/* Danger zone */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>COMPTE</Text>
+          <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>COMPTE</Text>
 
-          <TouchableOpacity style={styles.menuItem} onPress={handleResetProgress} activeOpacity={0.7}>
+          <TouchableOpacity style={[styles.menuItem, {
+            backgroundColor: colors.surface,
+            borderColor: colors.surfaceBorder,
+          }]} onPress={handleResetProgress} activeOpacity={0.7}>
             <View style={[styles.menuIcon, { backgroundColor: 'rgba(239,68,68,0.1)' }]}>
               <Ionicons name="refresh-outline" size={scale(20)} color="#EF4444" />
             </View>
@@ -207,19 +245,18 @@ export default function ProfilScreen() {
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.version}>QuranDuel v1.1.0</Text>
-        <Text style={styles.copyright}>Fait avec amour pour la Oumma</Text>
+        <Text style={[styles.version, { color: colors.textMuted }]}>QuranDuel v1.1.0</Text>
+        <Text style={[styles.copyright, { color: colors.gold }]}>Fait avec amour pour la Oumma</Text>
       </ScrollView>
     </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FAFAF7' },
+  container: { flex: 1 },
 
   // Header
   header: {
-    backgroundColor: '#0D2818',
     paddingVertical: scale(32),
     paddingBottom: scale(28),
     alignItems: 'center',
@@ -231,11 +268,9 @@ const styles = StyleSheet.create({
     width: scale(80),
     height: scale(80),
     borderRadius: scale(40),
-    backgroundColor: 'rgba(212,175,55,0.15)',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#D4AF37',
   },
   levelBadge: {
     position: 'absolute',
@@ -244,15 +279,13 @@ const styles = StyleSheet.create({
     width: scale(28),
     height: scale(28),
     borderRadius: scale(14),
-    backgroundColor: '#D4AF37',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 3,
-    borderColor: '#0D2818',
   },
-  levelBadgeText: { fontSize: fontScale(12), fontWeight: '800', color: '#0D2818' },
-  name: { fontSize: fontScale(22), fontWeight: '800', color: '#fff', marginTop: scale(14) },
-  subtitle: { fontSize: fontScale(14), color: 'rgba(255,255,255,0.5)', marginTop: scale(2) },
+  levelBadgeText: { fontSize: fontScale(12), fontWeight: '800' },
+  name: { fontSize: fontScale(22), fontWeight: '800', marginTop: scale(14) },
+  subtitle: { fontSize: fontScale(14), marginTop: scale(2) },
 
   headerStats: {
     flexDirection: 'row',
@@ -265,28 +298,26 @@ const styles = StyleSheet.create({
     gap: scale(4),
   },
   headerStat: { flex: 1, alignItems: 'center', gap: scale(4) },
-  headerStatNumber: { fontSize: fontScale(18), fontWeight: '800', color: '#fff' },
-  headerStatLabel: { fontSize: fontScale(11), color: 'rgba(255,255,255,0.5)' },
+  headerStatNumber: { fontSize: fontScale(18), fontWeight: '800' },
+  headerStatLabel: { fontSize: fontScale(11) },
   headerStatDivider: { width: 1, height: scale(30), backgroundColor: 'rgba(255,255,255,0.15)' },
 
   multiplierBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: spacing.sm + spacing.xs,
-    backgroundColor: 'rgba(212,175,55,0.15)',
     paddingHorizontal: scale(14),
     paddingVertical: scale(6),
     borderRadius: scale(20),
     gap: scale(6),
   },
-  multiplierText: { fontSize: fontScale(13), fontWeight: '600', color: '#D4AF37' },
+  multiplierText: { fontSize: fontScale(13), fontWeight: '600' },
 
   // Sections
   section: { marginTop: spacing.lg, paddingHorizontal: spacing.md },
   sectionTitle: {
     fontSize: fontScale(12),
     fontWeight: '700',
-    color: '#9CA3AF',
     letterSpacing: 1,
     marginBottom: scale(10),
     marginLeft: scale(4),
@@ -296,19 +327,17 @@ const styles = StyleSheet.create({
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
     padding: scale(14),
     borderRadius: scale(14),
     marginBottom: scale(6),
     gap: spacing.sm + spacing.xs,
     borderWidth: 1,
-    borderColor: '#F3F4F6',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.03,
     shadowRadius: 4,
     elevation: 1,
-    minHeight: scale(48), // Minimum touch target
+    minHeight: scale(48),
   },
   menuIcon: {
     width: scale(36),
@@ -317,10 +346,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  menuText: { flex: 1, fontSize: fontScale(15), color: '#0D2818', fontWeight: '500' },
-  menuValue: { fontSize: fontScale(14), color: '#9CA3AF' },
+  menuText: { flex: 1, fontSize: fontScale(15), fontWeight: '500' },
+  menuValue: { fontSize: fontScale(14) },
 
   // Footer
-  version: { textAlign: 'center', fontSize: fontScale(12), color: '#9CA3AF', marginTop: scale(40) },
-  copyright: { textAlign: 'center', fontSize: fontScale(11), color: '#D4AF37', marginTop: scale(4), marginBottom: scale(20), opacity: 0.6 },
+  version: { textAlign: 'center', fontSize: fontScale(12), marginTop: scale(40) },
+  copyright: { textAlign: 'center', fontSize: fontScale(11), marginTop: scale(4), marginBottom: scale(20), opacity: 0.6 },
 });

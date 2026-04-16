@@ -2,25 +2,27 @@ import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { View, StyleSheet, Platform } from 'react-native';
 import { scale, fontScale } from '../../lib/responsive';
+import { useTheme } from '../../context/ThemeContext';
 
 export default function TabsLayout() {
   const tabBarHeight = Platform.OS === 'ios' ? scale(64) : scale(60);
   const iconSize = scale(24);
+  const { colors } = useTheme();
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: '#D4AF37',
-        tabBarInactiveTintColor: '#6B7280',
+        tabBarActiveTintColor: colors.gold,
+        tabBarInactiveTintColor: colors.textSecondary,
         tabBarStyle: {
-          backgroundColor: '#0D2818',
-          borderTopColor: 'rgba(212,175,55,0.15)',
+          backgroundColor: colors.tabBarBg,
+          borderTopColor: colors.separator,
           borderTopWidth: 1,
           paddingBottom: Platform.OS === 'ios' ? scale(6) : scale(6),
           paddingTop: scale(6),
           height: tabBarHeight,
           elevation: 8,
-          shadowColor: '#000',
+          shadowColor: colors.shadow,
           shadowOffset: { width: 0, height: -4 },
           shadowOpacity: 0.15,
           shadowRadius: 8,
@@ -31,17 +33,17 @@ export default function TabsLayout() {
           marginTop: scale(2),
         },
         headerStyle: {
-          backgroundColor: '#0D2818',
+          backgroundColor: colors.headerBg,
           elevation: 0,
           shadowOpacity: 0,
           borderBottomWidth: 1,
-          borderBottomColor: 'rgba(212,175,55,0.15)',
+          borderBottomColor: colors.separator,
         },
-        headerTintColor: '#D4AF37',
+        headerTintColor: colors.gold,
         headerTitleStyle: {
           fontWeight: '700',
           fontSize: fontScale(18),
-          color: '#fff',
+          color: colors.textOnHeader,
         },
       }}
     >
