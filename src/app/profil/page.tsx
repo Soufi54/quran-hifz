@@ -51,7 +51,7 @@ export default function ProfilPage() {
   }, []);
 
   const toggleNotifications = async () => {
-    if (notifEnabled) return; // Can't revoke from JS
+    if (notifEnabled) return;
     const granted = await requestNotificationPermission();
     if (granted) {
       setNotifEnabled(true);
@@ -74,7 +74,6 @@ export default function ProfilPage() {
   const updateLangue = (code: string) => {
     setLangue(code);
     setUserLanguage(code);
-    // Effacer la preference de traduction pour que la nouvelle langue soit utilisee
     localStorage.removeItem('setting_translation_id');
     setShowLangue(false);
   };
@@ -91,7 +90,7 @@ export default function ProfilPage() {
 
   return (
     <div className="min-h-screen pb-20 page-enter">
-      <div className="bg-gradient-to-br from-emerald-800 to-emerald-900 text-white px-5 py-8 rounded-b-3xl text-center" style={{ boxShadow: '0 4px 20px rgba(6, 78, 59, 0.2)' }}>
+      <div className="islamic-header text-white px-5 py-8 rounded-b-3xl text-center" style={{ boxShadow: '0 4px 20px rgba(13, 92, 77, 0.2)' }}>
         <div className="w-[72px] h-[72px] rounded-2xl bg-white/15 flex items-center justify-center mx-auto" style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
           <User size={36} className="text-white/90" />
         </div>
@@ -102,30 +101,30 @@ export default function ProfilPage() {
       <div className="p-4 space-y-5 mt-2">
         {/* Sourates connues */}
         <div>
-          <h3 className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2.5 ml-1">Quiz</h3>
+          <h3 className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider mb-2.5 ml-1">Quiz</h3>
           <button
             onClick={() => router.push('/parametres/sourates')}
             className="clay-card w-full p-4 flex items-center gap-3 cursor-pointer"
           >
-            <BookOpen size={20} className="text-emerald-600" />
-            <span className="flex-1 text-left text-sm text-emerald-900 font-medium">Mes sourates connues</span>
-            <span className="text-sm text-gray-400">{learnedCount}</span>
-            <ChevronRight size={16} className="text-gray-300" />
+            <BookOpen size={20} className="text-[var(--primary)]" />
+            <span className="flex-1 text-left text-sm text-[var(--text)] font-medium">Mes sourates connues</span>
+            <span className="text-sm text-[var(--text-muted)]">{learnedCount}</span>
+            <ChevronRight size={16} className="text-[var(--text-muted)]" />
           </button>
         </div>
 
         {/* Parametres */}
         <div>
-          <h3 className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2.5 ml-1">Parametres</h3>
-          <div className="clay-card divide-y divide-emerald-50">
+          <h3 className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider mb-2.5 ml-1">Parametres</h3>
+          <div className="clay-card divide-y divide-[var(--border)]">
             {/* Notifications */}
             <button
               onClick={toggleNotifications}
-              className="w-full p-4 flex items-center gap-3 cursor-pointer transition-colors duration-200 hover:bg-emerald-50/50 rounded-t-2xl"
+              className="w-full p-4 flex items-center gap-3 cursor-pointer transition-colors duration-200 hover:bg-[var(--primary-light)] rounded-t-2xl"
             >
-              <Bell size={20} className="text-emerald-600" />
-              <span className="flex-1 text-left text-sm text-emerald-900 font-medium">Rappel quotidien</span>
-              <span className={`text-xs px-2 py-0.5 rounded-full ${notifEnabled ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>
+              <Bell size={20} className="text-[var(--primary)]" />
+              <span className="flex-1 text-left text-sm text-[var(--text)] font-medium">Rappel quotidien</span>
+              <span className={`text-xs px-2 py-0.5 rounded-full ${notifEnabled ? 'bg-[var(--primary-light)] text-[var(--primary)]' : 'bg-[var(--border)] text-[var(--text-muted)]'}`}>
                 {notifEnabled ? 'Active' : 'Desactive'}
               </span>
             </button>
@@ -133,11 +132,11 @@ export default function ProfilPage() {
             {/* Objectif quotidien */}
             <button
               onClick={() => setShowGoal(!showGoal)}
-              className="w-full p-4 flex items-center gap-3 cursor-pointer transition-colors duration-200 hover:bg-emerald-50/50"
+              className="w-full p-4 flex items-center gap-3 cursor-pointer transition-colors duration-200 hover:bg-[var(--primary-light)]"
             >
-              <Clock size={20} className="text-emerald-600" />
-              <span className="flex-1 text-left text-sm text-emerald-900 font-medium">Objectif quotidien</span>
-              <span className="text-sm text-gray-400">{dailyGoal} min</span>
+              <Clock size={20} className="text-[var(--primary)]" />
+              <span className="flex-1 text-left text-sm text-[var(--text)] font-medium">Objectif quotidien</span>
+              <span className="text-sm text-[var(--text-muted)]">{dailyGoal} min</span>
             </button>
             {showGoal && (
               <div className="p-4 flex gap-2">
@@ -147,8 +146,8 @@ export default function ProfilPage() {
                     onClick={() => updateGoal(min)}
                     className={`flex-1 py-2.5 rounded-xl text-sm font-semibold cursor-pointer transition-all ${
                       dailyGoal === min
-                        ? 'bg-emerald-500 text-white'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        ? 'bg-[var(--primary)] text-white'
+                        : 'bg-[var(--border)] text-[var(--text-muted)] hover:bg-[var(--primary-light)]'
                     }`}
                   >
                     {min} min
@@ -160,11 +159,11 @@ export default function ProfilPage() {
             {/* Recitateur */}
             <button
               onClick={() => setShowRecitateur(!showRecitateur)}
-              className="w-full p-4 flex items-center gap-3 cursor-pointer transition-colors duration-200 hover:bg-emerald-50/50"
+              className="w-full p-4 flex items-center gap-3 cursor-pointer transition-colors duration-200 hover:bg-[var(--primary-light)]"
             >
-              <Music size={20} className="text-emerald-600" />
-              <span className="flex-1 text-left text-sm text-emerald-900 font-medium">Recitateur</span>
-              <span className="text-sm text-gray-400">{recitateurName}</span>
+              <Music size={20} className="text-[var(--primary)]" />
+              <span className="flex-1 text-left text-sm text-[var(--text)] font-medium">Recitateur</span>
+              <span className="text-sm text-[var(--text-muted)]">{recitateurName}</span>
             </button>
             {showRecitateur && (
               <div className="p-2">
@@ -174,8 +173,8 @@ export default function ProfilPage() {
                     onClick={() => updateRecitateur(r.id)}
                     className={`w-full text-left p-3 rounded-xl text-sm cursor-pointer transition-colors ${
                       recitateur === r.id
-                        ? 'bg-emerald-50 text-emerald-700 font-semibold'
-                        : 'text-gray-600 hover:bg-gray-50'
+                        ? 'bg-[var(--primary-light)] text-[var(--primary)] font-semibold'
+                        : 'text-[var(--text-muted)] hover:bg-[var(--primary-light)]'
                     }`}
                   >
                     {r.name}
@@ -187,11 +186,11 @@ export default function ProfilPage() {
             {/* Langue */}
             <button
               onClick={() => setShowLangue(!showLangue)}
-              className="w-full p-4 flex items-center gap-3 cursor-pointer transition-colors duration-200 hover:bg-emerald-50/50 rounded-b-2xl"
+              className="w-full p-4 flex items-center gap-3 cursor-pointer transition-colors duration-200 hover:bg-[var(--primary-light)] rounded-b-2xl"
             >
-              <Globe size={20} className="text-emerald-600" />
-              <span className="flex-1 text-left text-sm text-emerald-900 font-medium">Langue / Language</span>
-              <span className="text-sm text-gray-400">{langueName}</span>
+              <Globe size={20} className="text-[var(--primary)]" />
+              <span className="flex-1 text-left text-sm text-[var(--text)] font-medium">Langue / Language</span>
+              <span className="text-sm text-[var(--text-muted)]">{langueName}</span>
             </button>
             {showLangue && (
               <div className="p-2">
@@ -201,12 +200,12 @@ export default function ProfilPage() {
                     onClick={() => updateLangue(l.code)}
                     className={`w-full text-left p-3 rounded-xl text-sm cursor-pointer transition-colors ${
                       langue === l.code
-                        ? 'bg-emerald-50 text-emerald-700 font-semibold'
-                        : 'text-gray-600 hover:bg-gray-50'
+                        ? 'bg-[var(--primary-light)] text-[var(--primary)] font-semibold'
+                        : 'text-[var(--text-muted)] hover:bg-[var(--primary-light)]'
                     }`}
                   >
                     <span>{l.native}</span>
-                    <span className="text-xs text-gray-400 ml-2">({l.label})</span>
+                    <span className="text-xs text-[var(--text-muted)] ml-2">({l.label})</span>
                   </button>
                 ))}
               </div>
@@ -214,21 +213,36 @@ export default function ProfilPage() {
           </div>
         </div>
 
-        {/* Compte */}
+        {/* Traduction */}
         <div>
-          <h3 className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2.5 ml-1">Compte</h3>
+          <h3 className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider mb-2.5 ml-1">Contenu</h3>
           <div className="clay-card">
             <button
-              onClick={handleReset}
-              className="w-full p-4 flex items-center gap-3 cursor-pointer transition-colors duration-200 hover:bg-red-50/50 rounded-2xl"
+              onClick={() => router.push('/parametres/traduction')}
+              className="w-full p-4 flex items-center gap-3 cursor-pointer transition-colors duration-200 hover:bg-[var(--primary-light)] rounded-2xl"
             >
-              <RefreshCw size={20} className="text-red-500" />
-              <span className="text-sm text-red-500 font-medium">Reinitialiser la progression</span>
+              <Globe size={20} className="text-[var(--primary)]" />
+              <span className="flex-1 text-left text-sm text-[var(--text)] font-medium">Traduction</span>
+              <ChevronRight size={16} className="text-[var(--text-muted)]" />
             </button>
           </div>
         </div>
 
-        <p className="text-center text-[11px] text-gray-300 mt-8">Quran Hifz v1.0.0</p>
+        {/* Compte */}
+        <div>
+          <h3 className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider mb-2.5 ml-1">Compte</h3>
+          <div className="clay-card">
+            <button
+              onClick={handleReset}
+              className="w-full p-4 flex items-center gap-3 cursor-pointer transition-colors duration-200 hover:bg-red-50/50 dark:hover:bg-red-900/20 rounded-2xl"
+            >
+              <RefreshCw size={20} className="text-[var(--danger)]" />
+              <span className="text-sm text-[var(--danger)] font-medium">Reinitialiser la progression</span>
+            </button>
+          </div>
+        </div>
+
+        <p className="text-center text-[11px] text-[var(--text-muted)] mt-8">Quran Hifz v1.0.0</p>
       </div>
 
       <BottomNav />

@@ -175,3 +175,24 @@ export function getUserLanguage(): string {
 export function setUserLanguage(lang: string): void {
   set('userLanguage', lang);
 }
+
+// --- Favoris sourates ---
+
+export function getFavorites(): number[] {
+  return safeParse<number[]>(get('qh_favorites'), []);
+}
+
+export function toggleFavorite(surahNumber: number): void {
+  const favs = getFavorites();
+  const idx = favs.indexOf(surahNumber);
+  if (idx >= 0) {
+    favs.splice(idx, 1);
+  } else {
+    favs.push(surahNumber);
+  }
+  set('qh_favorites', JSON.stringify(favs));
+}
+
+export function isFavorite(surahNumber: number): boolean {
+  return getFavorites().includes(surahNumber);
+}

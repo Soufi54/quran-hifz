@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Flame, Heart, BookOpen, Trophy, CheckCircle } from 'lucide-react';
 import BottomNav from '../components/BottomNav';
 import QuizPlayer from '../components/QuizPlayer';
+import Confetti from '../components/Confetti';
 import { generateDailyChallenge } from '../lib/quiz-generator';
 import {
   getStreak, updateStreak, addXP, getLives, loseLive,
@@ -17,14 +18,15 @@ export default function ChallengePage() {
   const [streak, setStreak] = useState(0);
   const [lives, setLives] = useState(5);
   const [result, setResult] = useState<{ score: number; total: number; xp: number } | null>(null);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [showXP, setShowXP] = useState(false);
+  const xpRef = useRef(0);
 
   useEffect(() => {
     const s = getStreak();
     setStreak(s);
     setLives(getLives());
-    updateSurahDeclines(); // Verifie les sourates en declin
-
-    // Ne plus bloquer si deja fait — l'utilisateur peut refaire des challenges
+    updateSurahDeclines();
 
     const learned = getLearnedSurahs();
     if (learned.length === 0) {
@@ -43,7 +45,15 @@ export default function ChallengePage() {
     addXP(xp);
     setStreak(newStreak);
     setResult({ score, total, xp });
+    xpRef.current = xp;
     setState('done');
+
+    if (score >= Math.ceil(total / 2)) {
+      setShowConfetti(true);
+      setTimeout(() => setShowConfetti(false), 3000);
+    }
+    setShowXP(true);
+    setTimeout(() => setShowXP(false), 2500);
   };
 
   const handleLoseLife = () => {
@@ -51,8 +61,34 @@ export default function ChallengePage() {
     setLives(newLives);
   };
 
+  const streakBadge = streak >= 7
+    ? <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--accent)] text-white text-xs font-bold animate-pulse">ON FIRE</span>
+    : streak >= 3
+      ? <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-[var(--accent)] text-[var(--accent)] text-xs font-bold animate-pulse">x{streak}</span>
+      : null;
+
   return (
     <div className="min-h-screen pb-20 page-enter">
+      {/* Confetti overlay */}
+      {showConfetti && <Confetti />}
+
+      {/* XP flottant */}
+      {showXP && result && (
+        <div
+          className="fixed top-1/3 left-1/2 -translate-x-1/2 z-50 pointer-events-none text-2xl font-bold text-[var(--accent)]"
+          style={{ animation: 'xpFloat 2.5s ease-out forwards' }}
+        >
+          +{result.xp} XP
+        </div>
+      )}
+
+      <style jsx global>{`
+        @keyframes xpFloat {
+          0% { opacity: 1; transform: translate(-50%, 0); }
+          100% { opacity: 0; transform: translate(-50%, -60px); }
+        }
+      `}</style>
+
       {/* Header */}
       <div className="islamic-header text-white px-5 py-5 rounded-b-3xl" style={{ boxShadow: '0 4px 20px rgba(13, 92, 77, 0.2)' }}>
         <h1 className="text-xl font-bold text-center">Challenge du jour</h1>
@@ -60,6 +96,7 @@ export default function ChallengePage() {
           <div className="flex items-center gap-1.5">
             <Flame size={18} className="text-[#C9A84C]" />
             <span className="font-semibold">{streak} jours</span>
+            {streakBadge && <span className="ml-1">{streakBadge}</span>}
           </div>
           <div className="flex items-center gap-1.5">
             <Heart size={18} className="text-red-400" fill="currentColor" />
@@ -70,17 +107,17 @@ export default function ChallengePage() {
 
       {state === 'loading' && (
         <div className="flex justify-center items-center h-64">
-          <div className="w-8 h-8 border-3 border-emerald-200 border-t-emerald-600 rounded-full animate-spin" />
+          <div className="w-8 h-8 border-3 border-[var(--border)] border-t-[var(--primary)] rounded-full animate-spin" />
         </div>
       )}
 
       {state === 'no_surahs' && (
         <div className="flex flex-col items-center justify-center px-8 text-center mt-16">
-          <div className="w-20 h-20 rounded-2xl bg-[#F0F9F6] flex items-center justify-center mb-5" style={{ boxShadow: 'var(--shadow-clay)' }}>
-            <BookOpen size={36} className="text-[#0D5C4D]" />
+          <div className="w-20 h-20 rounded-2xl bg-[var(--primary-light)] flex items-center justify-center mb-5" style={{ boxShadow: 'var(--shadow-clay)' }}>
+            <BookOpen size={36} className="text-[var(--primary)]" />
           </div>
-          <h2 className="text-xl font-bold text-[#1C2B2A] mb-2">Pas encore de sourates</h2>
-          <p className="text-sm text-gray-500 leading-relaxed">
+          <h2 className="text-xl font-bold text-[var(--text)] mb-2">Pas encore de sourates</h2>
+          <p className="text-sm text-[var(--text-muted)] leading-relaxed">
             Commence par apprendre une sourate dans l&apos;onglet &quot;Sourates&quot; pour debloquer le challenge quotidien.
           </p>
         </div>
@@ -99,23 +136,24 @@ export default function ChallengePage() {
         <div className="flex flex-col items-center justify-center px-8 text-center mt-12">
           {result ? (
             <>
-              <div className="w-24 h-24 rounded-3xl bg-[#C9A84C]/10 flex items-center justify-center mb-5" style={{ boxShadow: 'var(--shadow-clay)' }}>
-                <Trophy size={44} className="text-[#C9A84C]" />
+              <div className="w-24 h-24 rounded-3xl bg-[var(--accent)]/10 flex items-center justify-center mb-5" style={{ boxShadow: 'var(--shadow-clay)' }}>
+                <Trophy size={44} className="text-[var(--accent)]" />
               </div>
-              <h2 className="text-2xl font-bold text-[#1C2B2A] mb-2">Challenge termine !</h2>
-              <p className="text-lg text-gray-600">{result.score}/{result.total} bonnes reponses</p>
+              <h2 className="text-2xl font-bold text-[var(--text)] mb-2">Challenge termine !</h2>
+              <p className="text-lg text-[var(--text-muted)]">{result.score}/{result.total} bonnes reponses</p>
               <div className="clay-card px-6 py-3 mt-4">
-                <span className="text-xl font-bold text-[#0D5C4D]">+{result.xp} XP</span>
+                <span className="text-xl font-bold text-[var(--primary)]">+{result.xp} XP</span>
               </div>
               <div className="flex items-center gap-2 mt-5">
                 <Flame size={24} className="text-amber-500" />
                 <span className="text-lg font-bold text-amber-600">{streak} jours</span>
+                {streakBadge}
               </div>
             </>
           ) : (
             <>
-              <div className="w-20 h-20 rounded-3xl bg-[#F0F9F6] flex items-center justify-center mb-4" style={{ boxShadow: 'var(--shadow-clay)' }}>
-                <CheckCircle size={40} className="text-[#0D5C4D]" />
+              <div className="w-20 h-20 rounded-3xl bg-[var(--primary-light)] flex items-center justify-center mb-4" style={{ boxShadow: 'var(--shadow-clay)' }}>
+                <CheckCircle size={40} className="text-[var(--primary)]" />
               </div>
               <div className="flex items-center gap-2 mb-2">
                 <Flame size={24} className="text-amber-500" />
@@ -130,6 +168,7 @@ export default function ChallengePage() {
                 const q = generateDailyChallenge(learned, 5);
                 setQuestions(q);
                 setResult(null);
+                setShowConfetti(false);
                 setState('playing');
               }
             }}

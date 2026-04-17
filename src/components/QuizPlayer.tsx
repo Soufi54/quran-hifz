@@ -179,17 +179,17 @@ export default function QuizPlayer({ questions, onComplete, onLoseLife, lives }:
     return (
       <div className="flex flex-col items-center min-h-[70vh]" onClick={goNext} style={{ cursor: 'pointer' }}>
         <div className="text-center py-2">
-          <p className="text-lg font-bold text-[#1C2B2A]" style={{ fontFamily: "'Noto Naskh Arabic', serif" }}>
+          <p className="text-lg font-bold text-[var(--text)]" style={{ fontFamily: "'Noto Naskh Arabic', serif" }}>
             {surah?.nameArabic}
           </p>
-          <p className="text-xs text-gray-400">{surah?.nameFrench} — verset {q.ayahNumber} — page {actualPage}</p>
-          <p className={`text-sm font-semibold mt-1 ${wasCorrect ? 'text-[#0D5C4D]' : 'text-[#C45B5B]'}`}>
+          <p className="text-xs text-[var(--text-muted)]">{surah?.nameFrench} — verset {q.ayahNumber} — page {actualPage}</p>
+          <p className={`text-sm font-semibold mt-1 ${wasCorrect ? 'text-[var(--primary)]' : 'text-[var(--danger)]'}`}>
             {wasCorrect ? 'Correct !' : 'Incorrect'}
             {pts > 0 && ` +${pts} pts`}
           </p>
         </div>
 
-        <div className="w-full flex-1 relative rounded-xl overflow-hidden border border-gray-200">
+        <div className="w-full flex-1 relative rounded-xl overflow-hidden border border-[var(--border)]">
           <img // eslint-disable-line @next/next/no-img-element
             src={getMushafUrl(actualPage)}
             alt={`Page ${actualPage}`}
@@ -218,7 +218,7 @@ export default function QuizPlayer({ questions, onComplete, onLoseLife, lives }:
           })}
         </div>
 
-        <p className="text-xs text-gray-300 mt-2 mb-1">Appuie pour continuer</p>
+        <p className="text-xs text-[var(--text-muted)] mt-2 mb-1">Appuie pour continuer</p>
       </div>
     );
   }
@@ -227,22 +227,22 @@ export default function QuizPlayer({ questions, onComplete, onLoseLife, lives }:
   return (
     <div className="p-4 relative">
       {/* Progress bar */}
-      <div className="h-2 bg-gray-200 rounded-full overflow-hidden mb-3">
-        <div className="h-full bg-[#0D5C4D] rounded-full transition-all duration-300" style={{ width: `${progress}%` }} />
+      <div className="h-2 bg-[var(--border)] rounded-full overflow-hidden mb-3">
+        <div className="h-full bg-[var(--primary)] rounded-full transition-all duration-300" style={{ width: `${progress}%` }} />
       </div>
 
       {/* Header */}
       <div className="flex justify-between items-center mb-4 text-sm">
         <div className="flex items-center gap-1">
-          <Heart size={16} className="text-[#C45B5B]" fill="currentColor" />
-          <span className="font-bold text-[#C45B5B]">{lives}</span>
+          <Heart size={16} className="text-[var(--danger)]" fill="currentColor" />
+          <span className="font-bold text-[var(--danger)]">{lives}</span>
         </div>
         <div className={`font-mono font-bold text-lg ${timerColor}`}>{timeLeft}s</div>
-        <span className="text-[#0D5C4D] font-semibold">{totalPoints} pts</span>
+        <span className="text-[var(--primary)] font-semibold">{totalPoints} pts</span>
       </div>
 
       {/* Timer bar */}
-      <div className="h-1 bg-gray-200 rounded-full overflow-hidden mb-6">
+      <div className="h-1 bg-[var(--border)] rounded-full overflow-hidden mb-6">
         <div
           className={`h-full rounded-full transition-all duration-1000 ${
             timeLeft <= 5 ? 'bg-red-500' : timeLeft <= 10 ? 'bg-orange-400' : 'bg-[#0D5C4D]'
@@ -255,8 +255,8 @@ export default function QuizPlayer({ questions, onComplete, onLoseLife, lives }:
       <h2 className="text-lg font-semibold text-center mb-4">{q.questionText}</h2>
 
       {q.questionArabic && (
-        <div className="bg-white rounded-xl p-5 mb-6 border border-gray-200">
-          <p className="text-2xl leading-[56px] text-right" dir="rtl"
+        <div className="bg-[var(--bg-card)] rounded-xl p-5 mb-6 border border-[var(--border)]">
+          <p className="text-2xl leading-[56px] text-right text-[var(--text)]" dir="rtl"
             style={{ fontFamily: "'Amiri Quran', serif" }}>
             {q.questionArabic}
           </p>
@@ -266,11 +266,11 @@ export default function QuizPlayer({ questions, onComplete, onLoseLife, lives }:
       {/* Options */}
       <div className="space-y-3">
         {q.options.map((option, i) => {
-          let border = 'border-gray-200';
-          let bg = 'bg-white';
+          let border = 'border-[var(--border)]';
+          let bg = 'bg-[var(--bg-card)]';
           if (answered) {
-            if (i === q.correctIndex) { border = 'border-[#1A8A6E]'; bg = 'bg-[#F0F9F6]'; }
-            else if (i === selected) { border = 'border-red-500'; bg = 'bg-red-50'; }
+            if (i === q.correctIndex) { border = 'border-[var(--secondary)]'; bg = 'bg-[var(--primary-light)]'; }
+            else if (i === selected) { border = 'border-red-500'; bg = 'bg-red-50 dark:bg-red-900/20'; }
           }
           return (
             <button
@@ -278,11 +278,11 @@ export default function QuizPlayer({ questions, onComplete, onLoseLife, lives }:
               onClick={() => doAnswer(i)}
               disabled={answered}
               className={`w-full text-right p-4 rounded-xl border-2 ${border} ${bg} transition-all ${
-                !answered ? 'hover:border-[#0D5C4D] active:scale-[0.98]' : ''
+                !answered ? 'hover:border-[var(--primary)] active:scale-[0.98]' : ''
               }`}
               dir="rtl"
             >
-              <span className="text-base leading-8" style={{ fontFamily: "'Amiri Quran', serif" }}>
+              <span className="text-base leading-8 text-[var(--text)]" style={{ fontFamily: "'Amiri Quran', serif" }}>
                 {option}
               </span>
             </button>
@@ -292,7 +292,7 @@ export default function QuizPlayer({ questions, onComplete, onLoseLife, lives }:
 
       {/* Ref sourate apres reponse */}
       {answered && (
-        <p className="text-xs text-gray-400 text-center mt-4">
+        <p className="text-xs text-[var(--text-muted)] text-center mt-4">
           {surah?.nameFrench} ({surah?.nameArabic}) — verset {q.ayahNumber}
         </p>
       )}

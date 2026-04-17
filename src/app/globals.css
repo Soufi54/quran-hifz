@@ -22,6 +22,27 @@
   --shadow-clay-inset: inset 0 1px 2px rgba(13, 92, 77, 0.06);
 }
 
+.dark {
+  --primary: #3BA58B;
+  --primary-dark: #2D7D69;
+  --primary-light: #1A2F2A;
+  --secondary: #4ECBA9;
+  --accent: #D4B65C;
+  --accent-dark: #B89B4A;
+  --bg: #0F1A17;
+  --bg-card: #162420;
+  --text: #E8F0ED;
+  --text-muted: #8FA8A0;
+  --border: #243832;
+  --danger: #E06B6B;
+  --shadow-clay: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-clay-sm: 0 1px 4px rgba(0, 0, 0, 0.2);
+  --shadow-clay-inset: inset 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+.dark body {
+  background-image: none;
+}
+
 * {
   -webkit-tap-highlight-color: transparent;
 }

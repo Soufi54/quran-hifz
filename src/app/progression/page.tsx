@@ -41,18 +41,18 @@ export default function ProgressionPage() {
       <div className="p-4 space-y-4 mt-2">
         {/* Mosquee */}
         <div className="clay-card p-6 text-center">
-          <div className="w-20 h-20 rounded-full bg-[#C9A84C]/10 flex items-center justify-center mx-auto mb-3"><span className="text-4xl">{mosque.emoji}</span></div>
-          <h2 className="text-xl font-bold text-[#0D5C4D]">{mosque.name}</h2>
-          <p className="text-sm text-gray-400 mt-1">Niveau {mosqueLevel}/7</p>
+          <div className="w-20 h-20 rounded-full bg-[var(--accent)]/10 flex items-center justify-center mx-auto mb-3"><span className="text-4xl">{mosque.emoji}</span></div>
+          <h2 className="text-xl font-bold text-[var(--primary)]">{mosque.name}</h2>
+          <p className="text-sm text-[var(--text-muted)] mt-1">Niveau {mosqueLevel}/7</p>
           {nextLevel && (
             <div className="mt-5">
-              <div className="h-2.5 rounded-full overflow-hidden" style={{ background: '#E2EBE8', boxShadow: 'var(--shadow-clay-inset)' }}>
+              <div className="h-2.5 rounded-full overflow-hidden" style={{ background: 'var(--border)', boxShadow: 'var(--shadow-clay-inset)' }}>
                 <div
-                  className="h-full bg-gradient-to-r from-[#0D5C4D] to-[#1A8A6E] rounded-full transition-all duration-500"
+                  className="h-full bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] rounded-full transition-all duration-500"
                   style={{ width: `${Math.min(100, progressToNext)}%` }}
                 />
               </div>
-              <p className="text-xs text-gray-400 mt-2">
+              <p className="text-xs text-[var(--text-muted)] mt-2">
                 Encore {nextLevel.minStreak - streak} jours pour &quot;{nextLevel.name}&quot;
               </p>
             </div>
@@ -62,22 +62,22 @@ export default function ProgressionPage() {
         {/* Streak */}
         <div className="clay-card p-4 flex items-center">
           <div className="flex-1 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#C9A84C]/10 flex items-center justify-center">
-              <Flame size={22} className="text-[#C9A84C]" />
+            <div className="w-10 h-10 rounded-xl bg-[var(--accent)]/10 flex items-center justify-center">
+              <Flame size={22} className="text-[var(--accent)]" />
             </div>
             <div>
-              <p className="text-lg font-bold text-[#1C2B2A]">{streak} jours</p>
-              <p className="text-[11px] text-gray-400">Streak actuel</p>
+              <p className="text-lg font-bold text-[var(--text)]">{streak} jours</p>
+              <p className="text-[11px] text-[var(--text-muted)]">Streak actuel</p>
             </div>
           </div>
-          <div className="w-px h-10 bg-emerald-100 mx-3" />
+          <div className="w-px h-10 bg-[var(--border)] mx-3" />
           <div className="flex-1 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#C9A84C]/10 flex items-center justify-center">
-              <Trophy size={22} className="text-[#C9A84C]" />
+            <div className="w-10 h-10 rounded-xl bg-[var(--accent)]/10 flex items-center justify-center">
+              <Trophy size={22} className="text-[var(--accent)]" />
             </div>
             <div>
-              <p className="text-lg font-bold text-[#1C2B2A]">{bestStreak} jours</p>
-              <p className="text-[11px] text-gray-400">Meilleur streak</p>
+              <p className="text-lg font-bold text-[var(--text)]">{bestStreak} jours</p>
+              <p className="text-[11px] text-[var(--text-muted)]">Meilleur streak</p>
             </div>
           </div>
         </div>
@@ -86,30 +86,30 @@ export default function ProgressionPage() {
         <div className="grid grid-cols-2 gap-3">
           <div className="clay-card p-4 text-center">
             <Zap size={20} className="text-amber-500 mx-auto mb-1" />
-            <p className="text-2xl font-bold text-[#1C2B2A]">{totalXP}</p>
-            <p className="text-[11px] text-gray-400 mt-1">XP Total</p>
+            <p className="text-2xl font-bold text-[var(--text)]">{totalXP}</p>
+            <p className="text-[11px] text-[var(--text-muted)] mt-1">XP Total</p>
           </div>
           <div className="clay-card p-4 text-center">
-            <CheckCircle size={20} className="text-[#0D5C4D] mx-auto mb-1" />
-            <p className="text-2xl font-bold text-[#0D5C4D]">{mastered}</p>
-            <p className="text-[11px] text-gray-400 mt-1">Maitrisees</p>
+            <CheckCircle size={20} className="text-[var(--primary)] mx-auto mb-1" />
+            <p className="text-2xl font-bold text-[var(--primary)]">{mastered}</p>
+            <p className="text-[11px] text-[var(--text-muted)] mt-1">Maitrisees</p>
           </div>
           <div className="clay-card p-4 text-center">
             <BookOpen size={20} className="text-amber-500 mx-auto mb-1" />
             <p className="text-2xl font-bold text-amber-500">{learning}</p>
-            <p className="text-[11px] text-gray-400 mt-1">En cours</p>
+            <p className="text-[11px] text-[var(--text-muted)] mt-1">En cours</p>
           </div>
           <div className="clay-card p-4 text-center">
             <AlertTriangle size={20} className="text-red-500 mx-auto mb-1" />
             <p className="text-2xl font-bold text-red-500">{declining}</p>
-            <p className="text-[11px] text-gray-400 mt-1">A reviser</p>
+            <p className="text-[11px] text-[var(--text-muted)] mt-1">A reviser</p>
           </div>
         </div>
 
         {declining > 0 && (
-          <div className="clay-card p-3.5 flex items-start gap-2.5 border-amber-200 bg-amber-50/50">
+          <div className="clay-card p-3.5 flex items-start gap-2.5 border-amber-200 bg-amber-50/50 dark:bg-amber-900/20 dark:border-amber-700">
             <AlertTriangle size={18} className="text-amber-600 flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-amber-800">
+            <p className="text-sm text-amber-800 dark:text-amber-400">
               {declining} sourate(s) en declin. Va dans &quot;Sourates&quot; pour les reviser.
             </p>
           </div>

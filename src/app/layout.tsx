@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import OnboardingGuard from "../components/OnboardingGuard";
 import PWAInstall from "../components/PWAInstall";
+import ThemeProvider from "../components/ThemeProvider";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://quranhifz.pages.dev"),
@@ -53,8 +54,10 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
       <body className="antialiased">
-        <PWAInstall />
-        <OnboardingGuard>{children}</OnboardingGuard>
+        <ThemeProvider>
+          <PWAInstall />
+          <OnboardingGuard>{children}</OnboardingGuard>
+        </ThemeProvider>
       </body>
     </html>
   );
