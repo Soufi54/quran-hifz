@@ -139,11 +139,11 @@ function MushafPage({
       {/* Titre sourate + bismillah */}
       {hasSurahHeader && (
         <div className="text-center py-1">
-          <p className="text-lg font-bold text-gray-800" style={{ fontFamily: "'Noto Naskh Arabic', serif" }}>
+          <p className="text-lg font-bold text-[var(--text)]" style={{ fontFamily: "'Noto Naskh Arabic', serif" }}>
             {surahStarts[0].surahName}
           </p>
           {surahStarts[0].surahNumber !== 1 && surahStarts[0].surahNumber !== 9 && (
-            <p className="text-base text-gray-600 mt-0.5" style={{ fontFamily: "'Amiri Quran', serif" }}>
+            <p className="text-base text-[var(--text-muted)] mt-0.5" style={{ fontFamily: "'Amiri Quran', serif" }}>
               بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ
             </p>
           )}
@@ -158,12 +158,12 @@ function MushafPage({
         return (
           <div key={lineNum}>
             {showInlineSurahHeader && (
-              <div className="text-center py-1 my-1 border-t border-b border-gray-200" style={{ background: 'linear-gradient(to right, transparent, rgba(0,0,0,0.03), transparent)' }}>
-                <p className="text-base font-bold text-gray-700" style={{ fontFamily: "'Noto Naskh Arabic', serif" }}>
+              <div className="text-center py-1 my-1 border-t border-b border-[var(--border)]" style={{ background: 'linear-gradient(to right, transparent, rgba(0,0,0,0.03), transparent)' }}>
+                <p className="text-base font-bold text-[var(--text)]" style={{ fontFamily: "'Noto Naskh Arabic', serif" }}>
                   {surahStart.surahName}
                 </p>
                 {surahStart.surahNumber !== 9 && (
-                  <p className="text-xs text-gray-500" style={{ fontFamily: "'Amiri Quran', serif" }}>
+                  <p className="text-xs text-[var(--text-muted)]" style={{ fontFamily: "'Amiri Quran', serif" }}>
                     بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ
                   </p>
                 )}
@@ -395,7 +395,7 @@ export default function SurahPage() {
     const pd = getPageData(currentPage);
     return (
       <div className="px-4 py-5 overflow-y-auto">
-        <div className="flex justify-between items-center pb-2 mb-4 border-b border-gray-200 text-xs text-gray-500">
+        <div className="flex justify-between items-center pb-2 mb-4 border-b border-[var(--border)] text-xs text-[var(--text-muted)]">
           <span>Page {currentPage}</span>
           <span style={{ fontFamily: "'Noto Naskh Arabic', serif" }}>
             {pd.ayahs[0]?.surahNameArabic}
@@ -410,25 +410,25 @@ export default function SurahPage() {
             return (
               <div key={`${ayah.surahNumber}-${ayah.ayahNumberInSurah}`}>
                 {isNewSurah && surahInfo && (
-                  <div className="text-center py-3 my-2 border-t border-b border-gray-200" style={{ background: 'linear-gradient(to right, transparent, rgba(0,0,0,0.03), transparent)' }}>
-                    <p className="text-lg font-bold text-gray-800" style={{ fontFamily: "'Noto Naskh Arabic', serif" }}>
+                  <div className="text-center py-3 my-2 border-t border-b border-[var(--border)]" style={{ background: 'linear-gradient(to right, transparent, rgba(0,0,0,0.03), transparent)' }}>
+                    <p className="text-lg font-bold text-[var(--text)]" style={{ fontFamily: "'Noto Naskh Arabic', serif" }}>
                       {surahInfo.nameArabic}
                     </p>
-                    <p className="text-xs text-gray-500">{surahInfo.nameFrench}</p>
+                    <p className="text-xs text-[var(--text-muted)]">{surahInfo.nameFrench}</p>
                     {ayah.surahNumber !== 9 && (
-                      <p className="text-sm text-gray-500 mt-1" style={{ fontFamily: "'Amiri Quran', serif" }}>
+                      <p className="text-sm text-[var(--text-muted)] mt-1" style={{ fontFamily: "'Amiri Quran', serif" }}>
                         بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ
                       </p>
                     )}
                   </div>
                 )}
-                <div className="pb-4 border-b border-gray-100 last:border-0">
-                  <p className="text-xl leading-[52px] text-right text-gray-900 mb-2" dir="rtl"
+                <div className="pb-4 border-b border-[var(--border)] last:border-0">
+                  <p className="text-xl leading-[52px] text-right text-[var(--text)] mb-2" dir="rtl"
                     style={{ fontFamily: "'Amiri Quran', serif" }}>
                     {ayah.text}
-                    <span className="text-sm text-gray-400 mx-1">﴿{ayah.ayahNumberInSurah}﴾</span>
+                    <span className="text-sm text-[var(--text-muted)] mx-1">﴿{ayah.ayahNumberInSurah}﴾</span>
                   </p>
-                  <p className="text-base text-emerald-700 leading-relaxed italic">
+                  <p className="text-base text-[var(--primary)] leading-relaxed italic">
                     {translit || '...'}
                   </p>
                 </div>
@@ -443,7 +443,7 @@ export default function SurahPage() {
   // Rendu traduction
   const renderTranslation = () => (
     <div className="px-4 py-5">
-      <div className="flex justify-between items-center pb-2 mb-4 border-b border-emerald-200 text-xs text-emerald-600">
+      <div className="flex justify-between items-center pb-2 mb-4 border-b border-[var(--border)] text-xs text-[var(--primary)]">
         <span>Page {currentPage}</span>
         <span style={{ fontFamily: "'Noto Naskh Arabic', serif" }}>
           {pageData.ayahs[0]?.surahNameArabic}
@@ -457,27 +457,27 @@ export default function SurahPage() {
           return (
             <div key={`${ayah.surahNumber}-${ayah.ayahNumberInSurah}`}>
               {isNewSurah && surahInfo && (
-                <div className="text-center py-3 my-2 border-t border-b border-emerald-200" style={{ background: 'linear-gradient(to right, transparent, rgba(16,185,129,0.05), transparent)' }}>
-                  <p className="text-lg font-bold text-emerald-900" style={{ fontFamily: "'Noto Naskh Arabic', serif" }}>
+                <div className="text-center py-3 my-2 border-t border-b border-[var(--border)]" style={{ background: 'linear-gradient(to right, transparent, rgba(16,185,129,0.05), transparent)' }}>
+                  <p className="text-lg font-bold text-[var(--text)]" style={{ fontFamily: "'Noto Naskh Arabic', serif" }}>
                     {surahInfo.nameArabic}
                   </p>
-                  <p className="text-xs text-emerald-600">{surahInfo.nameFrench}</p>
+                  <p className="text-xs text-[var(--primary)]">{surahInfo.nameFrench}</p>
                   {ayah.surahNumber !== 9 && (
-                    <p className="text-sm text-emerald-500 mt-1" style={{ fontFamily: "'Amiri Quran', serif" }}>
+                    <p className="text-sm text-[var(--primary)] mt-1" style={{ fontFamily: "'Amiri Quran', serif" }}>
                       بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ
                     </p>
                   )}
                 </div>
               )}
               <div className="clay-card p-4">
-                <p className="text-xl leading-[52px] text-right text-emerald-900 mb-3" dir="rtl"
+                <p className="text-xl leading-[52px] text-right text-[var(--text)] mb-3" dir="rtl"
                   style={{ fontFamily: "'Amiri Quran', serif" }}>
                   {ayah.text}
-                  <span className="text-sm text-emerald-400 mx-1">﴿{ayah.ayahNumberInSurah}﴾</span>
+                  <span className="text-sm text-[var(--primary)] mx-1">﴿{ayah.ayahNumberInSurah}﴾</span>
                 </p>
-                <div className="border-t border-emerald-100 pt-3">
-                  <p className="text-sm text-gray-600 leading-relaxed">
-                    <span className="text-xs font-semibold text-emerald-600 mr-1">{ayah.ayahNumberInSurah}.</span>
+                <div className="border-t border-[var(--border)] pt-3">
+                  <p className="text-sm text-[var(--text-muted)] leading-relaxed">
+                    <span className="text-xs font-semibold text-[var(--primary)] mr-1">{ayah.ayahNumberInSurah}.</span>
                     {ayah.translationFr}
                   </p>
                   <TafsirButton surahNumber={ayah.surahNumber} ayahNumber={ayah.ayahNumberInSurah} />
@@ -487,7 +487,7 @@ export default function SurahPage() {
           );
         })}
       </div>
-      <p className="text-center text-sm text-emerald-400 mt-6">Page {currentPage} / 604</p>
+      <p className="text-center text-sm text-[var(--text-muted)] mt-6">Page {currentPage} / 604</p>
     </div>
   );
 
@@ -522,7 +522,7 @@ export default function SurahPage() {
       <div
         ref={containerRef}
         className={`flex-1 overflow-x-hidden ${showTranslation ? 'overflow-y-auto' : 'overflow-hidden h-full'}`}
-        style={{ background: showTranslation ? '#F0FDF4' : '#FFFFFF' }}
+        style={{ background: showTranslation ? 'var(--primary-light)' : 'var(--bg-card)' }}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
@@ -537,16 +537,16 @@ export default function SurahPage() {
       </div>
 
       {/* Barre du bas */}
-      <div className="bg-white/95 backdrop-blur-md border-t border-emerald-100 px-4 py-3 flex items-center gap-3">
+      <div className="bg-[var(--bg-card)]/95 backdrop-blur-md border-t border-[var(--border)] px-4 py-3 flex items-center gap-3">
         <button onClick={playPageAudio}
-          className="flex flex-col items-center text-[10px] cursor-pointer transition-colors duration-200 hover:text-emerald-700 text-gray-500 min-w-[44px]">
+          className="flex flex-col items-center text-[10px] cursor-pointer transition-colors duration-200 hover:text-[var(--primary)] text-[var(--text-muted)] min-w-[44px]">
           {isPlaying ? <Pause size={20} /> : <Play size={20} />}
           <span className="mt-0.5">{isPlaying ? 'Pause' : 'Ecouter'}</span>
         </button>
 
         <button onClick={() => { setShowTranslation(!showTranslation); if (!showTranslation) { setShowImage(false); setShowPhonetic(false); } }}
           className={`flex flex-col items-center text-[10px] cursor-pointer transition-colors duration-200 min-w-[44px] ${
-            showTranslation ? 'text-emerald-700 font-semibold' : 'text-gray-400 hover:text-gray-600'
+            showTranslation ? 'text-[var(--primary)] font-semibold' : 'text-[var(--text-muted)] hover:text-[var(--text)]'
           }`}>
           <Languages size={20} />
           <span className="mt-0.5">Traduction</span>
@@ -554,7 +554,7 @@ export default function SurahPage() {
 
         <button onClick={() => { setShowPhonetic(!showPhonetic); if (!showPhonetic) { setShowTranslation(false); setShowImage(false); } }}
           className={`flex flex-col items-center text-[10px] cursor-pointer transition-colors duration-200 min-w-[44px] ${
-            showPhonetic ? 'text-emerald-700 font-semibold' : 'text-gray-400 hover:text-gray-600'
+            showPhonetic ? 'text-[var(--primary)] font-semibold' : 'text-[var(--text-muted)] hover:text-[var(--text)]'
           }`}>
           <span className="text-base">أ</span>
           <span className="mt-0.5">Phonetique</span>
@@ -562,14 +562,14 @@ export default function SurahPage() {
 
         <button onClick={() => { setShowImage(!showImage); if (showImage) { setShowTranslation(false); setShowPhonetic(false); } }}
           className={`flex flex-col items-center text-[10px] cursor-pointer transition-colors duration-200 min-w-[44px] ${
-            showImage ? 'text-emerald-700 font-semibold' : 'text-gray-400 hover:text-gray-600'
+            showImage ? 'text-[var(--primary)] font-semibold' : 'text-[var(--text-muted)] hover:text-[var(--text)]'
           }`}>
           <Image size={20} aria-hidden="true" />
           <span className="mt-0.5">Tajweed</span>
         </button>
 
         <button onClick={() => setShowRecitateur(!showRecitateur)}
-          className="flex flex-col items-center text-[10px] cursor-pointer transition-colors duration-200 text-gray-400 hover:text-gray-600 min-w-[44px]">
+          className="flex flex-col items-center text-[10px] cursor-pointer transition-colors duration-200 text-[var(--text-muted)] hover:text-[var(--text)] min-w-[44px]">
           <Music size={20} />
           <span className="mt-0.5">Recitateur</span>
         </button>
@@ -578,13 +578,13 @@ export default function SurahPage() {
 
         <div className="flex items-center gap-2">
           <button onClick={() => goToPage(currentPage + 1)} disabled={currentPage >= 604}
-            className="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center disabled:opacity-30 cursor-pointer transition-colors hover:bg-emerald-100">
-            <ChevronLeft size={18} className="text-emerald-700" />
+            className="w-9 h-9 rounded-xl bg-[var(--primary-light)] flex items-center justify-center disabled:opacity-30 cursor-pointer transition-colors hover:opacity-80">
+            <ChevronLeft size={18} className="text-[var(--primary)]" />
           </button>
-          <span className="text-xs text-gray-500 font-mono min-w-[40px] text-center">{currentPage}</span>
+          <span className="text-xs text-[var(--text-muted)] font-mono min-w-[40px] text-center">{currentPage}</span>
           <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage <= 1}
-            className="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center disabled:opacity-30 cursor-pointer transition-colors hover:bg-emerald-100">
-            <ChevronRight size={18} className="text-emerald-700" />
+            className="w-9 h-9 rounded-xl bg-[var(--primary-light)] flex items-center justify-center disabled:opacity-30 cursor-pointer transition-colors hover:opacity-80">
+            <ChevronRight size={18} className="text-[var(--primary)]" />
           </button>
         </div>
       </div>
@@ -593,8 +593,8 @@ export default function SurahPage() {
       {showRecitateur && (
         <div className="fixed inset-0 z-50 flex items-end justify-center" onClick={() => setShowRecitateur(false)}>
           <div className="absolute inset-0 bg-black/30" />
-          <div className="relative bg-white rounded-t-2xl w-full p-4 pb-8" style={{ maxWidth: 480 }} onClick={e => e.stopPropagation()}>
-            <h3 className="text-sm font-bold text-emerald-900 mb-3">Recitateur</h3>
+          <div className="relative bg-[var(--bg-card)] rounded-t-2xl w-full p-4 pb-8" style={{ maxWidth: 480 }} onClick={e => e.stopPropagation()}>
+            <h3 className="text-sm font-bold text-[var(--text)] mb-3">Recitateur</h3>
             <div className="space-y-1">
               {RECITATEURS.map(r => (
                 <button key={r.id} onClick={() => {
@@ -603,7 +603,7 @@ export default function SurahPage() {
                   setShowRecitateur(false);
                 }}
                   className={`w-full text-left p-3 rounded-xl text-sm cursor-pointer transition-colors ${
-                    recitateur === r.id ? 'bg-emerald-50 text-emerald-700 font-semibold' : 'text-gray-600 hover:bg-gray-50'
+                    recitateur === r.id ? 'bg-[var(--primary-light)] text-[var(--primary)] font-semibold' : 'text-[var(--text-muted)] hover:bg-[var(--primary-light)]'
                   }`}>
                   {r.name}
                 </button>

@@ -4,17 +4,19 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Star, BookOpen, TrendingUp, User, Sun, Moon } from 'lucide-react';
 import { useTheme } from './ThemeProvider';
-
-const tabs = [
-  { href: '/', label: 'Challenge', Icon: Star },
-  { href: '/sourates', label: 'Sourates', Icon: BookOpen },
-  { href: '/progression', label: 'Progression', Icon: TrendingUp },
-  { href: '/profil', label: 'Profil', Icon: User },
-];
+import { useI18n } from './I18nProvider';
 
 export default function BottomNav() {
   const pathname = usePathname();
   const { theme, toggle } = useTheme();
+  const { t } = useI18n();
+
+  const tabs = [
+    { href: '/', label: t('challenge'), Icon: Star },
+    { href: '/sourates', label: t('sourates'), Icon: BookOpen },
+    { href: '/progression', label: t('progression'), Icon: TrendingUp },
+    { href: '/profil', label: t('profil'), Icon: User },
+  ];
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50" style={{ maxWidth: 480, margin: '0 auto' }}>

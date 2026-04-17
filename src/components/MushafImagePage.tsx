@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState, useEffect } from 'react';
+import { useTheme } from './ThemeProvider';
 
 interface QcfWord {
   c: string;
@@ -35,6 +36,7 @@ const LINE_HEIGHT_PX = (TEXT_BOTTOM_PX - TEXT_TOP_PX) / TOTAL_LINES;
 export default function MushafImagePage({ pageNumber, qcfPage, playingAyahKey }: MushafImagePageProps) {
   const imgRef = useRef<HTMLImageElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const { theme } = useTheme();
   const [imageRect, setImageRect] = useState<{ top: number; left: number; width: number; height: number } | null>(null);
 
   // Quand l'image charge ou le conteneur resize, calculer la position reelle de l'image
@@ -97,7 +99,7 @@ export default function MushafImagePage({ pageNumber, qcfPage, playingAyahKey }:
         alt={`Page ${pageNumber}`}
         className="w-full h-full object-contain"
         onLoad={updateImageRect}
-        style={{ display: 'block' }}
+        style={{ display: 'block', filter: theme === 'dark' ? 'invert(0.87) hue-rotate(180deg) contrast(0.9)' : 'none' }}
       />
 
       {/* Overlay surlignage */}
@@ -120,7 +122,7 @@ export default function MushafImagePage({ pageNumber, qcfPage, playingAyahKey }:
               left: `${leftInContainer}px`,
               width: `${widthInContainer}px`,
               height: `${heightInContainer}px`,
-              backgroundColor: 'rgba(16, 185, 129, 0.18)',
+              backgroundColor: theme === 'dark' ? 'rgba(16, 185, 129, 0.25)' : 'rgba(16, 185, 129, 0.18)',
               borderRadius: '4px',
               pointerEvents: 'none',
             }}

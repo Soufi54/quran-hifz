@@ -5,6 +5,7 @@ import { Flame, Heart, BookOpen, Trophy, CheckCircle } from 'lucide-react';
 import BottomNav from '../components/BottomNav';
 import QuizPlayer from '../components/QuizPlayer';
 import Confetti from '../components/Confetti';
+import { useI18n } from '../components/I18nProvider';
 import { generateDailyChallenge } from '../lib/quiz-generator';
 import {
   getStreak, updateStreak, addXP, getLives, loseLive,
@@ -13,6 +14,7 @@ import {
 import { QuizQuestion } from '../types';
 
 export default function ChallengePage() {
+  const { t } = useI18n();
   const [state, setState] = useState<'loading' | 'no_surahs' | 'done' | 'playing'>('loading');
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [streak, setStreak] = useState(0);
@@ -91,7 +93,7 @@ export default function ChallengePage() {
 
       {/* Header */}
       <div className="islamic-header text-white px-5 py-5 rounded-b-3xl" style={{ boxShadow: '0 4px 20px rgba(13, 92, 77, 0.2)' }}>
-        <h1 className="text-xl font-bold text-center">Challenge du jour</h1>
+        <h1 className="text-xl font-bold text-center">{t('challenge')}</h1>
         <div className="flex justify-center gap-8 mt-3">
           <div className="flex items-center gap-1.5">
             <Flame size={18} className="text-[#C9A84C]" />
@@ -116,9 +118,9 @@ export default function ChallengePage() {
           <div className="w-20 h-20 rounded-2xl bg-[var(--primary-light)] flex items-center justify-center mb-5" style={{ boxShadow: 'var(--shadow-clay)' }}>
             <BookOpen size={36} className="text-[var(--primary)]" />
           </div>
-          <h2 className="text-xl font-bold text-[var(--text)] mb-2">Pas encore de sourates</h2>
+          <h2 className="text-xl font-bold text-[var(--text)] mb-2">{t('noSurahs')}</h2>
           <p className="text-sm text-[var(--text-muted)] leading-relaxed">
-            Commence par apprendre une sourate dans l&apos;onglet &quot;Sourates&quot; pour debloquer le challenge quotidien.
+            {t('startLearning')}
           </p>
         </div>
       )}
@@ -139,8 +141,8 @@ export default function ChallengePage() {
               <div className="w-24 h-24 rounded-3xl bg-[var(--accent)]/10 flex items-center justify-center mb-5" style={{ boxShadow: 'var(--shadow-clay)' }}>
                 <Trophy size={44} className="text-[var(--accent)]" />
               </div>
-              <h2 className="text-2xl font-bold text-[var(--text)] mb-2">Challenge termine !</h2>
-              <p className="text-lg text-[var(--text-muted)]">{result.score}/{result.total} bonnes reponses</p>
+              <h2 className="text-2xl font-bold text-[var(--text)] mb-2">{t('challengeDone')}</h2>
+              <p className="text-lg text-[var(--text-muted)]">{result.score}/{result.total} {t('correctAnswers')}</p>
               <div className="clay-card px-6 py-3 mt-4">
                 <span className="text-xl font-bold text-[var(--primary)]">+{result.xp} XP</span>
               </div>
@@ -174,7 +176,7 @@ export default function ChallengePage() {
             }}
             className="gold-accent rounded-xl font-semibold shadow-lg py-4 px-10 mt-4 text-lg border-none cursor-pointer transition-transform active:scale-[0.97]"
           >
-            Nouveau challenge
+            {t('newChallenge')}
           </button>
         </div>
       )}

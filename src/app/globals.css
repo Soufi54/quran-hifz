@@ -175,6 +175,13 @@ body {
 .tajweed-text tajweed.ghunnah { color: #FF7E1E; }
 .tajweed-text tajweed.iqlab { color: #26BFAF; }
 
+.dark .mushaf-highlight {
+  background-color: rgba(59, 165, 139, 0.25);
+}
+.dark .tajweed-text {
+  color: #e0e0e0;
+}
+
 .ayah-number {
   display: inline-block;
   font-size: 0.65em;

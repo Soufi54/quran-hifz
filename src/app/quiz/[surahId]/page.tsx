@@ -71,10 +71,10 @@ export default function QuizPage() {
       {done && result ? (
         <div className="flex flex-col items-center justify-center h-[60vh] px-8 text-center">
           <span className="text-6xl mb-4">{result.mastered ? '✅' : '📝'}</span>
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">
+          <h2 className="text-2xl font-bold text-[var(--text)] mb-2">
             {result.mastered ? 'Sourate maitrisee !' : 'Continue a reviser'}
           </h2>
-          <p className="text-lg text-gray-600">
+          <p className="text-lg text-[var(--text-muted)]">
             {result.score}/{result.total} ({Math.round((result.score / result.total) * 100)}%)
           </p>
           {!result.mastered && (
@@ -90,7 +90,7 @@ export default function QuizPage() {
             </button>
             <button
               onClick={() => router.back()}
-              className="bg-gray-200 text-gray-700 px-6 py-3 rounded-xl font-semibold"
+              className="bg-[var(--border)] text-[var(--text)] px-6 py-3 rounded-xl font-semibold"
             >
               Retour
             </button>

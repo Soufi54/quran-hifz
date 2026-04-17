@@ -7,8 +7,10 @@ import BottomNav from '../../components/BottomNav';
 import { getAllSurahs } from '../../lib/quran';
 import { getSurahProgress, getFavorites, toggleFavorite } from '../../lib/storage';
 import { SurahStatus, STATUS_COLORS } from '../../types';
+import { useI18n } from '../../components/I18nProvider';
 
 export default function SouratesPage() {
+  const { t } = useI18n();
   const [progress, setProgress] = useState<Record<number, SurahStatus>>({});
   const [search, setSearch] = useState('');
   const [favorites, setFavorites] = useState<number[]>([]);
@@ -98,7 +100,7 @@ export default function SouratesPage() {
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
           <input
             type="text"
-            placeholder="Rechercher une sourate..."
+            placeholder={t('search')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full bg-white/10 rounded-xl pl-9 pr-4 py-2.5 text-sm placeholder:text-white/40 text-white outline-none focus:bg-white/25 transition-colors"
@@ -111,17 +113,17 @@ export default function SouratesPage() {
         <div className="text-center flex items-center gap-1.5">
           <CheckCircle size={14} className="text-[var(--primary)]" />
           <span className="text-sm font-bold text-[var(--primary)]">{masteredCount}</span>
-          <span className="text-[10px] text-[var(--text-muted)]">maitrisees</span>
+          <span className="text-[10px] text-[var(--text-muted)]">{t('mastered')}</span>
         </div>
         <div className="text-center flex items-center gap-1.5">
           <Clock size={14} className="text-amber-500" />
           <span className="text-sm font-bold text-amber-500">{learningCount}</span>
-          <span className="text-[10px] text-[var(--text-muted)]">en cours</span>
+          <span className="text-[10px] text-[var(--text-muted)]">{t('learning')}</span>
         </div>
         <div className="text-center flex items-center gap-1.5">
           <AlertTriangle size={14} className="text-red-500" />
           <span className="text-sm font-bold text-red-500">{decliningCount}</span>
-          <span className="text-[10px] text-[var(--text-muted)]">a reviser</span>
+          <span className="text-[10px] text-[var(--text-muted)]">{t('toReview')}</span>
         </div>
       </div>
 
@@ -136,7 +138,7 @@ export default function SouratesPage() {
           }`}
         >
           <Star size={12} fill={showFavOnly ? 'currentColor' : 'none'} />
-          {favorites.length === 0 ? 'Aucun favori' : `Favoris (${favorites.length})`}
+          {favorites.length === 0 ? t('noFavorites') : `${t('favorites')} (${favorites.length})`}
         </button>
       </div>
 

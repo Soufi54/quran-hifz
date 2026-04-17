@@ -528,10 +528,10 @@ export default function TartilPage() {
             style={{ background: mastered ? '#ECFDF5' : '#FEF3C7', boxShadow: 'var(--shadow-clay)' }}>
             {mastered ? <Check size={48} className="text-emerald-500" /> : <RotateCcw size={48} className="text-amber-500" />}
           </div>
-          <h2 className="text-2xl font-bold text-emerald-900 mb-2">{mastered ? 'Maitrisee !' : 'A reviser'}</h2>
-          <p className="text-lg text-gray-600 mb-4">{correct}/{total} mots ({pct}%)</p>
+          <h2 className="text-2xl font-bold text-[var(--text)] mb-2">{mastered ? 'Maitrisee !' : 'A reviser'}</h2>
+          <p className="text-lg text-[var(--text-muted)] mb-4">{correct}/{total} mots ({pct}%)</p>
 
-          <div className="w-full max-h-[50vh] overflow-y-auto rounded-2xl bg-white p-4" style={{ boxShadow: 'var(--shadow-clay)' }}>
+          <div className="w-full max-h-[50vh] overflow-y-auto rounded-2xl bg-[var(--bg-card)] p-4" style={{ boxShadow: 'var(--shadow-clay)' }}>
             <div className="text-right leading-[52px]" dir="rtl" style={{ fontFamily: "'Amiri Quran', serif" }}>
               {words.map((w, i) => {
                 const ayahNum = ayahSeparators.get(i);
@@ -546,7 +546,7 @@ export default function TartilPage() {
                     <span className={`text-xl inline-block mx-0.5 ${
                       w.status === 'correct' ? 'text-emerald-700' :
                       w.status === 'wrong' ? 'text-red-500 line-through decoration-red-300' :
-                      'text-gray-400'
+                      'text-[var(--text-muted)]'
                     }`}>
                       {w.original}
                     </span>{' '}
@@ -573,7 +573,7 @@ export default function TartilPage() {
   const progress = totalWords > 0 ? (revealed / totalWords) * 100 : 0;
 
   return (
-    <div className="min-h-screen flex flex-col page-enter" style={{ background: '#FDF6EC' }}>
+    <div className="min-h-screen flex flex-col page-enter bg-[var(--bg)]">
       {/* Flash erreur */}
       {errorFlash && (
         <div className="fixed inset-0 z-50 pointer-events-none bg-red-500/10 animate-pulse" />
@@ -628,24 +628,24 @@ export default function TartilPage() {
             >
               <Mic size={44} className="text-white" />
             </button>
-            <h2 className="text-xl font-bold text-emerald-900 mb-2">Mode Tartil</h2>
-            <p className="text-sm text-gray-500 max-w-[280px] mx-auto leading-relaxed">
+            <h2 className="text-xl font-bold text-[var(--text)] mb-2">Mode Tartil</h2>
+            <p className="text-sm text-[var(--text-muted)] max-w-[280px] mx-auto leading-relaxed">
               Recite la sourate. Les mots se revelent au fur et a mesure. Les erreurs apparaissent en rouge.
             </p>
-            <p className="text-xs text-gray-400 mt-3">{totalWords} mots · Chrome recommande</p>
+            <p className="text-xs text-[var(--text-muted)] mt-3">{totalWords} mots · Chrome recommande</p>
           </div>
         ) : (
           <div>
             {/* Status vocal */}
-            <div className="mb-3 p-2 rounded-lg bg-white/80 border border-gray-200">
+            <div className="mb-3 p-2 rounded-lg bg-[var(--bg-card)]/80 border border-[var(--border)]">
               <div className="flex items-center gap-2 mb-1">
                 <div className={`w-3 h-3 rounded-full ${
                   voiceStatus === 'receiving' ? 'bg-emerald-500 animate-pulse' :
                   voiceStatus === 'listening' ? 'bg-amber-400 animate-pulse' :
                   voiceStatus === 'error' ? 'bg-red-500' :
-                  'bg-gray-300'
+                  'bg-[var(--border)]'
                 }`} />
-                <span className="text-xs text-gray-500">
+                <span className="text-xs text-[var(--text-muted)]">
                   {voiceStatus === 'receiving' ? 'Voix detectee' :
                    voiceStatus === 'listening' ? 'En attente de voix...' :
                    voiceStatus === 'error' ? 'Erreur micro' :
@@ -653,12 +653,12 @@ export default function TartilPage() {
                 </span>
               </div>
               {transcript && (
-                <p className="text-xs text-gray-400 text-right" dir="rtl" style={{ fontFamily: "'Noto Naskh Arabic', serif" }}>
+                <p className="text-xs text-[var(--text-muted)] text-right" dir="rtl" style={{ fontFamily: "'Noto Naskh Arabic', serif" }}>
                   {transcript.split(' ').slice(-8).join(' ')}
                 </p>
               )}
               {process.env.NODE_ENV === 'development' && debugLog.length > 0 && (
-                <div className="mt-1 border-t border-gray-100 pt-1">
+                <div className="mt-1 border-t border-[var(--border)] pt-1">
                   {debugLog.slice(-3).map((log, i) => (
                     <p key={i} className="text-[10px] text-gray-300 font-mono">{log}</p>
                   ))}
@@ -667,7 +667,7 @@ export default function TartilPage() {
             </div>
 
             {/* Page Coran avec mots caches */}
-            <div className="rounded-2xl bg-white p-5 min-h-[55vh]" style={{ boxShadow: 'var(--shadow-clay)' }}>
+            <div className="rounded-2xl bg-[var(--bg-card)] p-5 min-h-[55vh]" style={{ boxShadow: 'var(--shadow-clay)' }}>
               <div className="text-right leading-[56px]" dir="rtl" style={{ fontFamily: "'Amiri Quran', serif" }}>
                 {words.map((w, i) => {
                   const isCurrentWord = i === currentWordIndex;

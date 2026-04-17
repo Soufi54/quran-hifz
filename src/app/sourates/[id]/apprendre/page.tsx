@@ -362,7 +362,7 @@ export default function ApprendrePage() {
     if (showCelebration) {
       const m = milestone();
       return (
-        <div className="min-h-screen bg-white flex flex-col">
+        <div className="min-h-screen bg-[var(--bg)] flex flex-col">
           <Header surahName={surah.nameArabic} progress={globalProgress()} onBack={() => router.back()} />
           <div className="flex-1 flex flex-col items-center justify-center px-6">
             {combo >= 5 && <CelebrationConfetti />}
@@ -372,14 +372,14 @@ export default function ApprendrePage() {
             >
               +{chunkScore} XP
             </div>
-            <p className="text-lg text-gray-700 mb-2">Partie terminee !</p>
+            <p className="text-lg text-[var(--text)] mb-2">Partie terminee !</p>
             {m && (
               <p className="text-sm font-semibold mb-6" style={{ color: GOLD }}>
                 {m}
               </p>
             )}
             {combo >= 5 && (
-              <p className="text-sm text-gray-500 mb-6">Combo x{combo} !</p>
+              <p className="text-sm text-[var(--text-muted)] mb-6">Combo x{combo} !</p>
             )}
             <div className="flex gap-3">
               {activeChunk !== null && activeChunk < chunks.length - 1 && (
@@ -396,7 +396,7 @@ export default function ApprendrePage() {
                   setActiveChunk(null);
                   setShowCelebration(false);
                 }}
-                className="px-6 py-3 rounded-xl bg-gray-100 text-gray-700 font-semibold cursor-pointer transition-transform active:scale-95"
+                className="px-6 py-3 rounded-xl bg-[var(--border)] text-[var(--text)] font-semibold cursor-pointer transition-transform active:scale-95"
               >
                 Retour
               </button>
@@ -413,7 +413,7 @@ export default function ApprendrePage() {
     }
 
     return (
-      <div className="min-h-screen bg-white flex flex-col">
+      <div className="min-h-screen bg-[var(--bg)] flex flex-col">
         <Header surahName={surah.nameArabic} progress={globalProgress()} onBack={() => router.back()} />
         <div className="flex-1 overflow-y-auto px-4 py-6 space-y-3">
           {chunks.map((chunk, i) => {
@@ -433,32 +433,32 @@ export default function ApprendrePage() {
                 disabled={!unlocked}
                 className={`w-full text-left p-4 rounded-xl border transition-all cursor-pointer ${
                   unlocked
-                    ? 'border-emerald-200 bg-white hover:bg-emerald-50 active:scale-[0.98]'
-                    : 'border-gray-100 bg-gray-50 opacity-50'
+                    ? 'border-[var(--border)] bg-[var(--bg-card)] hover:bg-[var(--primary-light)] active:scale-[0.98]'
+                    : 'border-[var(--border)] bg-[var(--bg)] opacity-50'
                 }`}
               >
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-semibold text-gray-800">
+                  <span className="text-sm font-semibold text-[var(--text)]">
                     Partie {i + 1}
                   </span>
-                  <span className="text-xs text-gray-500">
+                  <span className="text-xs text-[var(--text-muted)]">
                     Versets {ayahRange}
                   </span>
                 </div>
                 {!unlocked ? (
-                  <p className="text-xs text-gray-400" style={{ filter: 'blur(3px)' }}>
+                  <p className="text-xs text-[var(--text-muted)]" style={{ filter: 'blur(3px)' }}>
                     {chunk.ayahs[0].text.slice(0, 60)}...
                   </p>
                 ) : (
                   <>
                     <p
-                      className="text-base text-right leading-loose text-gray-800 mb-2"
+                      className="text-base text-right leading-loose text-[var(--text)] mb-2"
                       dir="rtl"
                       style={{ fontFamily: "'Amiri Quran', serif" }}
                     >
                       {chunk.ayahs[0].text.slice(0, 80)}...
                     </p>
-                    <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                    <div className="w-full h-1.5 bg-[var(--border)] rounded-full overflow-hidden">
                       <div
                         className="h-full rounded-full transition-all duration-500"
                         style={{
@@ -482,7 +482,7 @@ export default function ApprendrePage() {
   const stepIndex = STEPS.indexOf(currentStep);
 
   return (
-    <div className="min-h-screen bg-white flex flex-col relative">
+    <div className="min-h-screen bg-[var(--bg)] flex flex-col relative">
       {/* Flash overlay */}
       {flashColor && (
         <div
@@ -516,7 +516,7 @@ export default function ApprendrePage() {
             />
           ))}
         </div>
-        <p className="text-xs text-gray-500 text-center">
+        <p className="text-xs text-[var(--text-muted)] text-center">
           {STEP_LABELS[currentStep]} ({stepIndex + 1}/{STEPS.length})
         </p>
       </div>
@@ -645,7 +645,7 @@ export default function ApprendrePage() {
         <div className="text-center mt-6 pb-4">
           <button
             onClick={() => { stopAudio(); nextStep(); }}
-            className="text-sm text-gray-400 underline cursor-pointer hover:text-gray-600"
+            className="text-sm text-[var(--text-muted)] underline cursor-pointer hover:text-[var(--text)]"
           >
             Passer cette etape
           </button>
@@ -667,14 +667,14 @@ function Header({
   onBack: () => void;
 }) {
   return (
-    <div className="bg-white border-b border-gray-100 px-4 py-3">
+    <div className="bg-[var(--bg-card)] border-b border-[var(--border)] px-4 py-3">
       <div className="flex items-center gap-3 mb-2">
         <button onClick={onBack} className="p-1 cursor-pointer">
-          <ArrowLeft size={22} className="text-gray-700" />
+          <ArrowLeft size={22} className="text-[var(--text)]" />
         </button>
         <div className="flex-1 text-center">
           <h1
-            className="text-lg font-bold text-gray-900"
+            className="text-lg font-bold text-[var(--text)]"
             style={{ fontFamily: "'Amiri Quran', serif" }}
           >
             {surahName}
@@ -682,13 +682,13 @@ function Header({
         </div>
         <div className="w-7" />
       </div>
-      <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+      <div className="w-full h-1.5 bg-[var(--border)] rounded-full overflow-hidden">
         <div
           className="h-full rounded-full transition-all duration-700"
           style={{ width: `${progress}%`, backgroundColor: GREEN }}
         />
       </div>
-      <p className="text-[10px] text-gray-400 text-right mt-1">{progress}% maitrise</p>
+      <p className="text-[10px] text-[var(--text-muted)] text-right mt-1">{progress}% maitrise</p>
     </div>
   );
 }
@@ -758,13 +758,13 @@ function StepListen({
 
   return (
     <div className="flex flex-col items-center gap-4">
-      <p className="text-sm text-gray-500">
+      <p className="text-sm text-[var(--text-muted)]">
         Ecoute {Math.min(listenCount + 1, LISTEN_COUNT)}/{LISTEN_COUNT}
-        <span className="text-xs text-gray-400 ml-2">— verset {currentAyah?.numberInSurah}</span>
+        <span className="text-xs text-[var(--text-muted)] ml-2">— verset {currentAyah?.numberInSurah}</span>
       </p>
 
       {/* Image mushaf avec spotlight sur l'ayah courante */}
-      <div className="w-full relative rounded-xl overflow-hidden border border-gray-200">
+      <div className="w-full relative rounded-xl overflow-hidden border border-[var(--border)]">
         {/* Image de base — assombrie */}
         <img // eslint-disable-line @next/next/no-img-element
           src={getMushafUrl(pageNumber)}
@@ -871,12 +871,12 @@ function StepRecognize({
 
   return (
     <div className="flex flex-col gap-6">
-      <p className="text-sm text-gray-500 text-center">
+      <p className="text-sm text-[var(--text-muted)] text-center">
         Question {currentIdx + 1}/{questions.length}
       </p>
-      <p className="text-center text-gray-700 font-medium">Quel est le verset suivant ?</p>
+      <p className="text-center text-[var(--text)] font-medium">Quel est le verset suivant ?</p>
       <div
-        className="text-right text-xl leading-[56px] text-gray-800 p-4 bg-gray-50 rounded-xl"
+        className="text-right text-xl leading-[56px] text-[var(--text)] p-4 bg-[var(--primary-light)] rounded-xl"
         dir="rtl"
         style={{ fontFamily: "'Amiri Quran', serif" }}
       >
@@ -884,7 +884,7 @@ function StepRecognize({
       </div>
       <div className="space-y-3">
         {q.options.map((option, i) => {
-          let bg = 'bg-white border-gray-200';
+          let bg = 'bg-[var(--bg-card)] border-[var(--border)]';
           if (answer !== null) {
             if (i === q.correctIndex) bg = 'border-transparent';
             else if (i === answer) bg = 'border-transparent';
@@ -938,7 +938,7 @@ function StepPuzzle({
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <span className="text-sm text-gray-500">
+        <span className="text-sm text-[var(--text-muted)]">
           Verset {ayah.numberInSurah}
         </span>
         <span
@@ -991,10 +991,10 @@ function StepComplete({
 
   return (
     <div className="flex flex-col gap-6">
-      <p className="text-sm text-gray-500 text-center">Completez le verset</p>
+      <p className="text-sm text-[var(--text-muted)] text-center">Completez le verset</p>
 
       <div
-        className="text-right text-xl leading-[56px] p-4 bg-gray-50 rounded-xl"
+        className="text-right text-xl leading-[56px] p-4 bg-[var(--primary-light)] rounded-xl"
         dir="rtl"
         style={{ fontFamily: "'Amiri Quran', serif" }}
       >
@@ -1012,7 +1012,7 @@ function StepComplete({
               borderBottom: w.type === 'active' ? `2px solid ${GOLD}` : 'none',
               padding: '2px 6px',
               borderRadius: '4px',
-              color: w.type === 'blank' ? '#9CA3AF' : w.type === 'filled' ? GREEN : '#1F2937',
+              color: w.type === 'blank' ? 'var(--text-muted)' : w.type === 'filled' ? GREEN : 'var(--text)',
             }}
           >
             {w.text}{' '}
@@ -1023,8 +1023,8 @@ function StepComplete({
       {blank && (
         <div className="grid grid-cols-2 gap-3">
           {blank.options.map((option, i) => {
-            let borderColor = '#E5E7EB';
-            let bgColor = 'white';
+            let borderColor = 'var(--border)';
+            let bgColor = 'var(--bg-card)';
             if (answer !== null) {
               if (option === blank.answer) {
                 borderColor = GREEN;
@@ -1074,7 +1074,7 @@ function StepRecite({
 }) {
   return (
     <div className="flex flex-col items-center gap-6">
-      <p className="text-sm text-gray-500">
+      <p className="text-sm text-[var(--text-muted)]">
         Recitez le verset {ayah.numberInSurah} de memoire
       </p>
 
@@ -1084,18 +1084,18 @@ function StepRecite({
           dir="rtl"
           style={{
             fontFamily: "'Amiri Quran', serif",
-            backgroundColor: revealed ? '#F9FAFB' : '#D1D5DB',
-            color: revealed ? '#1F2937' : 'transparent',
+            backgroundColor: revealed ? 'var(--primary-light)' : 'var(--border)',
+            color: revealed ? 'var(--text)' : 'transparent',
             userSelect: revealed ? 'auto' : 'none',
           }}
         >
           {ayah.text}
-          <span className="text-sm text-gray-400 ml-2">﴿{ayah.numberInSurah}﴾</span>
+          <span className="text-sm text-[var(--text-muted)] ml-2">﴿{ayah.numberInSurah}﴾</span>
         </div>
 
         {!revealed && (
           <div className="absolute inset-0 flex items-center justify-center">
-            <p className="text-gray-500 text-sm">Recitez puis verifiez</p>
+            <p className="text-[var(--text-muted)] text-sm">Recitez puis verifiez</p>
           </div>
         )}
       </div>
@@ -1103,7 +1103,7 @@ function StepRecite({
       {!revealed ? (
         <button
           onClick={onReveal}
-          className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gray-100 text-gray-700 font-semibold cursor-pointer transition-transform active:scale-95"
+          className="flex items-center gap-2 px-6 py-3 rounded-xl bg-[var(--border)] text-[var(--text)] font-semibold cursor-pointer transition-transform active:scale-95"
         >
           <Eye size={18} />
           Reveler
