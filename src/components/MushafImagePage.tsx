@@ -101,7 +101,7 @@ export default function MushafImagePage({ pageNumber, qcfPage, playingAyahKey }:
         onLoad={updateImageRect}
         style={{
           display: 'block',
-          filter: theme === 'dark' ? 'invert(1) contrast(1.3) brightness(0.8)' : 'none',
+          filter: theme === 'dark' ? 'invert(1) hue-rotate(180deg) contrast(1.3) brightness(0.8)' : 'none',
         }}
       />
 
