@@ -90,18 +90,19 @@ export default function MushafImagePage({ pageNumber, qcfPage, playingAyahKey }:
   return (
     <div
       ref={containerRef}
-      className="relative overflow-hidden"
-      style={{ height: 'calc(100vh - 110px)', background: theme === 'dark' ? 'var(--bg)' : 'white' }}
+      className="relative overflow-hidden flex items-center justify-center"
+      style={{ height: 'calc(100vh - 110px)', background: theme === 'dark' ? '#111' : 'white' }}
     >
       <img // eslint-disable-line @next/next/no-img-element
         ref={imgRef}
         src={getMushafImageUrl(pageNumber)}
         alt={`Page ${pageNumber}`}
-        className="w-full h-full object-contain"
+        className="h-full object-contain"
         onLoad={updateImageRect}
         style={{
           display: 'block',
-          filter: theme === 'dark' ? 'invert(1) contrast(1.3) brightness(0.8)' : 'none',
+          maxWidth: '100%',
+          borderRadius: theme === 'dark' ? '8px' : '0',
         }}
       />
 
