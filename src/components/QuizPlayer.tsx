@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { Heart } from 'lucide-react';
 import { QuizQuestion } from '../types';
 import { getSurah, getFirstPageOfSurah } from '../lib/quran';
+import { useTheme } from './ThemeProvider';
 
 // QCF data pour le mapping lignes/versets
 interface QcfWord { c: string; t: string; p: number; vk: string; }
@@ -55,6 +56,7 @@ function getMushafUrl(page: number): string {
 type Phase = 'question' | 'context';
 
 export default function QuizPlayer({ questions, onComplete, onLoseLife, lives }: QuizPlayerProps) {
+  const { theme } = useTheme();
   const [idx, setIdx] = useState(0);
   const [totalPoints, setTotalPoints] = useState(0);
   const [answered, setAnswered] = useState(false);
@@ -189,11 +191,13 @@ export default function QuizPlayer({ questions, onComplete, onLoseLife, lives }:
           </p>
         </div>
 
-        <div className="w-full flex-1 relative rounded-xl overflow-hidden border border-[var(--border)] bg-white">
+        <div className="w-full flex-1 relative rounded-xl overflow-hidden border border-[var(--border)]"
+          style={{ background: theme === 'dark' ? 'var(--bg)' : 'white' }}>
           <img // eslint-disable-line @next/next/no-img-element
             src={getMushafUrl(actualPage)}
             alt={`Page ${actualPage}`}
             className="w-full h-auto"
+            style={{ filter: theme === 'dark' ? 'invert(1) contrast(1.3) brightness(0.8)' : 'none' }}
           />
           {highlightLines.map(lineNum => {
             // Position en % de la hauteur de l'image

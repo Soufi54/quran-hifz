@@ -90,8 +90,8 @@ export default function MushafImagePage({ pageNumber, qcfPage, playingAyahKey }:
   return (
     <div
       ref={containerRef}
-      className="relative overflow-hidden bg-white"
-      style={{ height: 'calc(100vh - 110px)' }}
+      className="relative overflow-hidden"
+      style={{ height: 'calc(100vh - 110px)', background: theme === 'dark' ? 'var(--bg)' : 'white' }}
     >
       <img // eslint-disable-line @next/next/no-img-element
         ref={imgRef}
@@ -99,7 +99,10 @@ export default function MushafImagePage({ pageNumber, qcfPage, playingAyahKey }:
         alt={`Page ${pageNumber}`}
         className="w-full h-full object-contain"
         onLoad={updateImageRect}
-        style={{ display: 'block' }}
+        style={{
+          display: 'block',
+          filter: theme === 'dark' ? 'invert(1) contrast(1.3) brightness(0.8)' : 'none',
+        }}
       />
 
       {/* Overlay surlignage */}
