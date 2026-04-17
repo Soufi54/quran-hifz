@@ -189,7 +189,7 @@ export default function QuizPlayer({ questions, onComplete, onLoseLife, lives }:
           </p>
         </div>
 
-        <div className="w-full flex-1 relative rounded-xl overflow-hidden border border-[var(--border)]">
+        <div className="w-full flex-1 relative rounded-xl overflow-hidden border border-[var(--border)] bg-white">
           <img // eslint-disable-line @next/next/no-img-element
             src={getMushafUrl(actualPage)}
             alt={`Page ${actualPage}`}

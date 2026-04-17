@@ -175,9 +175,12 @@ body {
 .tajweed-text tajweed.ghunnah { color: #FF7E1E; }
 .tajweed-text tajweed.iqlab { color: #26BFAF; }
 
-/* Dark mode mushaf — texte blanc sur fond sombre (style quran.com) */
+/* Dark mode mushaf — texte blanc sur fond sombre (style quran.com)
+   COLRv1 fonts (QCF v4) embed palette colors that ignore CSS `color`.
+   filter: invert(1) on the glyph spans reliably flips black→white. */
 .dark .mushaf-line {
   color: #E8E8E8;
+  filter: invert(1);
 }
 .dark .mushaf-highlight {
   background-color: rgba(59, 165, 139, 0.3);

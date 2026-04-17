@@ -90,7 +90,7 @@ export default function MushafImagePage({ pageNumber, qcfPage, playingAyahKey }:
   return (
     <div
       ref={containerRef}
-      className="relative overflow-hidden"
+      className="relative overflow-hidden bg-white"
       style={{ height: 'calc(100vh - 110px)' }}
     >
       <img // eslint-disable-line @next/next/no-img-element
