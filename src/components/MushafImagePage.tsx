@@ -99,7 +99,7 @@ export default function MushafImagePage({ pageNumber, qcfPage, playingAyahKey }:
         alt={`Page ${pageNumber}`}
         className="w-full h-full object-contain"
         onLoad={updateImageRect}
-        style={{ display: 'block', filter: theme === 'dark' ? 'invert(0.87) hue-rotate(180deg) contrast(0.9)' : 'none' }}
+        style={{ display: 'block' }}
       />
 
       {/* Overlay surlignage */}
