@@ -29,7 +29,7 @@
   --secondary: #4ECBA9;
   --accent: #D4B65C;
   --accent-dark: #B89B4A;
-  --bg: #0F1A17;
+  --bg: #0A0F0D;
   --bg-card: #162420;
   --text: #E8F0ED;
   --text-muted: #8FA8A0;
@@ -175,11 +175,18 @@ body {
 .tajweed-text tajweed.ghunnah { color: #FF7E1E; }
 .tajweed-text tajweed.iqlab { color: #26BFAF; }
 
+/* Dark mode mushaf — texte blanc sur fond sombre (style quran.com) */
+.dark .mushaf-line {
+  color: #E8E8E8;
+}
 .dark .mushaf-highlight {
-  background-color: rgba(59, 165, 139, 0.25);
+  background-color: rgba(59, 165, 139, 0.3);
 }
 .dark .tajweed-text {
-  color: #e0e0e0;
+  color: #E8E8E8;
+}
+.dark .ayah-number {
+  color: #D4B65C;
 }
 
 .ayah-number {

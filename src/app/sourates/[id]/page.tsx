@@ -522,7 +522,7 @@ export default function SurahPage() {
       <div
         ref={containerRef}
         className={`flex-1 overflow-x-hidden ${showTranslation ? 'overflow-y-auto' : 'overflow-hidden h-full'}`}
-        style={{ background: showTranslation ? 'var(--primary-light)' : 'var(--bg-card)' }}
+        style={{ background: showTranslation ? 'var(--primary-light)' : 'var(--bg)' }}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
