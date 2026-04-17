@@ -54,7 +54,11 @@ function loadQcfFont(pageNumber: number): Promise<void> {
   });
 }
 
-// Composant MushafPage : auto-sizing pour fitter exactement dans l'ecran
+// Composant MushafPage : layout fidele au mushaf imprime
+// - Marges laterales proportionnelles
+// - Line-height calcule dynamiquement pour remplir la hauteur
+// - Separateurs de sourate compacts
+// - Auto-sizing robuste (font-size ajuste pour fitter en largeur)
 function MushafPage({
   fontFamily, lineNumbers, qcfPage, surahStarts, surahStartLines, firstDataLine, playingAyahKey,
 }: {
@@ -67,129 +71,137 @@ function MushafPage({
   playingAyahKey: string | null;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
-  // Taille initiale basee sur le nombre de lignes
-  const initialSize = lineNumbers.length <= 8 ? 28 : lineNumbers.length <= 13 ? 22 : 20;
-  const [fontSize, setFontSize] = useState(initialSize);
+  const [fontSize, setFontSize] = useState(0);
+  const [lineHeight, setLineHeight] = useState(1.6);
   const [ready, setReady] = useState(false);
 
-  const isFullPage = lineNumbers.length >= 13;
   const hasSurahHeader = firstDataLine > 1 && surahStarts.length > 0;
+  // Combien d'espace vertical les separateurs prennent (~40px par separateur)
+  const inlineSurahCount = surahStarts.filter(s => s.lineNumber !== firstDataLine).length;
+  const headerSpace = (hasSurahHeader ? 50 : 0) + (inlineSurahCount * 36);
 
-  // Auto-size : apres le rendu, mesurer et ajuster
   useEffect(() => {
     setReady(false);
-    setFontSize(initialSize);
 
     const autoFit = () => {
       if (!containerRef.current) return;
       const container = containerRef.current;
-      const containerWidth = container.clientWidth;
-      const containerHeight = container.clientHeight;
+      const cw = container.clientWidth;
+      const ch = container.clientHeight;
+      if (cw === 0 || ch === 0) return;
+
       const lines = container.querySelectorAll('.mushaf-line');
       if (lines.length === 0) return;
 
-      let size = initialSize;
-      const minSize = 10;
+      // Espace disponible pour les lignes de texte (total - headers - marges)
+      const availH = ch - headerSpace - 16; // 16px marge haut+bas
+      const nLines = lineNumbers.length;
+
+      // Largeur disponible (avec marges laterales de 4%)
+      const availW = cw * 0.92;
+
+      // Calcul du line-height pour repartir les lignes uniformement
+      const targetLineH = availH / nLines;
+
+      // Trouver la font-size max qui fait tenir chaque ligne en largeur
+      let size = Math.min(28, targetLineH * 0.55); // Estimation initiale
+      const minSize = 8;
 
       while (size > minSize) {
-        let fits = true;
         lines.forEach(line => {
           (line as HTMLElement).style.fontSize = `${size}px`;
         });
-        // Forcer le reflow
         void container.offsetHeight;
-        // Check largeur
+
+        let allFit = true;
         lines.forEach(line => {
-          if (line.scrollWidth > containerWidth + 1) fits = false;
+          if (line.scrollWidth > availW + 2) allFit = false;
         });
-        // Check hauteur — le contenu ne doit pas depasser le conteneur
-        if (fits && container.scrollHeight > containerHeight + 5) {
-          fits = false;
-        }
-        if (fits) break;
+        if (allFit) break;
         size -= 0.5;
       }
 
+      // Line-height = espace par ligne / font-size (en em)
+      const lh = Math.max(1.3, Math.min(2.5, targetLineH / size));
+
       setFontSize(size);
+      setLineHeight(lh);
       setReady(true);
     };
 
-    // Attendre que la police soit chargee, puis re-verifier apres 1s
     document.fonts.ready.then(() => {
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           autoFit();
-          // Re-check apres 1s au cas ou la police se charge en retard
-          setTimeout(autoFit, 1000);
+          setTimeout(autoFit, 800);
         });
       });
     });
-  }, [lineNumbers, fontFamily, initialSize]);
+  }, [lineNumbers, fontFamily, headerSpace]);
 
   return (
     <div
       ref={containerRef}
-      className={`flex flex-col overflow-hidden ${isFullPage ? 'justify-between' : 'justify-center'}`}
+      className="flex flex-col overflow-hidden"
       style={{
         height: 'calc(100vh - 110px)',
         opacity: ready ? 1 : 0,
-        transition: 'opacity 0.2s',
+        transition: 'opacity 0.15s',
+        padding: '8px 4%',
       }}
     >
-      {/* Titre sourate + bismillah */}
+      {/* Titre sourate + bismillah — compact */}
       {hasSurahHeader && (
-        <div className="text-center py-1">
-          <p className="text-lg font-bold text-[var(--text)]" style={{ fontFamily: "'Noto Naskh Arabic', serif" }}>
+        <div className="text-center" style={{ paddingBottom: 4 }}>
+          <p className="text-sm font-bold text-[var(--text)]" style={{ fontFamily: "'Noto Naskh Arabic', serif", margin: 0 }}>
             {surahStarts[0].surahName}
           </p>
           {surahStarts[0].surahNumber !== 1 && surahStarts[0].surahNumber !== 9 && (
-            <p className="text-base text-[var(--text-muted)] mt-0.5" style={{ fontFamily: "'Amiri Quran', serif" }}>
+            <p className="text-xs text-[var(--text-muted)]" style={{ fontFamily: "'Amiri Quran', serif", margin: 0 }}>
               بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ
             </p>
           )}
         </div>
       )}
 
-      {lineNumbers.map(lineNum => {
-        const words = qcfPage[String(lineNum)];
-        const surahStart = surahStartLines.get(lineNum);
-        const showInlineSurahHeader = surahStart && firstDataLine !== lineNum;
+      {/* Lignes de texte — reparties uniformement */}
+      <div className="flex-1 flex flex-col justify-between">
+        {lineNumbers.map(lineNum => {
+          const words = qcfPage[String(lineNum)];
+          const surahStart = surahStartLines.get(lineNum);
+          const showInlineSurahHeader = surahStart && firstDataLine !== lineNum;
 
-        return (
-          <div key={lineNum}>
-            {showInlineSurahHeader && (
-              <div className="text-center py-1 my-1 border-t border-b border-[var(--border)]" style={{ background: 'linear-gradient(to right, transparent, rgba(0,0,0,0.03), transparent)' }}>
-                <p className="text-base font-bold text-[var(--text)]" style={{ fontFamily: "'Noto Naskh Arabic', serif" }}>
-                  {surahStart.surahName}
-                </p>
-                {surahStart.surahNumber !== 9 && (
-                  <p className="text-xs text-[var(--text-muted)]" style={{ fontFamily: "'Amiri Quran', serif" }}>
-                    بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ
+          return (
+            <div key={lineNum}>
+              {showInlineSurahHeader && (
+                <div className="text-center border-t border-b border-[var(--border)]" style={{ padding: '2px 0', margin: '1px 0' }}>
+                  <p className="text-xs font-semibold text-[var(--text-muted)]" style={{ fontFamily: "'Noto Naskh Arabic', serif", margin: 0, lineHeight: 1.3 }}>
+                    {surahStart.surahName}
                   </p>
-                )}
+                </div>
+              )}
+              <div
+                dir="rtl"
+                className="mushaf-line"
+                style={{
+                  fontFamily: `'${fontFamily}', sans-serif`,
+                  fontSize: `${fontSize}px`,
+                  lineHeight: lineHeight,
+                }}
+              >
+                {words.map((word, wi) => (
+                  <span key={wi}>
+                    <span
+                      dangerouslySetInnerHTML={{ __html: word.c }}
+                      className={playingAyahKey && word.vk === playingAyahKey ? 'mushaf-highlight' : ''}
+                    />{' '}
+                  </span>
+                ))}
               </div>
-            )}
-            <div
-              dir="rtl"
-              className="mushaf-line"
-              style={{
-                fontFamily: `'${fontFamily}', sans-serif`,
-                fontSize: `${fontSize}px`,
-                lineHeight: 1.8,
-              }}
-            >
-              {words.map((word, wi) => (
-                <span key={wi}>
-                  <span
-                    dangerouslySetInnerHTML={{ __html: word.c }}
-                    className={playingAyahKey && word.vk === playingAyahKey ? 'mushaf-highlight' : ''}
-                  />{' '}
-                </span>
-              ))}
             </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
   );
 }
