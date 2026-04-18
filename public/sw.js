@@ -1,5 +1,7 @@
-const CACHE_VERSION = 2;
-const CACHE_NAME = 'quranhifz-v' + CACHE_VERSION;
+// BUILD_TIMESTAMP is replaced at build time by the postbuild script.
+// Changing this value triggers the browser to install a new service worker.
+const BUILD_TIMESTAMP = '__BUILD_TS__';
+const CACHE_NAME = 'quranhifz-' + BUILD_TIMESTAMP;
 const STATIC_ASSETS = [
   '/',
   '/sourates/',

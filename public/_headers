@@ -1,0 +1,4 @@
+# Cloudflare Pages custom headers
+# Force no-cache on service worker so browser always checks for updates
+/sw.js
+  Cache-Control: no-cache, no-store, must-revalidate
