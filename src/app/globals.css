@@ -137,11 +137,13 @@ body {
   }
 }
 
-/* Mushaf QCF rendering — auto-sized */
+/* Mushaf QCF rendering — justified like a printed mushaf */
 .mushaf-line {
-  text-align: center;
-  white-space: nowrap;
-  overflow: visible;
+  text-align: justify;
+  text-align-last: justify;
+  white-space: normal;
+  word-spacing: 0.05em;
+  overflow: hidden;
   padding: 0;
   margin: 0;
 }
