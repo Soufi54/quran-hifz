@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 
 import QuizPlayer from '../../../components/QuizPlayer';
-import { getSurah } from '../../../lib/quran';
+import { getSurah, ensureFullData } from '../../../lib/quran';
 import { generateQuizForSurah } from '../../../lib/quiz-generator';
 import { calculateSurahMasteredXP } from '../../../lib/scoring';
 import { getLives, loseLive, addXP, setSurahStatus, setReviewDate, getStreak } from '../../../lib/storage';
@@ -13,17 +13,22 @@ export default function QuizPage() {
   const params = useParams();
   const router = useRouter();
   const surahNumber = parseInt(params.surahId as string);
-  const surah = getSurah(surahNumber);
 
+  const [dataReady, setDataReady] = useState(false);
   const [questions, setQuestions] = useState<ReturnType<typeof generateQuizForSurah>>([]);
   const [lives, setLives] = useState(5);
   const [done, setDone] = useState(false);
   const [result, setResult] = useState<{ score: number; total: number; xp: number; mastered: boolean } | null>(null);
 
   useEffect(() => {
-    setQuestions(generateQuizForSurah(surahNumber, 10));
-    setLives(getLives());
+    ensureFullData().then(() => {
+      setDataReady(true);
+      setQuestions(generateQuizForSurah(surahNumber, 10));
+      setLives(getLives());
+    });
   }, [surahNumber]);
+
+  const surah = getSurah(surahNumber);
 
   const handleComplete = (score: number, total: number, totalPoints: number) => {
     const percentage = (score / total) * 100;
@@ -54,6 +59,14 @@ export default function QuizPage() {
     setResult(null);
     setLives(getLives());
   };
+
+  if (!dataReady) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="w-6 h-6 border-2 border-emerald-300 border-t-emerald-700 rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   if (!surah) {
     return <div className="p-8 text-center text-gray-500">Sourate non trouvee</div>;

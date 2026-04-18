@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Play, Pause, Eye } from 'lucide-react';
-import { getSurah, getAudioUrl } from '../../../../lib/quran';
+import { getSurah, getAudioUrl, ensureFullData } from '../../../../lib/quran';
 import {
   getChunks,
   getVerseMastery,
@@ -65,6 +65,12 @@ export default function ApprendrePage() {
   const params = useParams();
   const router = useRouter();
   const surahNumber = parseInt(params.id as string);
+
+  const [dataReady, setDataReady] = useState(false);
+  useEffect(() => {
+    ensureFullData().then(() => setDataReady(true));
+  }, []);
+
   const surah = getSurah(surahNumber);
 
   // Donnees de la sourate
@@ -351,6 +357,14 @@ export default function ApprendrePage() {
   };
 
   // ─── Rendu conditionnel ────────────────────────────────────
+
+  if (!dataReady) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="w-6 h-6 border-2 border-emerald-300 border-t-emerald-700 rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   if (!surah) {
     return <div className="p-8 text-center text-gray-500">Sourate non trouvee</div>;

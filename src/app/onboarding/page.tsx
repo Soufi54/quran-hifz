@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Trophy, Check } from 'lucide-react';
-import { getAllSurahs } from '../../lib/quran';
+import { getAllSurahsMeta } from '../../lib/quran';
 import { setSurahStatus } from '../../lib/storage';
 
 type Step = 'welcome' | 'level' | 'surahs' | 'goal';
@@ -13,7 +13,7 @@ export default function OnboardingPage() {
   const [step, setStep] = useState<Step>('welcome');
   const [selectedSurahs, setSelectedSurahs] = useState<Set<number>>(new Set());
   const [dailyGoal, setDailyGoal] = useState(10);
-  const surahs = getAllSurahs();
+  const surahs = getAllSurahsMeta();
 
   const toggleSurah = (num: number) => {
     setSelectedSurahs(prev => {

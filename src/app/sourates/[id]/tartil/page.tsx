@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Mic, Square, RotateCcw, Check } from 'lucide-react';
-import { getSurah } from '../../../../lib/quran';
+import { getSurah, ensureFullData } from '../../../../lib/quran';
 import { setReviewDate, setSurahStatus } from '../../../../lib/storage';
 import { normalizeArabic } from '../../../../lib/speech';
 
@@ -20,6 +20,12 @@ export default function TartilPage() {
   const params = useParams();
   const router = useRouter();
   const surahNumber = parseInt(params.id as string);
+
+  const [dataReady, setDataReady] = useState(false);
+  useEffect(() => {
+    ensureFullData().then(() => setDataReady(true));
+  }, []);
+
   const surah = getSurah(surahNumber);
 
   const [started, setStarted] = useState(false);
@@ -505,6 +511,14 @@ export default function TartilPage() {
     const pct = words.length > 0 ? Math.round((correct / words.length) * 100) : 0;
     if (pct >= 80) setSurahStatus(surahNumber, 'mastered');
   }, [done, words, surahNumber, surah]);
+
+  if (!dataReady) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="w-6 h-6 border-2 border-emerald-300 border-t-emerald-700 rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   if (!surah) return <div className="p-8 text-center text-gray-500">Sourate non trouvee</div>;
 

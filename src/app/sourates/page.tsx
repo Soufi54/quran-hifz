@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { CheckCircle, Clock, AlertTriangle, Search, Star } from 'lucide-react';
 import BottomNav from '../../components/BottomNav';
-import { getAllSurahs } from '../../lib/quran';
+import { getAllSurahsMeta, SurahMeta } from '../../lib/quran';
 import { getSurahProgress, getFavorites, toggleFavorite } from '../../lib/storage';
 import { SurahStatus, STATUS_COLORS } from '../../types';
 import { useI18n } from '../../components/I18nProvider';
@@ -21,7 +21,7 @@ export default function SouratesPage() {
     setFavorites(getFavorites());
   }, []);
 
-  const surahs = getAllSurahs();
+  const surahs = getAllSurahsMeta();
   const getStatus = (n: number): SurahStatus => progress[n] || 'not_started';
 
   const masteredCount = Object.values(progress).filter(s => s === 'mastered').length;
@@ -45,7 +45,7 @@ export default function SouratesPage() {
     );
   });
 
-  const SurahItem = ({ surah }: { surah: typeof surahs[0] }) => {
+  const SurahItem = ({ surah }: { surah: SurahMeta }) => {
     const status = getStatus(surah.number);
     const fav = favorites.includes(surah.number);
     return (
@@ -148,8 +148,8 @@ export default function SouratesPage() {
           <p className="text-center text-[var(--text-muted)] text-sm py-10">Aucune sourate trouve</p>
         ) : (
           filteredSurahs.map((s, i) => {
-            const surahJuz = s.ayahs[0]?.juz || 1;
-            const prevJuz = i > 0 ? (filteredSurahs[i - 1].ayahs[0]?.juz || 1) : 0;
+            const surahJuz = s.firstJuz || 1;
+            const prevJuz = i > 0 ? (filteredSurahs[i - 1].firstJuz || 1) : 0;
             const showJuzHeader = surahJuz !== prevJuz && !showFavOnly;
             return (
               <div key={s.number}>

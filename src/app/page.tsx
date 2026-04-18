@@ -7,6 +7,7 @@ import QuizPlayer from '../components/QuizPlayer';
 import Confetti from '../components/Confetti';
 import { useI18n } from '../components/I18nProvider';
 import { generateDailyChallenge } from '../lib/quiz-generator';
+import { ensureFullData } from '../lib/quran';
 import {
   getStreak, updateStreak, addXP, getLives, loseLive,
   getLearnedSurahs, updateSurahDeclines,
@@ -36,9 +37,11 @@ export default function ChallengePage() {
       return;
     }
 
-    const q = generateDailyChallenge(learned, 5);
-    setQuestions(q);
-    setState('playing');
+    ensureFullData().then(() => {
+      const q = generateDailyChallenge(learned, 5);
+      setQuestions(q);
+      setState('playing');
+    });
   }, []);
 
   const handleComplete = (score: number, total: number, totalPoints: number) => {

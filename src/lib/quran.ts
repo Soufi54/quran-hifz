@@ -1,24 +1,77 @@
-import quranData from '../data/quran.json';
-import { QuranData, Surah } from '../types';
+/**
+ * quran.ts — Quran data access layer.
+ *
+ * PERFORMANCE: quran.json (2.7MB) is loaded LAZILY only when full ayah
+ * data is needed (reading page, quiz). Listing pages use quran-meta.json
+ * (26KB) via getAllSurahsMeta() for instant load.
+ */
+import type { QuranData, Surah } from '../types';
+import metaData from '../data/quran-meta.json';
 
-const data = quranData as QuranData;
+// ─── Lightweight metadata (26KB, loaded instantly) ─────────
 
+export interface SurahMeta {
+  number: number;
+  nameArabic: string;
+  nameTransliteration: string;
+  nameFrench: string;
+  revelationType: string;
+  ayahCount: number;
+  firstJuz: number;
+  firstPage: number;
+  juzList: number[];
+}
+
+const meta = metaData as SurahMeta[];
+
+/** Fast: uses 26KB metadata. For listing/search/navigation. */
+export function getAllSurahsMeta(): SurahMeta[] {
+  return meta;
+}
+
+/** Fast: metadata only. */
+export function getSurahMeta(number: number): SurahMeta | undefined {
+  return meta.find(s => s.number === number);
+}
+
+/** Fast: juz grouping from metadata. */
+export function getJuzList(): number[] {
+  const juzSet = new Set<number>();
+  meta.forEach(s => s.juzList.forEach(j => juzSet.add(j)));
+  return Array.from(juzSet).sort((a, b) => a - b);
+}
+
+/** Fast: surahs in a juz from metadata. */
+export function getSurahsByJuz(juz: number): SurahMeta[] {
+  return meta.filter(s => s.juzList.includes(juz));
+}
+
+export const TOTAL_SURAHS = meta.length;
+
+// ─── Full data (2.7MB, loaded lazily on demand) ────────────
+
+let _fullData: QuranData | null = null;
+
+async function loadFullData(): Promise<QuranData> {
+  if (_fullData) return _fullData;
+  const mod = await import('../data/quran.json');
+  _fullData = mod.default as QuranData;
+  return _fullData;
+}
+
+
+/** Backward compat — returns all surahs WITH full ayah data. HEAVY. */
 export function getAllSurahs(): Surah[] {
-  return data.surahs;
+  return _fullData?.surahs ?? [];
 }
 
 export function getSurah(number: number): Surah | undefined {
-  return data.surahs.find(s => s.number === number);
+  return _fullData?.surahs.find(s => s.number === number);
 }
 
-export function getSurahsByJuz(juz: number): Surah[] {
-  return data.surahs.filter(s => s.ayahs.some(a => a.juz === juz));
-}
-
-export function getJuzList(): number[] {
-  const juzSet = new Set<number>();
-  data.surahs.forEach(s => s.ayahs.forEach(a => juzSet.add(a.juz)));
-  return Array.from(juzSet).sort((a, b) => a - b);
+/** Call this at the top of pages that need full ayah data (reading, quiz, learn). */
+export async function ensureFullData(): Promise<void> {
+  await loadFullData();
 }
 
 export interface PageData {
@@ -34,7 +87,8 @@ export interface PageData {
 
 export function getPageData(pageNumber: number): PageData {
   const ayahs: PageData['ayahs'] = [];
-  data.surahs.forEach(surah => {
+  const surahs = _fullData?.surahs ?? [];
+  surahs.forEach(surah => {
     surah.ayahs.forEach(ayah => {
       if (ayah.page === pageNumber) {
         ayahs.push({
@@ -51,9 +105,8 @@ export function getPageData(pageNumber: number): PageData {
 }
 
 export function getFirstPageOfSurah(surahNumber: number): number {
-  const surah = getSurah(surahNumber);
-  if (!surah || surah.ayahs.length === 0) return 1;
-  return surah.ayahs[0].page;
+  const s = getSurahMeta(surahNumber);
+  return s?.firstPage ?? 1;
 }
 
 export function getLastPageOfSurah(surahNumber: number): number {
@@ -75,5 +128,3 @@ export function getTafsirUrl(surahNumber: number, ayahNumber: number, lang: 'ar'
   const slug = lang === 'ar' ? 'ar-tafsir-ibn-kathir' : 'en-tafsir-ibn-kathir';
   return `https://cdn.jsdelivr.net/gh/spa5k/tafsir_api@main/tafsir/${slug}/${surahNumber}/${ayahNumber}.json`;
 }
-
-export const TOTAL_SURAHS = data.surahs.length;
