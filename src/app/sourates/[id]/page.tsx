@@ -104,8 +104,13 @@ function MushafPage({
       const targetLineH = availH / nLines;
 
       // Trouver la font-size max qui fait tenir chaque ligne en largeur
-      let size = Math.min(28, targetLineH * 0.55); // Estimation initiale
+      let size = Math.min(28, targetLineH * 0.55);
       const minSize = 8;
+
+      // Reset word-spacing avant mesure
+      lines.forEach(line => {
+        (line as HTMLElement).style.wordSpacing = '0px';
+      });
 
       while (size > minSize) {
         lines.forEach(line => {
@@ -121,7 +126,19 @@ function MushafPage({
         size -= 0.5;
       }
 
-      // Line-height = espace par ligne / font-size (en em)
+      // Justification JS : calculer le word-spacing par ligne pour remplir la largeur
+      lines.forEach(line => {
+        const el = line as HTMLElement;
+        const lineW = el.scrollWidth;
+        const gap = availW - lineW;
+        const spans = el.querySelectorAll('span > span');
+        const nWords = spans.length;
+        if (gap > 0 && nWords > 1 && gap < availW * 0.3) {
+          // Distribuer le gap entre les mots
+          el.style.wordSpacing = `${gap / (nWords - 1)}px`;
+        }
+      });
+
       const lh = Math.max(1.3, Math.min(2.5, targetLineH / size));
 
       setFontSize(size);
