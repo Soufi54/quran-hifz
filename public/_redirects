@@ -1,0 +1,4 @@
+# Cloudflare Pages redirects
+# Liens d'invitation courts vers les pages statiques avec query params.
+/m/:code  /m/?code=:code  302
+/f/:code  /f/?code=:code  302

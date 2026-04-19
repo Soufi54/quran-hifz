@@ -10,17 +10,13 @@ import {
   Profile,
   Madrasa,
   MadrasaView,
-  MadrasaMember,
   WirdLog,
   WeeklyLeaderboardEntry,
   Challenge,
-  ChallengeStatus,
   Friendship,
-  MemberWithStats,
   UserId,
   MadrasaId,
   ChallengeId,
-  DateStr,
 } from './types';
 
 export interface MadrasaStore {
