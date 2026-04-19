@@ -1,4 +1,1 @@
-# Cloudflare Pages redirects
-# Liens d'invitation courts vers les pages statiques avec query params.
-/m/:code  /m/?code=:code  302
-/f/:code  /f/?code=:code  302
+# Placeholder : les vraies redirections /m/:code et /f/:code passent par functions/m/[code].ts et functions/f/[code].ts
