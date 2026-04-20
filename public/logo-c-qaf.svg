@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="112" fill="#0D5C4D"/>
+  <!-- Lettre ق (qaf) geometrique : cercle + deux points dessus + queue en bas -->
+  <circle cx="256" cy="256" r="72" fill="none" stroke="#FFFFFF" stroke-width="24"/>
+  <circle cx="232" cy="152" r="10" fill="#FFFFFF"/>
+  <circle cx="280" cy="152" r="10" fill="#FFFFFF"/>
+  <path d="M184 260 Q160 320, 160 380" stroke="#FFFFFF" stroke-width="24" stroke-linecap="round" fill="none"/>
+</svg>

@@ -1,8 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
-  <!-- Livre ouvert geometrique minimal -->
-  <path d="M32 18 L32 52" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-  <path d="M32 18 C28 16, 20 15, 12 18 L12 48 C20 45, 28 46, 32 48" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M32 18 C36 16, 44 15, 52 18 L52 48 C44 45, 36 46, 32 48" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-  <!-- Croissant discret au-dessus -->
-  <path d="M29 8 A4 4 0 1 0 33 11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="112" fill="#0D5C4D"/>
+  <text x="256" y="256"
+        text-anchor="middle"
+        dominant-baseline="central"
+        font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', system-ui, sans-serif"
+        font-weight="700"
+        font-size="280"
+        letter-spacing="-8"
+        fill="#FFFFFF">q</text>
 </svg>
