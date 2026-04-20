@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { User, Clock, Music, RefreshCw, BookOpen, ChevronRight, Bell, Globe } from 'lucide-react';
+import { Clock, Music, RefreshCw, BookOpen, ChevronRight, Bell, Globe } from 'lucide-react';
+import Logo from '../../components/Logo';
 import BottomNav from '../../components/BottomNav';
 import { getLearnedSurahs, getUserLanguage, setUserLanguage } from '../../lib/storage';
 import { requestNotificationPermission, scheduleStreakReminder } from '../../lib/notifications';
@@ -91,11 +92,11 @@ export default function ProfilPage() {
   return (
     <div className="min-h-screen pb-20 page-enter">
       <div className="islamic-header text-white px-5 py-8 rounded-b-3xl text-center" style={{ boxShadow: '0 4px 20px rgba(13, 92, 77, 0.2)' }}>
-        <div className="w-[72px] h-[72px] rounded-2xl bg-white/15 flex items-center justify-center mx-auto" style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
-          <User size={36} className="text-white/90" />
+        <div className="w-[72px] h-[72px] rounded-2xl bg-white/10 flex items-center justify-center mx-auto text-white/90" style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+          <Logo size={44} />
         </div>
-        <h2 className="text-lg font-bold mt-3">Utilisateur</h2>
-        <p className="text-sm text-emerald-200 mt-1">Quran Hifz</p>
+        <h2 className="text-lg font-bold mt-3">Quran Hifz</h2>
+        <p className="text-sm text-emerald-200 mt-1">Memorise, teste, progresse</p>
       </div>
 
       <div className="p-4 space-y-5 mt-2">

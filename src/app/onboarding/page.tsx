@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Trophy, Check } from 'lucide-react';
+import Logo from '../../components/Logo';
 import { getAllSurahsMeta } from '../../lib/quran';
 import { setSurahStatus } from '../../lib/storage';
 
@@ -40,11 +41,8 @@ export default function OnboardingPage() {
     <div className="min-h-screen bg-[var(--bg)] page-enter">
       {step === 'welcome' && (
         <div className="flex flex-col items-center justify-center min-h-screen px-8 text-center">
-          <div className="w-24 h-24 rounded-3xl bg-[var(--primary-light)] flex items-center justify-center mb-6" style={{ boxShadow: 'var(--shadow-clay)' }}>
-            <svg viewBox="0 0 64 64" className="w-12 h-12" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M32 4C18.745 4 8 14.745 8 28c0 13.255 10.745 24 24 24 3.305 0 6.458-.67 9.33-1.88C35.69 47.25 31 41.15 31 34c0-10.493 8.507-19 19-19 1.89 0 3.716.276 5.44.79C52.78 9.41 43.14 4 32 4z" fill="var(--accent)"/>
-              <circle cx="46" cy="12" r="3" fill="var(--accent)"/>
-            </svg>
+          <div className="w-20 h-20 rounded-2xl bg-[var(--primary-light)] flex items-center justify-center mb-6 text-[var(--primary)]">
+            <Logo size={56} />
           </div>
           <h1 className="text-3xl font-bold text-[var(--text)] mb-3">Quran Hifz</h1>
           <p className="text-[var(--text-muted)] leading-relaxed mb-10">

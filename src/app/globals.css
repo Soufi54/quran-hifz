@@ -118,6 +118,11 @@ body {
   pointer-events: none;
 }
 
+/* Icones minimalistes : stroke-width plus fin (1.5 au lieu du 2 par defaut lucide) */
+svg[class*="lucide"] {
+  stroke-width: 1.5;
+}
+
 /* Smooth page transitions */
 @media (prefers-reduced-motion: no-preference) {
   .page-enter {
