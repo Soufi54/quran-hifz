@@ -240,6 +240,10 @@ export default function SurahPage() {
   const [showPhonetic, setShowPhonetic] = useState(false);
   const [showImage, setShowImage] = useState(true); // mushaf classique par defaut
   const [isPlaying, setIsPlaying] = useState(false);
+  const [immersive, setImmersive] = useState(false);
+  const [slideDir, setSlideDir] = useState<'next' | 'prev' | null>(null);
+  const prevPageRef = useRef(currentPage);
+  const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [translitData, setTranslitData] = useState<Record<string, Record<string, string>> | null>(null);
   const [showRecitateur, setShowRecitateur] = useState(false);
   const [recitateur, setRecitateur] = useState('Alafasy_128kbps');
@@ -307,11 +311,33 @@ export default function SurahPage() {
 
   const goToPage = useCallback((page: number) => {
     const clamped = Math.max(1, Math.min(604, page));
+    setSlideDir(clamped > prevPageRef.current ? 'next' : clamped < prevPageRef.current ? 'prev' : null);
+    prevPageRef.current = clamped;
     setCurrentPage(clamped);
+  }, []);
+
+  // Mode plein ecran : 10s d'inactivite = auto-immersive, tap sur texte = toggle
+  const resetIdleTimer = useCallback(() => {
+    if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+    idleTimerRef.current = setTimeout(() => setImmersive(true), 10000);
+  }, []);
+
+  useEffect(() => {
+    if (immersive) return;
+    resetIdleTimer();
+    return () => {
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+    };
+  }, [immersive, resetIdleTimer, currentPage]);
+
+  const toggleImmersive = useCallback(() => {
+    setImmersive((v) => !v);
+    if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
   }, []);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
+    touchEndX.current = e.touches[0].clientX;
   };
   const handleTouchMove = (e: React.TouchEvent) => {
     touchEndX.current = e.touches[0].clientX;
@@ -319,9 +345,13 @@ export default function SurahPage() {
   const handleTouchEnd = () => {
     const diff = touchStartX.current - touchEndX.current;
     if (Math.abs(diff) > 50) {
-      // Sens arabe : swipe gauche = page precedente, swipe droite = page suivante
+      // Swipe : sens arabe : swipe gauche = page precedente, swipe droite = page suivante
       goToPage(diff > 0 ? currentPage - 1 : currentPage + 1);
+    } else if (Math.abs(diff) < 10) {
+      // Tap (pas un swipe) : toggle plein ecran
+      toggleImmersive();
     }
+    resetIdleTimer();
   };
 
   const playPageAudio = async () => {
@@ -370,6 +400,9 @@ export default function SurahPage() {
   if (!surah) return <div className="p-8 text-center text-gray-500">Sourate non trouvee</div>;
 
   const pageData = getPageData(currentPage);
+  // Sourate courante = celle de la premiere ayah affichee sur cette page (peut differer de la sourate d'entree)
+  const currentSurahNumber = pageData.ayahs[0]?.surahNumber ?? surahNumber;
+  const currentSurah = getSurah(currentSurahNumber) ?? surah;
 
   // Detecter si une nouvelle sourate commence sur cette page
   const getSurahStarts = (): { lineNumber: number; surahNumber: number; surahName: string }[] => {
@@ -536,32 +569,36 @@ export default function SurahPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#1B4332]">
-      {/* Header */}
-      <div className="bg-gradient-to-br from-emerald-800 to-emerald-900 text-white px-4 py-3 flex items-center gap-3">
+      {/* Header — cache en mode plein ecran */}
+      <div
+        className={`bg-gradient-to-br from-emerald-800 to-emerald-900 text-white px-4 py-3 flex items-center gap-3 transition-all duration-300 ease-out ${
+          immersive ? 'opacity-0 -translate-y-full pointer-events-none h-0 overflow-hidden py-0' : 'opacity-100 translate-y-0'
+        }`}
+      >
         <button onClick={() => router.back()} className="cursor-pointer p-1">
           <ArrowLeft size={22} />
         </button>
         <div className="flex-1 text-center">
-          <h1 className="text-base font-bold" style={{ fontFamily: "'Noto Naskh Arabic', serif" }}>
-            {surah.nameArabic}
+          <h1 className="text-base font-bold transition-opacity duration-200" style={{ fontFamily: "'Noto Naskh Arabic', serif" }} key={`ar-${currentSurahNumber}`}>
+            {currentSurah.nameArabic}
           </h1>
-          <p className="text-xs text-emerald-200">{surah.nameFrench}</p>
+          <p className="text-xs text-emerald-200" key={`fr-${currentSurahNumber}`}>{currentSurah.nameFrench}</p>
         </div>
-        <button onClick={() => router.push(`/sourates/${surahNumber}/apprendre`)}
+        <button onClick={() => router.push(`/sourates/${currentSurahNumber}/apprendre`)}
           className="bg-amber-500/80 p-2 rounded-xl cursor-pointer transition-colors hover:bg-amber-500" title="Apprendre">
           <BookOpen size={18} />
         </button>
-        <button onClick={() => router.push(`/sourates/${surahNumber}/tartil`)}
+        <button onClick={() => router.push(`/sourates/${currentSurahNumber}/tartil`)}
           className="bg-white/15 p-2 rounded-xl cursor-pointer transition-colors hover:bg-white/25" title="Mode Tartil">
           <EyeOff size={18} />
         </button>
-        <button onClick={() => router.push(`/quiz/${surahNumber}`)}
+        <button onClick={() => router.push(`/quiz/${currentSurahNumber}`)}
           className="bg-white/15 p-2 rounded-xl cursor-pointer transition-colors hover:bg-white/25" title="Quiz">
           <GraduationCap size={18} />
         </button>
       </div>
 
-      {/* Contenu — swipeable */}
+      {/* Contenu — swipeable, animations page, tap pour plein ecran */}
       <div
         ref={containerRef}
         className={`flex-1 overflow-x-hidden ${showTranslation ? 'overflow-y-auto' : 'overflow-hidden h-full'}`}
@@ -569,18 +606,44 @@ export default function SurahPage() {
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
+        onMouseMove={resetIdleTimer}
       >
-        {showPhonetic ? renderPhonetic() : showTranslation ? renderTranslation() : showImage ? (
-          <MushafImagePage
-            pageNumber={currentPage}
-            qcfPage={qcfPage}
-            playingAyahKey={playingAyahKey}
-          />
-        ) : renderQcf()}
+        <div
+          key={currentPage}
+          className={
+            slideDir === 'next'
+              ? 'page-slide-from-right h-full'
+              : slideDir === 'prev'
+                ? 'page-slide-from-left h-full'
+                : 'page-fade-in h-full'
+          }
+        >
+          {showPhonetic ? renderPhonetic() : showTranslation ? renderTranslation() : showImage ? (
+            <MushafImagePage
+              pageNumber={currentPage}
+              qcfPage={qcfPage}
+              playingAyahKey={playingAyahKey}
+            />
+          ) : renderQcf()}
+        </div>
       </div>
 
-      {/* Barre du bas */}
-      <div className="bg-[var(--bg-card)]/95 backdrop-blur-md border-t border-[var(--border)] px-4 py-3 flex items-center gap-3">
+      {/* Indicateur discret en mode plein ecran */}
+      {immersive && (
+        <button
+          onClick={toggleImmersive}
+          className="fixed top-2 right-2 z-40 px-3 py-1 rounded-full bg-black/30 text-white/80 text-[11px] font-medium backdrop-blur-sm"
+        >
+          {currentSurah.nameFrench} · p. {currentPage}
+        </button>
+      )}
+
+      {/* Barre du bas — cachee en mode plein ecran */}
+      <div
+        className={`bg-[var(--bg-card)]/95 backdrop-blur-md border-t border-[var(--border)] px-4 py-3 flex items-center gap-3 transition-all duration-300 ease-out ${
+          immersive ? 'opacity-0 translate-y-full pointer-events-none h-0 overflow-hidden py-0' : 'opacity-100 translate-y-0'
+        }`}
+      >
         <button onClick={playPageAudio}
           className="flex flex-col items-center text-[10px] cursor-pointer transition-colors duration-200 hover:text-[var(--primary)] text-[var(--text-muted)] min-w-[44px]">
           {isPlaying ? <Pause size={20} /> : <Play size={20} />}

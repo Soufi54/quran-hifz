@@ -123,11 +123,35 @@ body {
   .page-enter {
     animation: fadeSlideIn 0.3s ease-out;
   }
+  .page-fade-in {
+    animation: fadeIn 0.25s ease-out;
+  }
+  .page-slide-from-right {
+    animation: slideFromRight 0.28s cubic-bezier(0.25, 0.8, 0.25, 1);
+  }
+  .page-slide-from-left {
+    animation: slideFromLeft 0.28s cubic-bezier(0.25, 0.8, 0.25, 1);
+  }
 }
 
 @keyframes fadeSlideIn {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideFromRight {
+  from { opacity: 0; transform: translateX(32px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideFromLeft {
+  from { opacity: 0; transform: translateX(-32px); }
+  to { opacity: 1; transform: translateX(0); }
 }
 
 @media (prefers-reduced-motion: reduce) {
