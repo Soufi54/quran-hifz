@@ -4,6 +4,7 @@ import OnboardingGuard from "../components/OnboardingGuard";
 import PWAInstall from "../components/PWAInstall";
 import ThemeProvider from "../components/ThemeProvider";
 import I18nProvider from "../components/I18nProvider";
+import { AuthProvider } from "../components/AuthProvider";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://quranhifz.pages.dev"),
@@ -58,8 +59,10 @@ export default function RootLayout({
       <body className="antialiased">
         <ThemeProvider>
           <I18nProvider>
-            <PWAInstall />
-            <OnboardingGuard>{children}</OnboardingGuard>
+            <AuthProvider>
+              <PWAInstall />
+              <OnboardingGuard>{children}</OnboardingGuard>
+            </AuthProvider>
           </I18nProvider>
         </ThemeProvider>
       </body>

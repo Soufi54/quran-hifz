@@ -1,0 +1,74 @@
+'use client';
+
+import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { Session, User } from '@supabase/supabase-js';
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+
+interface AuthContextValue {
+  user: User | null;
+  session: Session | null;
+  loading: boolean;
+  supabaseMode: boolean;
+  signInWithMagicLink: (email: string) => Promise<void>;
+  signOut: () => Promise<void>;
+}
+
+const AuthContext = createContext<AuthContextValue | null>(null);
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const supabaseMode = isSupabaseConfigured();
+  const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [loading, setLoading] = useState(supabaseMode);
+
+  useEffect(() => {
+    if (!supabaseMode) {
+      setLoading(false);
+      return;
+    }
+    const s = supabase();
+    s.auth.getSession().then(({ data }) => {
+      setSession(data.session);
+      setUser(data.session?.user ?? null);
+      setLoading(false);
+    });
+
+    const { data: sub } = s.auth.onAuthStateChange((_event, newSession) => {
+      setSession(newSession);
+      setUser(newSession?.user ?? null);
+    });
+    return () => {
+      sub.subscription.unsubscribe();
+    };
+  }, [supabaseMode]);
+
+  async function signInWithMagicLink(email: string): Promise<void> {
+    if (!supabaseMode) throw new Error('Mode local : pas d auth');
+    const redirectTo =
+      typeof window !== 'undefined' ? `${window.location.origin}/madrasa` : undefined;
+    const { error } = await supabase().auth.signInWithOtp({
+      email: email.trim().toLowerCase(),
+      options: { emailRedirectTo: redirectTo },
+    });
+    if (error) throw error;
+  }
+
+  async function signOut(): Promise<void> {
+    if (!supabaseMode) return;
+    await supabase().auth.signOut();
+  }
+
+  return (
+    <AuthContext.Provider
+      value={{ user, session, loading, supabaseMode, signInWithMagicLink, signOut }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+export function useAuth(): AuthContextValue {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
+  return ctx;
+}

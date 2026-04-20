@@ -3,32 +3,48 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Plus, LogIn, Users, Crown, ChevronRight, UserRound, Swords, UserPlus2 } from 'lucide-react';
+import { Plus, LogIn, Users, Crown, ChevronRight, UserRound, Swords, UserPlus2, LogOut } from 'lucide-react';
 import BottomNav from '@/components/BottomNav';
 import UserSwitcher from '@/components/UserSwitcher';
 import Avatar from '@/components/Avatar';
-import { madrasaStore, Madrasa, Profile } from '@/lib/madrasa';
+import { madrasaStore, Madrasa, Profile, isSupabaseMode } from '@/lib/madrasa';
+import { useAuth } from '@/components/AuthProvider';
 
 export default function MadrasaHomePage() {
   const router = useRouter();
+  const auth = useAuth();
+  const supabaseMode = isSupabaseMode();
   const [me, setMe] = useState<Profile | null>(null);
   const [madrasas, setMadrasas] = useState<Madrasa[]>([]);
   const [badges, setBadges] = useState({ pending_challenges: 0, incoming_friends: 0, madrasa_invites: 0 });
   const [loading, setLoading] = useState(true);
 
+  // Redirect vers /auth si mode Supabase et pas connecte
   useEffect(() => {
+    if (supabaseMode && !auth.loading && !auth.user) {
+      router.replace('/auth');
+    }
+  }, [supabaseMode, auth.loading, auth.user, router]);
+
+  useEffect(() => {
+    // Ne pas charger le store tant que l'auth n'est pas resolue en mode Supabase
+    if (supabaseMode && (auth.loading || !auth.user)) return;
     const s = madrasaStore();
     Promise.all([
       s.getCurrentUser(),
       s.listMyMadrasas(),
       s.getUnreadBadges(),
-    ]).then(([u, ms, b]) => {
-      setMe(u);
-      setMadrasas(ms);
-      setBadges(b);
-      setLoading(false);
-    });
-  }, []);
+    ])
+      .then(([u, ms, b]) => {
+        setMe(u);
+        setMadrasas(ms);
+        setBadges(b);
+      })
+      .catch((err) => {
+        console.error('Erreur chargement madrasa:', err);
+      })
+      .finally(() => setLoading(false));
+  }, [supabaseMode, auth.loading, auth.user]);
 
   if (loading) {
     return (
@@ -53,10 +69,37 @@ export default function MadrasaHomePage() {
         </div>
       </header>
 
-      {/* User switcher (mode test) */}
-      <section className="px-4 mb-4">
-        <UserSwitcher />
-      </section>
+      {/* User switcher (uniquement en mode Local/dev) */}
+      {!supabaseMode && (
+        <section className="px-4 mb-4">
+          <UserSwitcher />
+        </section>
+      )}
+
+      {/* Bouton deconnexion en mode Supabase */}
+      {supabaseMode && me && (
+        <section className="px-4 mb-4">
+          <div className="flex items-center justify-between rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] px-4 py-3">
+            <div className="flex items-center gap-3">
+              <Avatar pseudo={me.pseudo} size="sm" />
+              <div>
+                <div className="text-sm font-semibold text-[var(--text)]">{me.pseudo}</div>
+                <div className="text-[11px] text-[var(--text-muted)]">Code ami : {me.friend_code}</div>
+              </div>
+            </div>
+            <button
+              onClick={async () => {
+                await auth.signOut();
+                router.replace('/auth');
+              }}
+              className="p-2 rounded-lg hover:bg-[var(--bg-alt)] text-[var(--text-muted)]"
+              aria-label="Se deconnecter"
+            >
+              <LogOut size={18} />
+            </button>
+          </div>
+        </section>
+      )}
 
       {/* Raccourcis */}
       <section className="px-4 mb-4 grid grid-cols-2 gap-3">

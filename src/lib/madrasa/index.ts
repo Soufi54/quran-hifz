@@ -1,21 +1,24 @@
 // Factory + singleton pour le MadrasaStore.
 //
-// Pour switcher Local -> Supabase :
-//   Remplacer `new LocalMadrasaStore()` par `new SupabaseMadrasaStore()`
-//   (plus configurer les env vars NEXT_PUBLIC_SUPABASE_*)
-//
-// Rien d'autre a changer dans l'app.
+// Feature flag : si NEXT_PUBLIC_SUPABASE_URL est defini, on utilise SupabaseMadrasaStore.
+// Sinon on tombe sur LocalMadrasaStore (mode dev sans backend).
 
 import { MadrasaStore } from './store';
 import { LocalMadrasaStore } from './local-store';
+import { SupabaseMadrasaStore } from './supabase-store';
+import { isSupabaseConfigured } from '../supabase';
 
 let instance: MadrasaStore | null = null;
 
 export function madrasaStore(): MadrasaStore {
   if (!instance) {
-    instance = new LocalMadrasaStore();
+    instance = isSupabaseConfigured() ? new SupabaseMadrasaStore() : new LocalMadrasaStore();
   }
   return instance;
+}
+
+export function isSupabaseMode(): boolean {
+  return isSupabaseConfigured();
 }
 
 export * from './types';
