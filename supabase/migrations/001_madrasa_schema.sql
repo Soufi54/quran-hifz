@@ -30,7 +30,7 @@ create table if not exists madrasas (
   name text not null check (length(name) between 1 and 60),
   invite_code text not null unique check (length(invite_code) = 6),
   admin_id uuid not null references profiles(id) on delete cascade,
-  max_members integer not null default 20 check (max_members between 2 and 50),
+  max_members integer not null default 50 check (max_members between 2 and 100),
   created_at timestamptz not null default now()
 );
 

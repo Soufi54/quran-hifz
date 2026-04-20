@@ -203,7 +203,7 @@ export class LocalMadrasaStore implements MadrasaStore {
       name: name.trim(),
       invite_code: randomCode(6),
       admin_id: uid,
-      max_members: 20,
+      max_members: 50,
       created_at: nowIso(),
     };
     const madrasas = getMadrasas();

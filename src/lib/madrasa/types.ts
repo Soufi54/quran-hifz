@@ -19,7 +19,7 @@ export interface Madrasa {
   name: string;
   invite_code: string; // 6 chars
   admin_id: UserId;
-  max_members: number; // default 20
+  max_members: number; // default 50
   created_at: string;
 }
 

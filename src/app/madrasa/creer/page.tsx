@@ -47,7 +47,7 @@ export default function CreerMadrasaPage() {
             <div>
               <div className="font-semibold text-[var(--text)]">Nouveau groupe</div>
               <div className="text-xs text-[var(--text-muted)]">
-                Jusqu&apos;a 20 membres, generation d&apos;un code d&apos;invitation
+                Jusqu&apos;a 50 membres, generation d&apos;un code d&apos;invitation
               </div>
             </div>
           </div>
