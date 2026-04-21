@@ -12,6 +12,8 @@ interface AuthContextValue {
   signInWithMagicLink: (email: string) => Promise<void>;
   signInWithPassword: (email: string, password: string) => Promise<void>;
   signUpWithPassword: (email: string, password: string, pseudo?: string) => Promise<void>;
+  sendOtpCode: (email: string) => Promise<void>;
+  verifyOtpCode: (email: string, token: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -82,6 +84,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) throw error;
   }
 
+  async function sendOtpCode(email: string): Promise<void> {
+    if (!supabaseMode) throw new Error('Mode local : pas d auth');
+    // shouldCreateUser: true = permet le signup via OTP, sinon rejeté si user inconnu
+    const { error } = await supabase().auth.signInWithOtp({
+      email: email.trim().toLowerCase(),
+      options: { shouldCreateUser: true },
+    });
+    if (error) throw error;
+  }
+
+  async function verifyOtpCode(email: string, token: string): Promise<void> {
+    if (!supabaseMode) throw new Error('Mode local : pas d auth');
+    const { error } = await supabase().auth.verifyOtp({
+      email: email.trim().toLowerCase(),
+      token: token.trim(),
+      type: 'email',
+    });
+    if (error) throw error;
+  }
+
   async function signOut(): Promise<void> {
     if (!supabaseMode) return;
     await supabase().auth.signOut();
@@ -97,6 +119,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signInWithMagicLink,
         signInWithPassword,
         signUpWithPassword,
+        sendOtpCode,
+        verifyOtpCode,
         signOut,
       }}
     >
