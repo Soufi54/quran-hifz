@@ -2,8 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Clock, Music, RefreshCw, BookOpen, ChevronRight, Bell, Globe } from 'lucide-react';
+import { Clock, Music, RefreshCw, BookOpen, ChevronRight, Bell, Globe, Pencil, LogOut } from 'lucide-react';
 import Logo from '../../components/Logo';
+import { madrasaStore, isSupabaseMode } from '@/lib/madrasa';
+import { useAuth } from '../../components/AuthProvider';
+import { supabase } from '@/lib/supabase';
 import BottomNav from '../../components/BottomNav';
 import { getLearnedSurahs, getUserLanguage, setUserLanguage } from '../../lib/storage';
 import { requestNotificationPermission, scheduleStreakReminder } from '../../lib/notifications';
@@ -30,6 +33,8 @@ const LANGUES = [
 
 export default function ProfilPage() {
   const router = useRouter();
+  const auth = useAuth();
+  const supabaseMode = isSupabaseMode();
   const [dailyGoal, setDailyGoal] = useState(10);
   const [recitateur, setRecitateur] = useState('Alafasy_128kbps');
   const [showRecitateur, setShowRecitateur] = useState(false);
@@ -38,6 +43,11 @@ export default function ProfilPage() {
   const [langue, setLangue] = useState('fr');
   const [learnedCount, setLearnedCount] = useState(0);
   const [notifEnabled, setNotifEnabled] = useState(false);
+  const [profilePseudo, setProfilePseudo] = useState<string>('');
+  const [friendCode, setFriendCode] = useState<string>('');
+  const [showEditPseudo, setShowEditPseudo] = useState(false);
+  const [newPseudo, setNewPseudo] = useState('');
+  const [pseudoError, setPseudoError] = useState<string | null>(null);
 
   useEffect(() => {
     const goal = localStorage.getItem('dailyGoalMinutes');
@@ -49,7 +59,51 @@ export default function ProfilPage() {
     if (typeof Notification !== 'undefined') {
       setNotifEnabled(Notification.permission === 'granted');
     }
-  }, []);
+    // Charger le profil Supabase
+    if (supabaseMode && !auth.loading && auth.user) {
+      madrasaStore()
+        .getCurrentUser()
+        .then((p) => {
+          if (p) {
+            setProfilePseudo(p.pseudo);
+            setFriendCode(p.friend_code);
+            setNewPseudo(p.pseudo);
+          }
+        });
+    }
+  }, [supabaseMode, auth.loading, auth.user]);
+
+  const savePseudo = async () => {
+    const trimmed = newPseudo.trim();
+    if (!trimmed || trimmed === profilePseudo) {
+      setShowEditPseudo(false);
+      return;
+    }
+    setPseudoError(null);
+    try {
+      const { error } = await supabase()
+        .from('profiles')
+        .update({ pseudo: trimmed, updated_at: new Date().toISOString() })
+        .eq('id', auth.user!.id);
+      if (error) {
+        if (error.message.toLowerCase().includes('unique') || error.message.toLowerCase().includes('duplicate')) {
+          setPseudoError('Ce pseudo est deja pris');
+        } else {
+          setPseudoError(error.message);
+        }
+        return;
+      }
+      setProfilePseudo(trimmed);
+      setShowEditPseudo(false);
+    } catch (err) {
+      setPseudoError(err instanceof Error ? err.message : 'Erreur');
+    }
+  };
+
+  const handleSignOut = async () => {
+    await auth.signOut();
+    router.replace('/auth');
+  };
 
   const toggleNotifications = async () => {
     if (notifEnabled) return;
@@ -95,8 +149,42 @@ export default function ProfilPage() {
         <div className="w-[72px] h-[72px] rounded-2xl bg-white/10 flex items-center justify-center mx-auto text-white/90" style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
           <Logo size={44} />
         </div>
-        <h2 className="text-lg font-bold mt-3">Quran Hifz</h2>
-        <p className="text-sm text-emerald-200 mt-1">Memorise, teste, progresse</p>
+        {supabaseMode && profilePseudo ? (
+          <>
+            {!showEditPseudo ? (
+              <div className="flex items-center justify-center gap-2 mt-3">
+                <h2 className="text-lg font-bold">{profilePseudo}</h2>
+                <button
+                  onClick={() => { setNewPseudo(profilePseudo); setShowEditPseudo(true); }}
+                  className="p-1 rounded hover:bg-white/10"
+                  aria-label="Modifier pseudo"
+                >
+                  <Pencil size={14} className="text-emerald-200" />
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center gap-1 mt-3">
+                <input
+                  type="text"
+                  value={newPseudo}
+                  onChange={(e) => setNewPseudo(e.target.value)}
+                  maxLength={30}
+                  className="px-2 py-1 text-black rounded text-sm w-40"
+                  autoFocus
+                />
+                <button onClick={savePseudo} className="text-xs bg-white/20 px-2 py-1 rounded">OK</button>
+                <button onClick={() => { setShowEditPseudo(false); setPseudoError(null); }} className="text-xs text-emerald-200 px-2 py-1">X</button>
+              </div>
+            )}
+            {pseudoError && <p className="text-xs text-red-200 mt-1">{pseudoError}</p>}
+            {friendCode && <p className="text-xs text-emerald-200 mt-1">Code ami : {friendCode}</p>}
+          </>
+        ) : (
+          <>
+            <h2 className="text-lg font-bold mt-3">Quran Hifz</h2>
+            <p className="text-sm text-emerald-200 mt-1">Memorise, teste, progresse</p>
+          </>
+        )}
       </div>
 
       <div className="p-4 space-y-5 mt-2">
@@ -232,10 +320,19 @@ export default function ProfilPage() {
         {/* Compte */}
         <div>
           <h3 className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider mb-2.5 ml-1">Compte</h3>
-          <div className="clay-card">
+          <div className="clay-card divide-y divide-[var(--border)]">
+            {supabaseMode && auth.user && (
+              <button
+                onClick={handleSignOut}
+                className="w-full p-4 flex items-center gap-3 cursor-pointer transition-colors duration-200 hover:bg-[var(--primary-light)] rounded-t-2xl"
+              >
+                <LogOut size={20} className="text-[var(--text-muted)]" />
+                <span className="text-sm text-[var(--text)] font-medium">Se deconnecter</span>
+              </button>
+            )}
             <button
               onClick={handleReset}
-              className="w-full p-4 flex items-center gap-3 cursor-pointer transition-colors duration-200 hover:bg-red-50/50 dark:hover:bg-red-900/20 rounded-2xl"
+              className={`w-full p-4 flex items-center gap-3 cursor-pointer transition-colors duration-200 hover:bg-red-50/50 dark:hover:bg-red-900/20 ${supabaseMode && auth.user ? 'rounded-b-2xl' : 'rounded-2xl'}`}
             >
               <RefreshCw size={20} className="text-[var(--danger)]" />
               <span className="text-sm text-[var(--danger)] font-medium">Reinitialiser la progression</span>

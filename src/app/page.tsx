@@ -12,6 +12,7 @@ import {
   getStreak, updateStreak, addXP, getLives, loseLive,
   getLearnedSurahs, updateSurahDeclines,
 } from '../lib/storage';
+import { madrasaStore, isSupabaseMode } from '@/lib/madrasa';
 import { QuizQuestion } from '../types';
 
 export default function ChallengePage() {
@@ -44,7 +45,7 @@ export default function ChallengePage() {
     });
   }, []);
 
-  const handleComplete = (score: number, total: number, totalPoints: number) => {
+  const handleComplete = async (score: number, total: number, totalPoints: number) => {
     const newStreak = updateStreak();
     const xp = Math.floor(totalPoints / 10);
     addXP(xp);
@@ -59,6 +60,19 @@ export default function ChallengePage() {
     }
     setShowXP(true);
     setTimeout(() => setShowXP(false), 2500);
+
+    // Propager aux madrasas
+    if (isSupabaseMode() && xp > 0) {
+      try {
+        const s = madrasaStore();
+        if (await s.getCurrentUser()) {
+          const mads = await s.listMyMadrasas();
+          await Promise.all(mads.map((m) => s.addQuizXp(m.id, xp)));
+        }
+      } catch (err) {
+        console.error('Madrasa XP propagation:', err);
+      }
+    }
   };
 
   const handleLoseLife = () => {

@@ -8,6 +8,7 @@ import { getSurah, ensureFullData } from '../../../lib/quran';
 import { generateQuizForSurah } from '../../../lib/quiz-generator';
 import { calculateSurahMasteredXP } from '../../../lib/scoring';
 import { getLives, loseLive, addXP, setSurahStatus, setReviewDate, getStreak } from '../../../lib/storage';
+import { madrasaStore, isSupabaseMode } from '@/lib/madrasa';
 
 export default function QuizPage() {
   const params = useParams();
@@ -30,7 +31,7 @@ export default function QuizPage() {
 
   const surah = getSurah(surahNumber);
 
-  const handleComplete = (score: number, total: number, totalPoints: number) => {
+  const handleComplete = async (score: number, total: number, totalPoints: number) => {
     const percentage = (score / total) * 100;
     const mastered = percentage >= 80;
     let xp = Math.floor(totalPoints / 10);
@@ -44,6 +45,21 @@ export default function QuizPage() {
 
     setReviewDate(surahNumber);
     addXP(xp);
+
+    // Propager l'XP gagne aux madrasas actives de l'user (mode Supabase uniquement)
+    if (isSupabaseMode() && xp > 0) {
+      try {
+        const s = madrasaStore();
+        const me = await s.getCurrentUser();
+        if (me) {
+          const myMadrasas = await s.listMyMadrasas();
+          await Promise.all(myMadrasas.map((m) => s.addQuizXp(m.id, xp)));
+        }
+      } catch (err) {
+        console.error('addQuizXp aux madrasas echoue:', err);
+      }
+    }
+
     setResult({ score, total, xp, mastered });
     setDone(true);
   };
