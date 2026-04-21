@@ -10,6 +10,8 @@ interface AuthContextValue {
   loading: boolean;
   supabaseMode: boolean;
   signInWithMagicLink: (email: string) => Promise<void>;
+  signInWithPassword: (email: string, password: string) => Promise<void>;
+  signUpWithPassword: (email: string, password: string, pseudo?: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -53,6 +55,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) throw error;
   }
 
+  async function signInWithPassword(email: string, password: string): Promise<void> {
+    if (!supabaseMode) throw new Error('Mode local : pas d auth');
+    const { error } = await supabase().auth.signInWithPassword({
+      email: email.trim().toLowerCase(),
+      password,
+    });
+    if (error) throw error;
+  }
+
+  async function signUpWithPassword(
+    email: string,
+    password: string,
+    pseudo?: string,
+  ): Promise<void> {
+    if (!supabaseMode) throw new Error('Mode local : pas d auth');
+    const { error } = await supabase().auth.signUp({
+      email: email.trim().toLowerCase(),
+      password,
+      options: {
+        data: pseudo ? { pseudo } : undefined,
+        emailRedirectTo:
+          typeof window !== 'undefined' ? `${window.location.origin}/madrasa` : undefined,
+      },
+    });
+    if (error) throw error;
+  }
+
   async function signOut(): Promise<void> {
     if (!supabaseMode) return;
     await supabase().auth.signOut();
@@ -60,7 +89,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, session, loading, supabaseMode, signInWithMagicLink, signOut }}
+      value={{
+        user,
+        session,
+        loading,
+        supabaseMode,
+        signInWithMagicLink,
+        signInWithPassword,
+        signUpWithPassword,
+        signOut,
+      }}
     >
       {children}
     </AuthContext.Provider>
