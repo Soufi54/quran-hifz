@@ -5,7 +5,8 @@ import Link from 'next/link';
 import { ChevronLeft, Swords, ChevronRight, Trophy } from 'lucide-react';
 import BottomNav from '@/components/BottomNav';
 import Avatar from '@/components/Avatar';
-import { madrasaStore, Challenge, Profile } from '@/lib/madrasa';
+import { madrasaStore, Challenge, Profile, isSupabaseMode } from '@/lib/madrasa';
+import { useAuth } from '@/components/AuthProvider';
 
 type ChallengeWithPeople = Challenge & {
   challenger: Profile | null;
@@ -13,6 +14,8 @@ type ChallengeWithPeople = Challenge & {
 };
 
 export default function DefisPage() {
+  const auth = useAuth();
+  const supabaseMode = isSupabaseMode();
   const [incoming, setIncoming] = useState<ChallengeWithPeople[]>([]);
   const [outgoing, setOutgoing] = useState<ChallengeWithPeople[]>([]);
   const [history, setHistory] = useState<ChallengeWithPeople[]>([]);
@@ -54,8 +57,9 @@ export default function DefisPage() {
   }, [enrich]);
 
   useEffect(() => {
-    refresh();
-  }, [refresh]);
+    if (supabaseMode && (auth.loading || !auth.user)) return;
+    refresh().catch((e) => console.error('Erreur chargement defis:', e));
+  }, [refresh, supabaseMode, auth.loading, auth.user]);
 
   async function refuse(id: string) {
     await madrasaStore().refuseChallenge(id);

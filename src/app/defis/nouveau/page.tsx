@@ -110,7 +110,7 @@ function NouveauDefiInner() {
     >
       <header className="px-4 pt-6 pb-4 flex items-center gap-3">
         <Link
-          href={madrasa ? `/madrasa/${madrasa.id}` : '/defis'}
+          href={madrasa ? `/madrasa/view?id=${madrasa.id}` : '/defis'}
           className="p-2 -ml-2 rounded-lg hover:bg-[var(--bg-alt)]"
         >
           <ChevronLeft size={22} className="text-[var(--text)]" />
