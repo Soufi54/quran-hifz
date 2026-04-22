@@ -49,7 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function signInWithMagicLink(email: string): Promise<void> {
     if (!supabaseMode) throw new Error('Mode local : pas d auth');
     const redirectTo =
-      typeof window !== 'undefined' ? `${window.location.origin}/madrasa` : undefined;
+      typeof window !== 'undefined' ? `${window.location.origin}/auth/callback` : undefined;
     const { error } = await supabase().auth.signInWithOtp({
       email: email.trim().toLowerCase(),
       options: { emailRedirectTo: redirectTo },

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Mail, Lock, Check, ChevronLeft, UserPlus2, KeyRound } from 'lucide-react';
+import { Mail, Lock, ChevronLeft, UserPlus2, KeyRound } from 'lucide-react';
 import Logo from '@/components/Logo';
 import { useAuth } from '@/components/AuthProvider';
 
@@ -19,7 +19,7 @@ export default function AuthPage() {
     sendOtpCode,
     verifyOtpCode,
   } = useAuth();
-  const [mode, setMode] = useState<Mode>('login');
+  const [mode, setMode] = useState<Mode>('otp');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [pseudo, setPseudo] = useState('');
@@ -112,7 +112,7 @@ export default function AuthPage() {
             : mode === 'otp'
               ? otpSent
                 ? 'Entrer le code'
-                : 'Code par email'
+                : 'Se connecter'
               : 'Se connecter'}
         </h1>
         <p className="text-[var(--text-muted)] mb-6">
@@ -121,8 +121,8 @@ export default function AuthPage() {
             : mode === 'otp'
               ? otpSent
                 ? 'Colle le code 6 chiffres recu par email.'
-                : 'On t\u2019envoie un code 6 chiffres par email. Pas de lien a cliquer.'
-              : 'Email + mot de passe.'}
+                : 'On t\u2019envoie un code a 6 chiffres. Pas de lien a cliquer.'
+              : 'Connexion avec email et mot de passe.'}
         </p>
 
         <form onSubmit={submit} className="w-full space-y-3">
@@ -229,21 +229,16 @@ export default function AuthPage() {
         </form>
 
         <div className="mt-6 space-y-2 text-sm text-[var(--text-muted)]">
-          {mode === 'login' && (
+          {mode === 'otp' && !otpSent && (
             <>
               <button onClick={() => { setMode('signup'); setError(null); setInfo(null); }} className="underline">
                 Pas encore de compte ? Cree-en un
               </button>
               <br />
-              <button onClick={() => { setMode('otp'); setOtpSent(false); setError(null); setInfo(null); }} className="underline">
-                Me connecter sans mot de passe (code par email)
+              <button onClick={() => { setMode('login'); setError(null); setInfo(null); }} className="underline">
+                Connexion par mot de passe
               </button>
             </>
-          )}
-          {mode === 'signup' && (
-            <button onClick={() => { setMode('login'); setError(null); setInfo(null); }} className="underline">
-              J&apos;ai deja un compte
-            </button>
           )}
           {mode === 'otp' && otpSent && (
             <>
@@ -252,14 +247,27 @@ export default function AuthPage() {
               </button>
               <br />
               <button onClick={() => { setMode('login'); setOtpSent(false); setError(null); setInfo(null); }} className="underline">
-                Retour au login par mot de passe
+                Connexion par mot de passe
               </button>
             </>
           )}
-          {mode === 'otp' && !otpSent && (
-            <button onClick={() => { setMode('login'); setError(null); setInfo(null); }} className="underline">
-              Retour au login par mot de passe
-            </button>
+          {mode === 'login' && (
+            <>
+              <button onClick={() => { setMode('otp'); setOtpSent(false); setError(null); setInfo(null); }} className="underline">
+                Connexion par code email (recommande)
+              </button>
+              <br />
+              <button onClick={() => { setMode('signup'); setError(null); setInfo(null); }} className="underline">
+                Pas encore de compte ? Cree-en un
+              </button>
+            </>
+          )}
+          {mode === 'signup' && (
+            <>
+              <button onClick={() => { setMode('otp'); setOtpSent(false); setError(null); setInfo(null); }} className="underline">
+                J&apos;ai deja un compte
+              </button>
+            </>
           )}
         </div>
       </div>

@@ -120,7 +120,7 @@ function JouerDefiInner() {
 
   return (
     <main
-      className="min-h-screen bg-[var(--bg)] pb-24"
+      className="min-h-screen bg-[var(--bg)] pb-6"
       style={{ maxWidth: 480, margin: '0 auto' }}
     >
       <header className="px-4 pt-6 pb-4 flex items-center gap-3">
