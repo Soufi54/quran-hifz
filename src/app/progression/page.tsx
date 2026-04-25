@@ -49,7 +49,7 @@ export default function ProgressionPage() {
               <div className="h-2.5 rounded-full overflow-hidden" style={{ background: 'var(--border)', boxShadow: 'var(--shadow-clay-inset)' }}>
                 <div
                   className="h-full bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] rounded-full transition-all duration-500"
-                  style={{ width: `${Math.min(100, progressToNext)}%` }}
+                  style={{ width: `${Math.min(100, Math.max(0, progressToNext))}%` }}
                 />
               </div>
               <p className="text-xs text-[var(--text-muted)] mt-2">

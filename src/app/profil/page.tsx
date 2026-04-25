@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Clock, Music, RefreshCw, BookOpen, ChevronRight, Bell, Globe, Pencil, LogOut } from 'lucide-react';
+import { Clock, Music, RefreshCw, BookOpen, ChevronRight, Bell, Globe, Pencil, LogOut, Moon, Sun } from 'lucide-react';
 import Logo from '../../components/Logo';
 import { madrasaStore, isSupabaseMode } from '@/lib/madrasa';
 import { useAuth } from '../../components/AuthProvider';
+import { useTheme } from '../../components/ThemeProvider';
 import { supabase } from '@/lib/supabase';
 import BottomNav from '../../components/BottomNav';
 import { getLearnedSurahs, getUserLanguage, setUserLanguage } from '../../lib/storage';
@@ -34,6 +35,7 @@ const LANGUES = [
 export default function ProfilPage() {
   const router = useRouter();
   const auth = useAuth();
+  const { theme, toggle } = useTheme();
   const supabaseMode = isSupabaseMode();
   const [dailyGoal, setDailyGoal] = useState(10);
   const [recitateur, setRecitateur] = useState('Alafasy_128kbps');
@@ -169,11 +171,11 @@ export default function ProfilPage() {
                   value={newPseudo}
                   onChange={(e) => setNewPseudo(e.target.value)}
                   maxLength={30}
-                  className="px-2 py-1 text-black rounded text-sm w-40"
+                  className="px-2 py-2 text-[var(--text)] bg-[var(--bg-card)] border border-[var(--border)] rounded text-sm w-40"
                   autoFocus
                 />
-                <button onClick={savePseudo} className="text-xs bg-white/20 px-2 py-1 rounded">OK</button>
-                <button onClick={() => { setShowEditPseudo(false); setPseudoError(null); }} className="text-xs text-emerald-200 px-2 py-1">X</button>
+                <button onClick={savePseudo} className="text-xs bg-white/20 px-4 py-2 rounded">OK</button>
+                <button onClick={() => { setShowEditPseudo(false); setPseudoError(null); }} className="text-xs text-emerald-200 px-4 py-2">X</button>
               </div>
             )}
             {pseudoError && <p className="text-xs text-red-200 mt-1">{pseudoError}</p>}
@@ -206,10 +208,22 @@ export default function ProfilPage() {
         <div>
           <h3 className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider mb-2.5 ml-1">Parametres</h3>
           <div className="clay-card divide-y divide-[var(--border)]">
+            {/* Mode sombre */}
+            <button
+              onClick={toggle}
+              className="w-full p-4 flex items-center gap-3 cursor-pointer transition-colors duration-200 hover:bg-[var(--primary-light)] rounded-t-2xl"
+            >
+              {theme === 'dark' ? <Sun size={20} className="text-[var(--primary)]" /> : <Moon size={20} className="text-[var(--primary)]" />}
+              <span className="flex-1 text-left text-sm text-[var(--text)] font-medium">Mode sombre</span>
+              <div className={`relative w-11 h-6 rounded-full transition-colors duration-200 ${theme === 'dark' ? 'bg-[var(--primary)]' : 'bg-[var(--border)]'}`}>
+                <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform duration-200 ${theme === 'dark' ? 'translate-x-5' : 'translate-x-0.5'}`} />
+              </div>
+            </button>
+
             {/* Notifications */}
             <button
               onClick={toggleNotifications}
-              className="w-full p-4 flex items-center gap-3 cursor-pointer transition-colors duration-200 hover:bg-[var(--primary-light)] rounded-t-2xl"
+              className="w-full p-4 flex items-center gap-3 cursor-pointer transition-colors duration-200 hover:bg-[var(--primary-light)]"
             >
               <Bell size={20} className="text-[var(--primary)]" />
               <span className="flex-1 text-left text-sm text-[var(--text)] font-medium">Rappel quotidien</span>

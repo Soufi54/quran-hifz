@@ -2,13 +2,11 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Star, BookOpen, TrendingUp, Users, Sun, Moon } from 'lucide-react';
-import { useTheme } from './ThemeProvider';
+import { Star, BookOpen, TrendingUp, Users } from 'lucide-react';
 import { useI18n } from './I18nProvider';
 
 export default function BottomNav() {
   const pathname = usePathname();
-  const { theme, toggle } = useTheme();
   const { t } = useI18n();
 
   const tabs = [
@@ -43,16 +41,6 @@ export default function BottomNav() {
             </Link>
           );
         })}
-
-        {/* Toggle dark mode */}
-        <button
-          onClick={toggle}
-          className="flex flex-col items-center py-3 px-3 cursor-pointer transition-colors duration-200 text-[var(--text-muted)] hover:text-[var(--text)]"
-          aria-label="Basculer le theme"
-        >
-          {theme === 'dark' ? <Sun size={22} strokeWidth={1.8} /> : <Moon size={22} strokeWidth={1.8} />}
-          <span className="text-[10px] mt-1 font-medium">{theme === 'dark' ? 'Clair' : 'Sombre'}</span>
-        </button>
       </div>
     </nav>
   );

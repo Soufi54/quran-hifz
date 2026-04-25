@@ -94,13 +94,13 @@ export default function OnboardingPage() {
               <button onClick={selectJuzAmma} className="clay-button text-xs flex-1 py-2">Juz Amma</button>
               <button
                 onClick={() => setSelectedSurahs(new Set(surahs.map(s => s.number)))}
-                className="clay-card text-xs flex-1 py-2 text-center cursor-pointer text-emerald-700 font-semibold"
+                className="clay-card text-xs flex-1 py-2 text-center cursor-pointer text-[var(--primary)] font-semibold"
               >
                 Tout
               </button>
             </div>
           </div>
-          <div className="flex-1 overflow-y-auto px-4 pb-24">
+          <div className="flex-1 overflow-y-auto px-4 pb-36">
             {surahs.map(s => {
               const selected = selectedSurahs.has(s.number);
               return (
@@ -131,8 +131,8 @@ export default function OnboardingPage() {
 
       {step === 'goal' && (
         <div className="flex flex-col items-center justify-center min-h-screen px-8 text-center">
-          <div className="w-20 h-20 rounded-2xl bg-amber-50 flex items-center justify-center mb-6" style={{ boxShadow: 'var(--shadow-clay)' }}>
-            <Trophy size={40} className="text-amber-500" />
+          <div className="w-20 h-20 rounded-2xl bg-[var(--accent)]/10 flex items-center justify-center mb-6" style={{ boxShadow: 'var(--shadow-clay)' }}>
+            <Trophy size={40} className="text-[var(--accent)]" />
           </div>
           <h2 className="text-2xl font-bold text-[var(--text)] mb-2">Objectif quotidien</h2>
           <p className="text-[var(--text-muted)] text-sm mb-8">Combien de minutes par jour ?</p>

@@ -160,7 +160,7 @@ export default function QuizPlayer({ questions, onComplete, onLoseLife, lives }:
   if (!q) return null;
 
   const progress = ((idx + 1) / questions.length) * 100;
-  const timerColor = timeLeft <= 5 ? 'text-red-500' : timeLeft <= 10 ? 'text-orange-500' : 'text-gray-500';
+  const timerColor = timeLeft <= 5 ? 'text-red-500' : timeLeft <= 10 ? 'text-orange-500' : 'text-[var(--text-muted)]';
 
   // ─── PHASE CONTEXTE : page mushaf + verset surligne ─────────
   if (phase === 'context') {
@@ -189,11 +189,11 @@ export default function QuizPlayer({ questions, onComplete, onLoseLife, lives }:
           </p>
         </div>
 
-        <div className="w-full flex-1 relative rounded-xl overflow-hidden border border-[var(--border)] bg-white">
+        <div className="w-full flex-1 relative rounded-xl overflow-hidden border border-[var(--border)] bg-[var(--border)]" style={{ aspectRatio: '1024/1656' }}>
           <img // eslint-disable-line @next/next/no-img-element
             src={getMushafUrl(actualPage)}
             alt={`Page ${actualPage}`}
-            className="w-full h-auto"
+            className="w-full h-auto absolute inset-0"
           />
           {highlightLines.map(lineNum => {
             // Position en % de la hauteur de l'image
@@ -245,7 +245,7 @@ export default function QuizPlayer({ questions, onComplete, onLoseLife, lives }:
       <div className="h-1 bg-[var(--border)] rounded-full overflow-hidden mb-6">
         <div
           className={`h-full rounded-full transition-all duration-1000 ${
-            timeLeft <= 5 ? 'bg-red-500' : timeLeft <= 10 ? 'bg-orange-400' : 'bg-[#0D5C4D]'
+            timeLeft <= 5 ? 'bg-red-500' : timeLeft <= 10 ? 'bg-orange-400' : 'bg-[var(--primary)]'
           }`}
           style={{ width: `${(timeLeft / MAX_TIME_S) * 100}%` }}
         />

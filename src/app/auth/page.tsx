@@ -195,7 +195,7 @@ export default function AuthPage() {
                 maxLength={6}
                 autoFocus
                 autoComplete="one-time-code"
-                className="w-full pl-10 pr-3 py-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border)] text-[var(--text)] placeholder-[var(--text-muted)] text-center tracking-widest text-2xl font-mono focus:outline-none focus:border-[var(--primary)]"
+                className="w-full max-w-[200px] mx-auto pl-10 pr-3 py-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border)] text-[var(--text)] placeholder-[var(--text-muted)] text-center tracking-wider text-lg font-mono focus:outline-none focus:border-[var(--primary)]"
               />
             </div>
           )}
@@ -231,40 +231,40 @@ export default function AuthPage() {
         <div className="mt-6 space-y-2 text-sm text-[var(--text-muted)]">
           {mode === 'otp' && !otpSent && (
             <>
-              <button onClick={() => { setMode('signup'); setError(null); setInfo(null); }} className="underline">
+              <button onClick={() => { setMode('signup'); setError(null); setInfo(null); }} className="underline py-2 px-2">
                 Pas encore de compte ? Cree-en un
               </button>
               <br />
-              <button onClick={() => { setMode('login'); setError(null); setInfo(null); }} className="underline">
+              <button onClick={() => { setMode('login'); setError(null); setInfo(null); }} className="underline py-2 px-2">
                 Connexion par mot de passe
               </button>
             </>
           )}
           {mode === 'otp' && otpSent && (
             <>
-              <button onClick={() => { setOtpSent(false); setOtp(''); setError(null); setInfo(null); }} className="underline">
+              <button onClick={() => { setOtpSent(false); setOtp(''); setError(null); setInfo(null); }} className="underline py-2 px-2">
                 Renvoyer le code / changer d&apos;email
               </button>
               <br />
-              <button onClick={() => { setMode('login'); setOtpSent(false); setError(null); setInfo(null); }} className="underline">
+              <button onClick={() => { setMode('login'); setOtpSent(false); setError(null); setInfo(null); }} className="underline py-2 px-2">
                 Connexion par mot de passe
               </button>
             </>
           )}
           {mode === 'login' && (
             <>
-              <button onClick={() => { setMode('otp'); setOtpSent(false); setError(null); setInfo(null); }} className="underline">
+              <button onClick={() => { setMode('otp'); setOtpSent(false); setError(null); setInfo(null); }} className="underline py-2 px-2">
                 Connexion par code email (recommande)
               </button>
               <br />
-              <button onClick={() => { setMode('signup'); setError(null); setInfo(null); }} className="underline">
+              <button onClick={() => { setMode('signup'); setError(null); setInfo(null); }} className="underline py-2 px-2">
                 Pas encore de compte ? Cree-en un
               </button>
             </>
           )}
           {mode === 'signup' && (
             <>
-              <button onClick={() => { setMode('otp'); setOtpSent(false); setError(null); setInfo(null); }} className="underline">
+              <button onClick={() => { setMode('otp'); setOtpSent(false); setError(null); setInfo(null); }} className="underline py-2 px-2">
                 J&apos;ai deja un compte
               </button>
             </>
