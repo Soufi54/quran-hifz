@@ -10,12 +10,21 @@ function shuffle<T>(arr: T[]): T[] {
   return copy;
 }
 
-function pickRandom<T>(arr: T[], count: number): T[] {
-  return shuffle(arr).slice(0, count);
-}
-
 function getFirstWords(text: string, wordCount: number = 3): string {
   return text.split(' ').slice(0, wordCount).join(' ');
+}
+
+// Bonne reponse + jusqu'a 3 leurres au texte distinct (les refrains ne doivent
+// jamais apparaitre deux fois). null s'il n'y a pas au moins 2 leurres.
+function buildOptions(correct: string, candidates: string[]): { options: string[]; correctIndex: number } | null {
+  const distractors: string[] = [];
+  for (const c of shuffle(candidates)) {
+    if (c && c !== correct && !distractors.includes(c)) distractors.push(c);
+    if (distractors.length === 3) break;
+  }
+  if (distractors.length < 2) return null;
+  const options = shuffle([correct, ...distractors]);
+  return { options, correctIndex: options.indexOf(correct) };
 }
 
 function createGap(text: string): { gapped: string; missing: string } {
@@ -28,27 +37,48 @@ function createGap(text: string): { gapped: string; missing: string } {
   return { gapped, missing };
 }
 
+// Nombre de positions ou la suite de versets [end-len+1 .. end] a le meme texte
+function countWindowMatches(surah: Surah, end: number, len: number): number {
+  const target = surah.ayahs.slice(end - len + 1, end + 1).map(a => a.text).join(' ');
+  let count = 0;
+  for (let j = len - 1; j < surah.ayahs.length; j++) {
+    if (surah.ayahs.slice(j - len + 1, j + 1).map(a => a.text).join(' ') === target) count++;
+  }
+  return count;
+}
+
 function generateNextAyahQuestion(surah: Surah): QuizQuestion | null {
   if (surah.ayahs.length < 3) return null;
-  const index = Math.floor(Math.random() * (surah.ayahs.length - 2));
+  const index = Math.floor(Math.random() * (surah.ayahs.length - 1));
   const currentAyah = surah.ayahs[index];
   const nextAyah = surah.ayahs[index + 1];
-  const distractors = pickRandom(
-    surah.ayahs.filter((_, i) => i !== index + 1),
-    3
-  );
+
+  // Refrains (ex. Ar-Rahman) : on remonte jusqu'a 3 versets de contexte pour que
+  // l'enonce designe une seule position dans la sourate.
+  let len = 1;
+  while (countWindowMatches(surah, index, len) > 1) {
+    if (len >= 4 || index - len < 0) return null;
+    len++;
+  }
+  const context = surah.ayahs.slice(index - len + 1, index).map(a => a.text).join(' ');
+
   const correctText = getFirstWords(nextAyah.text, 4);
-  const distractorTexts = distractors.map(d => getFirstWords(d.text, 4)).filter(t => t !== correctText);
-  if (distractorTexts.length === 0) return null;
-  const options = shuffle([correctText, ...distractorTexts.slice(0, 3)]);
+  const built = buildOptions(
+    correctText,
+    surah.ayahs.filter((_, i) => i !== index + 1).map(a => getFirstWords(a.text, 4)).filter(t => t !== getFirstWords(currentAyah.text, 4))
+  );
+  if (!built) return null;
   return {
     type: 'next_ayah',
     questionText: 'Quel est le verset suivant ?',
     questionArabic: currentAyah.text,
-    options,
-    correctIndex: options.indexOf(correctText),
+    contextArabic: context || undefined,
+    ...built,
     surahNumber: surah.number,
     ayahNumber: currentAyah.numberInSurah,
+    answerAyahNumber: nextAyah.numberInSurah,
+    answerArabic: nextAyah.text,
+    answerTranslation: nextAyah.translationFr,
   };
 }
 
@@ -57,108 +87,121 @@ function generateCompleteAyahQuestion(surah: Surah): QuizQuestion | null {
   if (longAyahs.length === 0) return null;
   const ayah = longAyahs[Math.floor(Math.random() * longAyahs.length)];
   const { gapped, missing } = createGap(ayah.text);
-  const distractors = pickRandom(
-    surah.ayahs.filter(a => a.numberInSurah !== ayah.numberInSurah),
-    3
-  ).map(d => {
+  const gapLen = missing.split(' ').length;
+  const candidates = surah.ayahs.filter(a => a.numberInSurah !== ayah.numberInSurah).map(d => {
     const w = d.text.split(' ');
-    const gapLen = missing.split(' ').length;
     const s = Math.floor(Math.random() * Math.max(1, w.length - gapLen));
-    return w.slice(s, s + gapLen).join(' ') || w.slice(0, gapLen).join(' ');
-  }).filter(t => t !== missing);
-  if (distractors.length === 0) return null;
-  const options = shuffle([missing, ...distractors.slice(0, 3)]);
+    return w.slice(s, s + gapLen).join(' ');
+  });
+  const built = buildOptions(missing, candidates);
+  if (!built) return null;
   return {
     type: 'complete_ayah',
     questionText: 'Complete le verset :',
     questionArabic: gapped,
-    options,
-    correctIndex: options.indexOf(missing),
+    ...built,
     surahNumber: surah.number,
     ayahNumber: ayah.numberInSurah,
+    answerAyahNumber: ayah.numberInSurah,
+    answerArabic: ayah.text,
+    answerTranslation: ayah.translationFr,
   };
 }
 
-function generateIdentifySurahQuestion(surahNumber: number): QuizQuestion | null {
-  const surah = getSurah(surahNumber);
-  if (!surah || surah.ayahs.length === 0) return null;
+function surahLabel(s: Surah): string {
+  return `${s.nameFrench} — ${s.nameArabic}`;
+}
+
+// Leurres pris d'abord parmi les sourates apprises (plus difficile), puis dans tout le Coran
+function generateIdentifySurahQuestion(surah: Surah, pool: number[]): QuizQuestion | null {
+  if (surah.ayahs.length === 0) return null;
   const ayah = surah.ayahs[Math.floor(Math.random() * surah.ayahs.length)];
-  const distractors = pickRandom(
-    getAllSurahs().filter(s => s.number !== surahNumber),
-    3
-  );
-  const correct = `${surah.nameArabic} (${surah.nameFrench})`;
-  const options = shuffle([correct, ...distractors.map(d => `${d.nameArabic} (${d.nameFrench})`)]);
+  const fromPool = shuffle(pool.filter(n => n !== surah.number)).map(n => getSurah(n)).filter((s): s is Surah => !!s);
+  const others = shuffle(getAllSurahs().filter(s => s.number !== surah.number && !pool.includes(s.number)));
+  const correct = surahLabel(surah);
+  const built = buildOptions(correct, [...fromPool, ...others].slice(0, 3).map(surahLabel));
+  if (!built) return null;
   return {
     type: 'identify_surah',
     questionText: 'De quelle sourate vient ce verset ?',
     questionArabic: ayah.text,
-    options,
-    correctIndex: options.indexOf(correct),
+    ...built,
     surahNumber: surah.number,
     ayahNumber: ayah.numberInSurah,
+    answerAyahNumber: ayah.numberInSurah,
+    answerArabic: ayah.text,
+    answerTranslation: ayah.translationFr,
   };
 }
 
 function generateTranslationQuestion(surah: Surah): QuizQuestion | null {
-  if (surah.ayahs.length < 2) return null;
+  if (surah.ayahs.length < 3) return null;
   const ayah = surah.ayahs[Math.floor(Math.random() * surah.ayahs.length)];
-  const distractors = pickRandom(
-    surah.ayahs.filter(a => a.numberInSurah !== ayah.numberInSurah),
-    3
-  ).map(d => d.translationFr);
-  const options = shuffle([ayah.translationFr, ...distractors]);
+  const built = buildOptions(
+    ayah.translationFr,
+    surah.ayahs.filter(a => a.numberInSurah !== ayah.numberInSurah).map(a => a.translationFr)
+  );
+  if (!built) return null;
   return {
     type: 'translation',
     questionText: 'Quelle est la traduction de ce verset ?',
     questionArabic: ayah.text,
-    options,
-    correctIndex: options.indexOf(ayah.translationFr),
+    ...built,
     surahNumber: surah.number,
     ayahNumber: ayah.numberInSurah,
+    answerAyahNumber: ayah.numberInSurah,
+    answerArabic: ayah.text,
+    answerTranslation: ayah.translationFr,
   };
 }
 
-// 85% verset suivant, 15% autres types
-function pickGenerator(surahNumber?: number): ((s: Surah) => QuizQuestion | null) {
+// 85% verset suivant, 15% autres types. "De quelle sourate" seulement si
+// plusieurs sourates sont revisees ensemble (sinon la reponse est evidente).
+function pickGenerator(surahPool: number[]): ((s: Surah) => QuizQuestion | null) {
   const roll = Math.random();
   if (roll < 0.85) return generateNextAyahQuestion;
   const others: ((s: Surah) => QuizQuestion | null)[] = [
     generateCompleteAyahQuestion,
     generateTranslationQuestion,
   ];
-  if (surahNumber !== undefined) {
-    others.push((s: Surah) => generateIdentifySurahQuestion(s.number));
+  if (surahPool.length >= 2) {
+    others.push((s: Surah) => generateIdentifySurahQuestion(s, surahPool));
   }
   return others[Math.floor(Math.random() * others.length)];
 }
 
-export function generateQuizForSurah(surahNumber: number, count: number = 10): QuizQuestion[] {
-  const surah = getSurah(surahNumber);
-  if (!surah) return [];
+function questionKey(q: QuizQuestion): string {
+  return `${q.type}:${q.surahNumber}:${q.ayahNumber}`;
+}
+
+// Tire des questions sans repetition ; les sourates tres courtes n'ont pas assez
+// de questions distinctes, on complete alors en evitant deux fois la meme d'affilee.
+function collectQuestions(count: number, surahPool: number[]): QuizQuestion[] {
   const questions: QuizQuestion[] = [];
+  const seen = new Set<string>();
   let attempts = 0;
-  while (questions.length < count && attempts < count * 3) {
-    const gen = pickGenerator();
-    const q = gen(surah);
-    if (q) questions.push(q);
+  while (questions.length < count && attempts < count * 20) {
     attempts++;
+    const surah = getSurah(surahPool[Math.floor(Math.random() * surahPool.length)]);
+    if (!surah) continue;
+    const q = pickGenerator(surahPool)(surah);
+    if (!q) continue;
+    const key = questionKey(q);
+    const repeatAllowed = attempts > count * 10;
+    if (seen.has(key) && !repeatAllowed) continue;
+    if (repeatAllowed && questions.length > 0 && questionKey(questions[questions.length - 1]) === key) continue;
+    seen.add(key);
+    questions.push(q);
   }
   return questions;
 }
 
+export function generateQuizForSurah(surahNumber: number, count: number = 10): QuizQuestion[] {
+  if (!getSurah(surahNumber)) return [];
+  return collectQuestions(count, [surahNumber]);
+}
+
 export function generateDailyChallenge(learnedSurahNumbers: number[], count: number = 5): QuizQuestion[] {
   if (learnedSurahNumbers.length === 0) return [];
-  const questions: QuizQuestion[] = [];
-  let attempts = 0;
-  while (questions.length < count && attempts < count * 5) {
-    const surahNum = learnedSurahNumbers[Math.floor(Math.random() * learnedSurahNumbers.length)];
-    const surah = getSurah(surahNum);
-    if (!surah) { attempts++; continue; }
-    const gen = pickGenerator();
-    const q = gen(surah);
-    if (q) questions.push(q);
-    attempts++;
-  }
-  return questions.slice(0, count);
+  return collectQuestions(count, learnedSurahNumbers);
 }

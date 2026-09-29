@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { ArrowLeft, CheckCircle2, RotateCcw } from 'lucide-react';
+import type { QuizQuestion } from '../../../types';
 
 import QuizPlayer from '../../../components/QuizPlayer';
 import { getSurah, ensureFullData } from '../../../lib/quran';
@@ -19,7 +21,7 @@ export default function QuizPage() {
   const [questions, setQuestions] = useState<ReturnType<typeof generateQuizForSurah>>([]);
   const [lives, setLives] = useState(5);
   const [done, setDone] = useState(false);
-  const [result, setResult] = useState<{ score: number; total: number; xp: number; mastered: boolean } | null>(null);
+  const [result, setResult] = useState<{ score: number; total: number; xp: number; mastered: boolean; mistakes: QuizQuestion[] } | null>(null);
 
   useEffect(() => {
     ensureFullData().then(() => {
@@ -31,7 +33,7 @@ export default function QuizPage() {
 
   const surah = getSurah(surahNumber);
 
-  const handleComplete = async (score: number, total: number, totalPoints: number) => {
+  const handleComplete = async (score: number, total: number, totalPoints: number, mistakes: QuizQuestion[]) => {
     const percentage = (score / total) * 100;
     const mastered = percentage >= 80;
     let xp = Math.floor(totalPoints / 10);
@@ -60,7 +62,7 @@ export default function QuizPage() {
       }
     }
 
-    setResult({ score, total, xp, mastered });
+    setResult({ score, total, xp, mastered, mistakes });
     setDone(true);
   };
 
@@ -91,35 +93,64 @@ export default function QuizPage() {
   return (
     <div className="min-h-screen">
       {/* Header */}
-      <div className="bg-[#1B4332] text-white px-4 py-3 flex items-center gap-3">
-        <button onClick={() => router.back()} className="text-xl">←</button>
-        <h1 className="flex-1 text-center text-base font-bold">Quiz - {surah.nameFrench}</h1>
-        <div className="w-6" />
+      <div className="bg-[var(--primary-dark)] text-white px-4 py-3 flex items-center gap-3">
+        <button onClick={() => router.back()} aria-label="Retour" className="w-9 h-9 -ml-2 flex items-center justify-center rounded-full">
+          <ArrowLeft size={20} />
+        </button>
+        <h1 className="flex-1 text-center text-base font-bold truncate">Quiz · {surah.nameFrench}</h1>
+        <div className="w-9" />
       </div>
 
       {done && result ? (
-        <div className="flex flex-col items-center justify-center h-[60vh] px-8 text-center">
-          <span className="text-6xl mb-4">{result.mastered ? '✅' : '📝'}</span>
-          <h2 className="text-2xl font-bold text-[var(--text)] mb-2">
-            {result.mastered ? 'Sourate maitrisee !' : 'Continue a reviser'}
-          </h2>
-          <p className="text-lg text-[var(--text-muted)]">
-            {result.score}/{result.total} ({Math.round((result.score / result.total) * 100)}%)
-          </p>
-          {!result.mastered && (
-            <p className="text-sm text-gray-400 mt-1">Il faut 80% pour maitriser la sourate</p>
+        <div className="px-4 pt-10 pb-8 max-w-lg mx-auto">
+          <div className="text-center">
+            <div className={`w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center ${result.mastered ? 'bg-[var(--primary-light)] text-[var(--primary)]' : 'bg-[var(--border)] text-[var(--text-muted)]'}`}>
+              {result.mastered ? <CheckCircle2 size={32} /> : <RotateCcw size={28} />}
+            </div>
+            <h2 className="text-2xl font-bold text-[var(--text)] mb-1">
+              {result.mastered ? 'Sourate maitrisee' : 'Continue a reviser'}
+            </h2>
+            <p className="text-lg text-[var(--text-muted)]">
+              {result.score}/{result.total} · {Math.round((result.score / result.total) * 100)}%
+            </p>
+            {!result.mastered && (
+              <p className="text-sm text-[var(--text-muted)] mt-1">80% pour maitriser la sourate</p>
+            )}
+            <p className="text-xl font-bold text-[var(--primary)] mt-3">+{result.xp} XP</p>
+          </div>
+
+          {result.mistakes.length > 0 && (
+            <section className="mt-8">
+              <h3 className="text-sm font-semibold text-[var(--text-muted)] uppercase tracking-wide mb-3">A revoir</h3>
+              <ul className="space-y-3">
+                {result.mistakes.map((m, i) => (
+                  <li key={i} className="rounded-xl bg-[var(--bg-card)] border border-[var(--border)] p-4">
+                    <p className="text-xs text-[var(--text-muted)]">Verset {m.answerAyahNumber}</p>
+                    {m.type === 'next_ayah' && (
+                      <p className="text-base leading-8 text-right text-[var(--text-muted)]" dir="rtl" style={{ fontFamily: "'Amiri Quran', serif" }}>
+                        {m.questionArabic} ...
+                      </p>
+                    )}
+                    <p className="text-xl leading-10 text-right text-[var(--text)]" dir="rtl" style={{ fontFamily: "'Amiri Quran', serif" }}>
+                      {m.answerArabic}
+                    </p>
+                    <p className="text-sm text-[var(--text-muted)] leading-snug mt-1">{m.answerTranslation}</p>
+                  </li>
+                ))}
+              </ul>
+            </section>
           )}
-          <p className="text-xl font-bold text-[#1B4332] mt-3">+{result.xp} XP</p>
+
           <div className="flex gap-3 mt-8">
             <button
               onClick={retry}
-              className="bg-[#1B4332] text-white px-6 py-3 rounded-xl font-semibold"
+              className="flex-1 bg-[var(--primary)] text-white py-3 rounded-xl font-semibold"
             >
               Recommencer
             </button>
             <button
               onClick={() => router.back()}
-              className="bg-[var(--border)] text-[var(--text)] px-6 py-3 rounded-xl font-semibold"
+              className="flex-1 bg-[var(--border)] text-[var(--text)] py-3 rounded-xl font-semibold"
             >
               Retour
             </button>

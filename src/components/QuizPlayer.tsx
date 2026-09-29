@@ -30,7 +30,7 @@ function getVerseLines(qcfPage: QcfPageData | undefined, surahNumber: number, ay
 
 interface QuizPlayerProps {
   questions: QuizQuestion[];
-  onComplete: (score: number, total: number, totalPoints: number) => void;
+  onComplete: (score: number, total: number, totalPoints: number, mistakes: QuizQuestion[]) => void;
   onLoseLife?: () => void;
   lives: number;
 }
@@ -68,9 +68,10 @@ export default function QuizPlayer({ questions, onComplete, onLoseLife, lives }:
 
   const startTime = useRef(Date.now());
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const contextRef = useRef<NodeJS.Timeout | null>(null);
   const scoreRef = useRef(0);
   const totalPointsRef = useRef(0);
+  const mistakesRef = useRef<QuizQuestion[]>([]);
+  const continueRef = useRef<HTMLButtonElement>(null);
 
   // Charger les donnees QCF au mount
   useEffect(() => {
@@ -97,11 +98,12 @@ export default function QuizPlayer({ questions, onComplete, onLoseLife, lives }:
 
   // Demarrer le timer quand on passe a la phase question
   useEffect(() => {
-    if (phase === 'question') {
+    if (phase === 'question' && !answered) {
       startTime.current = Date.now();
       startTimer();
     }
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [idx, phase, startTimer]);
 
   // Timeout
@@ -112,13 +114,27 @@ export default function QuizPlayer({ questions, onComplete, onLoseLife, lives }:
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeLeft, answered, phase]);
 
-  // Phase contexte : auto-avance apres 5s
+  // Clavier (app desktop) : 1-4 pour repondre, Entree/Espace pour continuer
   useEffect(() => {
-    if (phase !== 'context') return;
-    contextRef.current = setTimeout(goNext, 5000);
-    return () => { if (contextRef.current) clearTimeout(contextRef.current); };
+    function onKey(e: KeyboardEvent) {
+      if (phase === 'context') { if (e.key === 'Enter' || e.key === ' ' || e.key === 'Escape') { e.preventDefault(); setPhase('question'); } return; }
+      if (!answered) {
+        const n = parseInt(e.key);
+        if (n >= 1 && n <= (q?.options.length ?? 0)) doAnswer(n - 1);
+      } else if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        goNext();
+      }
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, idx]);
+  }, [phase, answered, idx]);
+
+  // Focus sur "Continuer" apres la reponse (lecteurs d'ecran + clavier)
+  useEffect(() => {
+    if (answered && phase === 'question') continueRef.current?.focus({ preventScroll: true });
+  }, [answered, phase]);
 
   function doAnswer(optionIndex: number) {
     if (answered) return;
@@ -137,15 +153,12 @@ export default function QuizPlayer({ questions, onComplete, onLoseLife, lives }:
       totalPointsRef.current += points;
       setTotalPoints(totalPointsRef.current);
     } else {
+      mistakesRef.current.push(q);
       onLoseLife?.();
     }
-
-    // Apres 1.5s → montrer le contexte
-    setTimeout(() => setPhase('context'), 1500);
   }
 
   function goNext() {
-    if (contextRef.current) clearTimeout(contextRef.current);
     if (idx < questions.length - 1) {
       setIdx(prev => prev + 1);
       setAnswered(false);
@@ -153,21 +166,22 @@ export default function QuizPlayer({ questions, onComplete, onLoseLife, lives }:
       setPts(0);
       setPhase('question');
     } else {
-      onComplete(scoreRef.current, questions.length, totalPointsRef.current);
+      onComplete(scoreRef.current, questions.length, totalPointsRef.current, mistakesRef.current);
     }
   }
 
   if (!q) return null;
 
-  const progress = ((idx + 1) / questions.length) * 100;
+  const progress = ((idx + (answered ? 1 : 0)) / questions.length) * 100;
+  const arabicOptions = q.type === 'next_ayah' || q.type === 'complete_ayah' || q.type === 'first_word';
   const timerColor = timeLeft <= 5 ? 'text-red-500' : timeLeft <= 10 ? 'text-orange-500' : 'text-[var(--text-muted)]';
 
   // ─── PHASE CONTEXTE : page mushaf + verset surligne ─────────
   if (phase === 'context') {
-    const ayah = surah?.ayahs.find(a => a.numberInSurah === q.ayahNumber);
+    const ayah = surah?.ayahs.find(a => a.numberInSurah === q.answerAyahNumber);
     const actualPage = ayah?.page || (surah ? getFirstPageOfSurah(q.surahNumber) : 1);
     const qcfPage = qcfData ? qcfData[String(actualPage)] : undefined;
-    const highlightLines = getVerseLines(qcfPage, q.surahNumber, q.ayahNumber);
+    const highlightLines = getVerseLines(qcfPage, q.surahNumber, q.answerAyahNumber);
 
     // Image mushaf classique : 1024x1656, texte y=50 a y=1620
     const IMG_H = 1656;
@@ -177,16 +191,12 @@ export default function QuizPlayer({ questions, onComplete, onLoseLife, lives }:
     const LINE_H = (TEXT_BOTTOM - TEXT_TOP) / TOTAL_LINES;
 
     return (
-      <div className="flex flex-col items-center min-h-[70vh]" onClick={goNext} style={{ cursor: 'pointer' }}>
+      <div className="flex flex-col items-center min-h-[70vh]" onClick={() => setPhase('question')} style={{ cursor: 'pointer' }}>
         <div className="text-center py-2">
           <p className="text-lg font-bold text-[var(--text)]" style={{ fontFamily: "'Noto Naskh Arabic', serif" }}>
             {surah?.nameArabic}
           </p>
-          <p className="text-xs text-[var(--text-muted)]">{surah?.nameFrench} — verset {q.ayahNumber} — page {actualPage}</p>
-          <p className={`text-sm font-semibold mt-1 ${wasCorrect ? 'text-[var(--primary)]' : 'text-[var(--danger)]'}`}>
-            {wasCorrect ? 'Correct !' : 'Incorrect'}
-            {pts > 0 && ` +${pts} pts`}
-          </p>
+          <p className="text-xs text-[var(--text-muted)]">{surah?.nameFrench} — verset {q.answerAyahNumber} — page {actualPage}</p>
         </div>
 
         <div className="w-full flex-1 relative rounded-xl overflow-hidden border border-[var(--border)] bg-[var(--border)]" style={{ aspectRatio: '1024/1656' }}>
@@ -218,7 +228,7 @@ export default function QuizPlayer({ questions, onComplete, onLoseLife, lives }:
           })}
         </div>
 
-        <p className="text-xs text-[var(--text-muted)] mt-2 mb-1">Appuie pour continuer</p>
+        <p className="text-xs text-[var(--text-muted)] mt-2 mb-1">Appuie pour revenir</p>
       </div>
     );
   }
@@ -256,6 +266,12 @@ export default function QuizPlayer({ questions, onComplete, onLoseLife, lives }:
 
       {q.questionArabic && (
         <div className="bg-[var(--bg-card)] rounded-xl p-5 mb-6 border border-[var(--border)]">
+          {q.contextArabic && (
+            <p className="text-lg leading-10 text-right text-[var(--text-muted)] mb-1" dir="rtl"
+              style={{ fontFamily: "'Amiri Quran', serif" }}>
+              {q.contextArabic}
+            </p>
+          )}
           <p className="text-2xl leading-[56px] text-right text-[var(--text)]" dir="rtl"
             style={{ fontFamily: "'Amiri Quran', serif" }}>
             {q.questionArabic}
@@ -268,33 +284,78 @@ export default function QuizPlayer({ questions, onComplete, onLoseLife, lives }:
         {q.options.map((option, i) => {
           let border = 'border-[var(--border)]';
           let bg = 'bg-[var(--bg-card)]';
+          let dim = '';
           if (answered) {
             if (i === q.correctIndex) { border = 'border-[var(--secondary)]'; bg = 'bg-[var(--primary-light)]'; }
-            else if (i === selected) { border = 'border-red-500'; bg = 'bg-red-50 dark:bg-red-900/20'; }
+            else if (i === selected) { border = 'border-[var(--danger)]'; bg = 'bg-red-50 dark:bg-red-900/20'; }
+            else dim = 'opacity-50';
           }
           return (
             <button
               key={i}
               onClick={() => doAnswer(i)}
               disabled={answered}
-              className={`w-full text-right p-4 rounded-xl border-2 ${border} ${bg} transition-all ${
+              className={`w-full flex items-center gap-3 p-4 rounded-xl border-2 ${border} ${bg} ${dim} transition-all ${
                 !answered ? 'hover:border-[var(--primary)] active:scale-[0.98]' : ''
               }`}
-              dir="rtl"
+              dir={arabicOptions ? 'rtl' : 'ltr'}
             >
-              <span className="text-base leading-8 text-[var(--text)]" style={{ fontFamily: "'Amiri Quran', serif" }}>
-                {option}
+              <span className="hidden sm:flex shrink-0 w-6 h-6 rounded-md border border-[var(--border)] text-xs text-[var(--text-muted)] items-center justify-center font-mono" aria-hidden>
+                {i + 1}
               </span>
+              {arabicOptions ? (
+                <span className="flex-1 text-right text-xl leading-9 text-[var(--text)]" style={{ fontFamily: "'Amiri Quran', serif" }}>
+                  {option}
+                </span>
+              ) : (
+                <span className="flex-1 text-left text-[15px] leading-snug text-[var(--text)]">
+                  {option}
+                </span>
+              )}
             </button>
           );
         })}
       </div>
 
-      {/* Ref sourate apres reponse */}
+      {/* Retour apres reponse : la bonne reponse complete, puis on continue a son rythme */}
       {answered && (
-        <p className="text-xs text-[var(--text-muted)] text-center mt-4">
-          {surah?.nameFrench} ({surah?.nameArabic}) — verset {q.ayahNumber}
-        </p>
+        <>
+          <div className="h-72" aria-hidden />
+          <div
+            role="status"
+            aria-live="polite"
+            className={`fixed inset-x-0 bottom-0 z-50 border-t-2 ${wasCorrect ? 'border-[var(--secondary)]' : 'border-[var(--danger)]'} bg-[var(--bg-card)] shadow-[0_-8px_24px_rgba(0,0,0,0.08)]`}
+            style={{ paddingBottom: 'max(16px, env(safe-area-inset-bottom))' }}
+          >
+            <div className="max-w-lg mx-auto px-4 pt-4 max-h-[55vh] overflow-y-auto">
+              <p className={`font-bold ${wasCorrect ? 'text-[var(--primary)]' : 'text-[var(--danger)]'}`}>
+                {wasCorrect ? `Correct${pts > 0 ? ` · +${pts} pts` : ''}` : selected === -1 ? 'Temps ecoule' : 'Pas tout a fait'}
+              </p>
+              <p className="text-xs text-[var(--text-muted)] mt-0.5">
+                {surah?.nameFrench} ({surah?.nameArabic}) — verset {q.answerAyahNumber}
+              </p>
+              <p className="text-xl leading-10 text-right text-[var(--text)] mt-2" dir="rtl" style={{ fontFamily: "'Amiri Quran', serif" }}>
+                {q.answerArabic}
+              </p>
+              <p className="text-sm text-[var(--text-muted)] mt-1 leading-snug">{q.answerTranslation}</p>
+            </div>
+            <div className="max-w-lg mx-auto px-4 pt-3 flex gap-2">
+              <button
+                onClick={() => setPhase('context')}
+                className="px-4 py-3 rounded-xl border border-[var(--border)] text-sm font-semibold text-[var(--text)]"
+              >
+                Voir la page
+              </button>
+              <button
+                ref={continueRef}
+                onClick={goNext}
+                className={`flex-1 py-3 rounded-xl font-semibold text-white ${wasCorrect ? 'bg-[var(--primary)]' : 'bg-[var(--danger)]'}`}
+              >
+                {idx < questions.length - 1 ? 'Continuer' : 'Voir le resultat'}
+              </button>
+            </div>
+          </div>
+        </>
       )}
     </div>
   );

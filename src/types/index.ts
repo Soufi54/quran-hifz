@@ -29,10 +29,14 @@ export interface QuizQuestion {
   type: 'next_ayah' | 'complete_ayah' | 'identify_surah' | 'first_word' | 'translation';
   questionText: string;
   questionArabic?: string;
+  contextArabic?: string; // versets precedents, quand l'enonce seul est ambigu (refrains)
   options: string[];
   correctIndex: number;
   surahNumber: number;
   ayahNumber: number;
+  answerAyahNumber: number;
+  answerArabic: string; // verset complet de la bonne reponse, affiche apres la reponse
+  answerTranslation: string;
 }
 
 export type MosqueLevel = 1 | 2 | 3 | 4 | 5 | 6 | 7;
