@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Star, BookOpen, TrendingUp, Users } from 'lucide-react';
+import { Star, BookOpen, TrendingUp, Users, Settings } from 'lucide-react';
 import { useI18n } from './I18nProvider';
 
 export default function BottomNav() {
@@ -14,6 +14,7 @@ export default function BottomNav() {
     { href: '/sourates', label: t('sourates'), Icon: BookOpen },
     { href: '/progression', label: t('progression'), Icon: TrendingUp },
     { href: '/madrasa', label: 'Madrasa', Icon: Users },
+    { href: '/profil', label: 'Profil', Icon: Settings },
   ];
 
   return (
